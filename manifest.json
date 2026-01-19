@@ -1,0 +1,43 @@
+{
+    "manifest_version": 3,
+    "name": "Ghostify",
+    "version": "2.0",
+    "description": "Control your visibility on Instagram & Messenger with Buttons",
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "*://*.instagram.com/*",
+        "*://*.messenger.com/*",
+        "*://*.facebook.com/*"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.instagram.com/*",
+                "*://*.messenger.com/*",
+                "*://*.facebook.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_start",
+            "world": "ISOLATED"
+        },
+        {
+            "matches": [
+                "*://*.instagram.com/*",
+                "*://*.messenger.com/*",
+                "*://*.facebook.com/*"
+            ],
+            "js": [
+                "ghost.js"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN"
+        }
+    ]
+}

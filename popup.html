@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 320px; padding: 20px; background: #1a1a2e; color: #fff; font-family: sans-serif; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .platform-section { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; margin-bottom: 12px; }
+        .platform-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+        .toggle { position: relative; width: 44px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a4a; transition: 0.3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
+        input:checked + .slider { background: #a855f7; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        input:disabled + .slider { background-color: #222; cursor: not-allowed; }
+        .refresh-note { text-align: center; font-size: 11px; color: #a855f7; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>👻 Ghostify</h1><p>Stealth Controls</p></div>
+    
+    <div class="platform-section">
+        <div class="platform-header"><span>📸</span><span>Instagram</span></div>
+        <div class="toggle-row"><span>Hide Typing</span><label class="toggle"><input type="checkbox" id="ig-typing"><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>Hide Seen</span><label class="toggle"><input type="checkbox" id="ig-seen"><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>Hide Story Views</span><label class="toggle"><input type="checkbox" id="ig-story"><span class="slider"></span></label></div>
+    </div>
+
+    <div class="platform-section">
+        <div class="platform-header"><span>💬</span><span>Messenger</span></div>
+        <div class="toggle-row"><span style="color:#666">Hide Typing (Encrypted)</span><label class="toggle"><input type="checkbox" id="msg-typing" disabled><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>Hide Seen</span><label class="toggle"><input type="checkbox" id="msg-seen"><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>Hide Story Views</span><label class="toggle"><input type="checkbox" id="msg-story"><span class="slider"></span></label></div>
+    </div>
+
+    <div class="refresh-note">🔄 Refresh page to apply</div>
+    <script src="popup.js"></script>
+</body>
+</html>
