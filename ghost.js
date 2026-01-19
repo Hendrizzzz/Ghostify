@@ -1,29 +1,58 @@
+/**
+ * @fileoverview Ghostify - Privacy control for Instagram & Messenger
+ * @description Main interception script that runs in the MAIN world to access
+ *              page JavaScript context and intercept network requests.
+ * @version 2.0.0
+ * @license MIT
+ */
+
 (function () {
     'use strict';
 
     // ============================================================
-    // SETTINGS
+    // CONFIGURATION
     // ============================================================
+
+    /**
+     * User settings received from the popup via content.js bridge.
+     * @type {Object}
+     */
     let SETTINGS = {
-        igTyping: true, igSeen: true, igStory: true,
-        msgTyping: false, msgSeen: true, msgStory: true
+        igTyping: true,
+        igSeen: true,
+        igStory: true,
+        msgTyping: false,
+        msgSeen: true,
+        msgStory: true
     };
 
+    // Listen for settings from the content.js bridge
     window.addEventListener('message', (event) => {
         if (event.source !== window) return;
         if (event.data.type === 'GHOSTIFY_INIT' || event.data.type === 'GHOSTIFY_UPDATE') {
             SETTINGS = event.data.settings;
-            console.log("👻 Settings:", SETTINGS);
+            console.log('👻 Ghostify settings updated:', SETTINGS);
         }
     });
 
+    /** @type {boolean} Whether current page is Instagram */
     const isInstagram = window.location.hostname.includes('instagram.com');
-    const isMessenger = window.location.hostname.includes('messenger.com') || window.location.hostname.includes('facebook.com');
+
+    /** @type {boolean} Whether current page is Messenger/Facebook */
+    const isMessenger = window.location.hostname.includes('messenger.com') ||
+        window.location.hostname.includes('facebook.com');
 
     // ============================================================
-    // V32 PATTERNS (proven to work)
+    // PATTERN DEFINITIONS
+    // These patterns have been tested and proven to work.
+    // Do not modify unless Meta changes their API.
     // ============================================================
 
+    /**
+     * Patterns that indicate typing activity (Instagram only).
+     * Messenger uses encrypted protocol that cannot be intercepted.
+     * @constant {string[]}
+     */
     const TYPING_PATTERNS = [
         'indicate_activity',
         'typing_indicator',
@@ -31,6 +60,10 @@
         'is_typing'
     ];
 
+    /**
+     * Patterns that indicate read receipts for direct messages.
+     * @constant {string[]}
+     */
     const SEEN_PATTERNS = [
         'mark_read',
         'mark_seen',
@@ -49,6 +82,10 @@
         'last_activity_at'
     ];
 
+    /**
+     * Patterns that indicate story view receipts.
+     * @constant {string[]}
+     */
     const STORY_PATTERNS = [
         'StoriesUpdateSeenMutation',
         'PolarisStoriesSeenMutation',
@@ -71,45 +108,60 @@
     ];
 
     // ============================================================
-    // HELPERS
+    // HELPER FUNCTIONS
     // ============================================================
 
+    /**
+     * Decodes various data types to a string for pattern matching.
+     * @param {string|ArrayBuffer|Blob|Object} data - Data to decode
+     * @returns {string} Decoded string representation
+     */
     function decode(data) {
-        if (!data) return "";
+        if (!data) return '';
         try {
             if (typeof data === 'string') return data;
             if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
                 return new TextDecoder().decode(data);
             }
             if (typeof data === 'object') return JSON.stringify(data);
-        } catch (e) { return ""; }
-        return "";
+        } catch (e) {
+            return '';
+        }
+        return '';
     }
 
-    function shouldBlock(data, url = "") {
-        if (url.includes('.mp4') || url.includes('.jpg') || url.includes('.png') || url.includes('.webp')) {
+    /**
+     * Determines if a request should be blocked based on its content.
+     * @param {*} data - Request body data
+     * @param {string} url - Request URL
+     * @returns {string|null} Block type if should block, null if should allow
+     */
+    function shouldBlock(data, url = '') {
+        // Allow media files to load (prevents grey screen issues)
+        if (url.includes('.mp4') || url.includes('.jpg') ||
+            url.includes('.png') || url.includes('.webp')) {
             return null;
         }
 
-        const str = (decode(data) + " " + url).toLowerCase();
+        const str = (decode(data) + ' ' + url).toLowerCase();
 
-        // TYPING - Only IG
+        // Check TYPING patterns (Instagram only)
         if (TYPING_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
-            if (isInstagram && SETTINGS.igTyping) return "IG_TYPING";
+            if (isInstagram && SETTINGS.igTyping) return 'IG_TYPING';
             return null;
         }
 
-        // STORY - Check before SEEN (more specific patterns)
+        // Check STORY patterns (more specific, check before SEEN)
         if (STORY_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
-            if (isInstagram && SETTINGS.igStory) return "IG_STORY";
-            if (isMessenger && SETTINGS.msgStory) return "MSG_STORY";
+            if (isInstagram && SETTINGS.igStory) return 'IG_STORY';
+            if (isMessenger && SETTINGS.msgStory) return 'MSG_STORY';
             return null;
         }
 
-        // SEEN
+        // Check SEEN patterns
         if (SEEN_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
-            if (isInstagram && SETTINGS.igSeen) return "IG_SEEN";
-            if (isMessenger && SETTINGS.msgSeen) return "MSG_SEEN";
+            if (isInstagram && SETTINGS.igSeen) return 'IG_SEEN';
+            if (isMessenger && SETTINGS.msgSeen) return 'MSG_SEEN';
             return null;
         }
 
@@ -117,28 +169,30 @@
     }
 
     // ============================================================
-    // DYNAMIC VISIBILITY SPOOFING
-    // Only spoof when SEEN features are ON
+    // VISIBILITY SPOOFING
+    // Tricks the page into thinking the tab is not focused,
+    // which helps prevent automatic read receipts.
     // ============================================================
 
     const originalHasFocus = document.hasFocus.bind(document);
+
     Object.defineProperty(document, 'hasFocus', {
         value: function () {
-            // If any SEEN feature is ON, spoof as unfocused
+            // Return false (unfocused) when SEEN blocking is enabled
             if (isInstagram && SETTINGS.igSeen) return false;
             if (isMessenger && SETTINGS.msgSeen) return false;
-            // Otherwise, return real focus state
             return originalHasFocus();
         }
     });
 
     const origAddEvt = EventTarget.prototype.addEventListener;
+
     EventTarget.prototype.addEventListener = function (type, listener, opt) {
         if (['visibilitychange', 'blur', 'focus'].includes(type)) {
-            // Wrap listener to conditionally block
             const wrappedListener = function (e) {
-                const seenOn = (isInstagram && SETTINGS.igSeen) || (isMessenger && SETTINGS.msgSeen);
-                if (seenOn) return; // Block event when seen is ON
+                const seenOn = (isInstagram && SETTINGS.igSeen) ||
+                    (isMessenger && SETTINGS.msgSeen);
+                if (seenOn) return; // Block visibility events when SEEN is ON
                 return listener.call(this, e);
             };
             return origAddEvt.call(this, type, wrappedListener, opt);
@@ -147,73 +201,92 @@
     };
 
     // ============================================================
-    // NETWORK INTERCEPTORS (V32 exact)
+    // NETWORK INTERCEPTORS
+    // Patch all methods that can send data to the server.
     // ============================================================
 
-    const OrigWS = window.WebSocket;
-    const origSend = OrigWS.prototype.send;
-    OrigWS.prototype.send = function (data) {
+    // --- WebSocket Interception ---
+    const OriginalWebSocket = window.WebSocket;
+    const originalWSSend = OriginalWebSocket.prototype.send;
+
+    OriginalWebSocket.prototype.send = function (data) {
         const blockType = shouldBlock(data);
         if (blockType) {
             console.log(`🚫 [${blockType}]`);
             return;
         }
-        return origSend.apply(this, arguments);
+        return originalWSSend.apply(this, arguments);
     };
 
-    window.WebSocket = function (url, proto) {
-        const ws = proto ? new OrigWS(url, proto) : new OrigWS(url);
-        const send = ws.send.bind(ws);
+    window.WebSocket = function (url, protocols) {
+        const ws = protocols ? new OriginalWebSocket(url, protocols) : new OriginalWebSocket(url);
+        const boundSend = ws.send.bind(ws);
+
         ws.send = function (data) {
             const blockType = shouldBlock(data);
             if (blockType) {
                 console.log(`🚫 [${blockType}]`);
                 return;
             }
-            return send(data);
+            return boundSend(data);
         };
+
         return ws;
     };
-    window.WebSocket.prototype = OrigWS.prototype;
-    Object.assign(window.WebSocket, OrigWS);
 
-    const origFetch = window.fetch;
+    window.WebSocket.prototype = OriginalWebSocket.prototype;
+    Object.assign(window.WebSocket, OriginalWebSocket);
+
+    // --- Fetch API Interception ---
+    const originalFetch = window.fetch;
+
     window.fetch = async function (input, init) {
-        let url = typeof input === 'string' ? input : (input?.url || "");
-        let body = init?.body || "";
+        const url = typeof input === 'string' ? input : (input?.url || '');
+        const body = init?.body || '';
+
         const blockType = shouldBlock(body, url);
         if (blockType) {
             console.log(`🚫 [${blockType}]`);
             return new Response('{"status":"ok"}', { status: 200 });
         }
-        return origFetch.apply(this, arguments);
+
+        return originalFetch.apply(this, arguments);
     };
 
-    const xhrOpen = XMLHttpRequest.prototype.open;
-    const xhrSend = XMLHttpRequest.prototype.send;
+    // --- XMLHttpRequest Interception ---
+    const originalXhrOpen = XMLHttpRequest.prototype.open;
+    const originalXhrSend = XMLHttpRequest.prototype.send;
+
     XMLHttpRequest.prototype.open = function (method, url) {
-        this._ghostUrl = url;
-        return xhrOpen.apply(this, arguments);
+        this._ghostifyUrl = url;
+        return originalXhrOpen.apply(this, arguments);
     };
+
     XMLHttpRequest.prototype.send = function (body) {
-        const blockType = shouldBlock(body, this._ghostUrl);
+        const blockType = shouldBlock(body, this._ghostifyUrl);
         if (blockType) {
             console.log(`🚫 [${blockType}]`);
             return;
         }
-        return xhrSend.apply(this, arguments);
+        return originalXhrSend.apply(this, arguments);
     };
 
-    const origBeacon = navigator.sendBeacon;
+    // --- Beacon API Interception ---
+    const originalBeacon = navigator.sendBeacon;
+
     navigator.sendBeacon = function (url, data) {
         const blockType = shouldBlock(data, url);
         if (blockType) {
             console.log(`🚫 [${blockType}]`);
             return true;
         }
-        return origBeacon.apply(this, arguments);
+        return originalBeacon.apply(this, arguments);
     };
 
-    console.log("👻 Ghostify V14 Active");
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+
+    console.log('👻 Ghostify v2.0.0 Active');
 
 })();
