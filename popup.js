@@ -1,13 +1,3 @@
-/**
- * @fileoverview Ghostify Popup Script
- * @description Handles the extension popup UI and settings persistence.
- * @version 2.0.0
- */
-
-/**
- * Default settings applied on first install.
- * @constant {Object}
- */
 const DEFAULT_SETTINGS = {
     igTyping: true,
     igSeen: true,
@@ -17,10 +7,7 @@ const DEFAULT_SETTINGS = {
     msgStory: true
 };
 
-/**
- * Element ID to settings key mapping.
- * @constant {Object}
- */
+
 const ELEMENT_MAP = {
     'ig-typing': 'igTyping',
     'ig-seen': 'igSeen',
@@ -29,17 +16,13 @@ const ELEMENT_MAP = {
     'msg-story': 'msgStory'
 };
 
-/**
- * Initialize popup when DOM is ready.
- */
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     attachEventListeners();
 });
 
-/**
- * Load saved settings from Chrome storage and update UI.
- */
+
 function loadSettings() {
     chrome.storage.local.get(['ghostifySettings'], (result) => {
         const settings = result.ghostifySettings || DEFAULT_SETTINGS;
@@ -53,9 +36,7 @@ function loadSettings() {
     });
 }
 
-/**
- * Attach change listeners to all toggle inputs.
- */
+
 function attachEventListeners() {
     const inputs = document.querySelectorAll('input[type="checkbox"]');
     inputs.forEach(input => {
@@ -63,15 +44,13 @@ function attachEventListeners() {
     });
 }
 
-/**
- * Save current UI state to Chrome storage.
- */
+
 function saveSettings() {
     const settings = {
         igTyping: document.getElementById('ig-typing')?.checked ?? true,
         igSeen: document.getElementById('ig-seen')?.checked ?? true,
         igStory: document.getElementById('ig-story')?.checked ?? true,
-        msgTyping: false, // Always false (not supported)
+        msgTyping: false, // (not supported yet pi)
         msgSeen: document.getElementById('msg-seen')?.checked ?? true,
         msgStory: document.getElementById('msg-story')?.checked ?? true
     };

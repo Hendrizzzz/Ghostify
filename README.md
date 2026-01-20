@@ -26,7 +26,7 @@ A Chrome extension that lets you browse Instagram and Messenger privately by hid
 ## 📸 Screenshot
 
 <p align="center">
-  <img src="screenshot.png" alt="Ghostify Popup" width="320">
+  <img src="screenshots/screenshot.png" alt="Ghostify Popup" width="320">
 </p>
 
 ---
@@ -57,24 +57,24 @@ A Chrome extension that lets you browse Instagram and Messenger privately by hid
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        POPUP (UI)                            │
-│  popup.html + popup.js                                       │
-│  • User toggles settings                                     │
+│                        POPUP (UI)                           │
+│  popup.html + popup.js                                      │
+│  • User toggles settings                                    │
 │  • Saves to chrome.storage.local                            │
 └──────────────────────────┬──────────────────────────────────┘
                            │ chrome.storage
 ┌──────────────────────────▼──────────────────────────────────┐
-│                    CONTENT SCRIPT                            │
+│                    CONTENT SCRIPT                           │
 │  content.js (ISOLATED world)                                │
 │  • Reads settings from chrome.storage                       │
 │  • Bridges to MAIN world via postMessage                    │
 └──────────────────────────┬──────────────────────────────────┘
                            │ window.postMessage
 ┌──────────────────────────▼──────────────────────────────────┐
-│                    GHOST SCRIPT                              │
+│                    GHOST SCRIPT                             │
 │  ghost.js (MAIN world)                                      │
 │  • Intercepts WebSocket, Fetch, XHR, Beacon                 │
-│  • Pattern-matches activity requests                         │
+│  • Pattern-matches activity requests                        │
 │  • Blocks based on current settings                         │
 └─────────────────────────────────────────────────────────────┘
 ```

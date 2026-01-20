@@ -9,14 +9,6 @@
 (function () {
     'use strict';
 
-    // ============================================================
-    // CONFIGURATION
-    // ============================================================
-
-    /**
-     * User settings received from the popup via content.js bridge.
-     * @type {Object}
-     */
     let SETTINGS = {
         igTyping: true,
         igSeen: true,
@@ -26,7 +18,6 @@
         msgStory: true
     };
 
-    // Listen for settings from the content.js bridge
     window.addEventListener('message', (event) => {
         if (event.source !== window) return;
         if (event.data.type === 'GHOSTIFY_INIT' || event.data.type === 'GHOSTIFY_UPDATE') {
@@ -35,24 +26,10 @@
         }
     });
 
-    /** @type {boolean} Whether current page is Instagram */
     const isInstagram = window.location.hostname.includes('instagram.com');
-
-    /** @type {boolean} Whether current page is Messenger/Facebook */
     const isMessenger = window.location.hostname.includes('messenger.com') ||
         window.location.hostname.includes('facebook.com');
 
-    // ============================================================
-    // PATTERN DEFINITIONS
-    // These patterns have been tested and proven to work.
-    // Do not modify unless Meta changes their API.
-    // ============================================================
-
-    /**
-     * Patterns that indicate typing activity (Instagram only).
-     * Messenger uses encrypted protocol that cannot be intercepted.
-     * @constant {string[]}
-     */
     const TYPING_PATTERNS = [
         'indicate_activity',
         'typing_indicator',
@@ -60,10 +37,6 @@
         'is_typing'
     ];
 
-    /**
-     * Patterns that indicate read receipts for direct messages.
-     * @constant {string[]}
-     */
     const SEEN_PATTERNS = [
         'mark_read',
         'mark_seen',
@@ -82,10 +55,6 @@
         'last_activity_at'
     ];
 
-    /**
-     * Patterns that indicate story view receipts.
-     * @constant {string[]}
-     */
     const STORY_PATTERNS = [
         'StoriesUpdateSeenMutation',
         'PolarisStoriesSeenMutation',
@@ -107,15 +76,9 @@
         'stories_viewer_stat_mutation'
     ];
 
-    // ============================================================
-    // HELPER FUNCTIONS
-    // ============================================================
 
-    /**
-     * Decodes various data types to a string for pattern matching.
-     * @param {string|ArrayBuffer|Blob|Object} data - Data to decode
-     * @returns {string} Decoded string representation
-     */
+
+
     function decode(data) {
         if (!data) return '';
         try {
@@ -130,14 +93,10 @@
         return '';
     }
 
-    /**
-     * Determines if a request should be blocked based on its content.
-     * @param {*} data - Request body data
-     * @param {string} url - Request URL
-     * @returns {string|null} Block type if should block, null if should allow
-     */
+
+
+
     function shouldBlock(data, url = '') {
-        // Allow media files to load (prevents grey screen issues)
         if (url.includes('.mp4') || url.includes('.jpg') ||
             url.includes('.png') || url.includes('.webp')) {
             return null;
@@ -145,20 +104,17 @@
 
         const str = (decode(data) + ' ' + url).toLowerCase();
 
-        // Check TYPING patterns (Instagram only)
         if (TYPING_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
             if (isInstagram && SETTINGS.igTyping) return 'IG_TYPING';
             return null;
         }
 
-        // Check STORY patterns (more specific, check before SEEN)
         if (STORY_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
             if (isInstagram && SETTINGS.igStory) return 'IG_STORY';
             if (isMessenger && SETTINGS.msgStory) return 'MSG_STORY';
             return null;
         }
 
-        // Check SEEN patterns
         if (SEEN_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
             if (isInstagram && SETTINGS.igSeen) return 'IG_SEEN';
             if (isMessenger && SETTINGS.msgSeen) return 'MSG_SEEN';
@@ -168,22 +124,21 @@
         return null;
     }
 
-    // ============================================================
-    // VISIBILITY SPOOFING
-    // Tricks the page into thinking the tab is not focused,
-    // which helps prevent automatic read receipts.
-    // ============================================================
+
+
 
     const originalHasFocus = document.hasFocus.bind(document);
 
     Object.defineProperty(document, 'hasFocus', {
         value: function () {
-            // Return false (unfocused) when SEEN blocking is enabled
             if (isInstagram && SETTINGS.igSeen) return false;
             if (isMessenger && SETTINGS.msgSeen) return false;
             return originalHasFocus();
         }
     });
+
+
+
 
     const origAddEvt = EventTarget.prototype.addEventListener;
 
@@ -192,7 +147,7 @@
             const wrappedListener = function (e) {
                 const seenOn = (isInstagram && SETTINGS.igSeen) ||
                     (isMessenger && SETTINGS.msgSeen);
-                if (seenOn) return; // Block visibility events when SEEN is ON
+                if (seenOn) return;
                 return listener.call(this, e);
             };
             return origAddEvt.call(this, type, wrappedListener, opt);
@@ -200,12 +155,8 @@
         return origAddEvt.call(this, type, listener, opt);
     };
 
-    // ============================================================
-    // NETWORK INTERCEPTORS
-    // Patch all methods that can send data to the server.
-    // ============================================================
 
-    // --- WebSocket Interception ---
+
     const OriginalWebSocket = window.WebSocket;
     const originalWSSend = OriginalWebSocket.prototype.send;
 
@@ -217,6 +168,8 @@
         }
         return originalWSSend.apply(this, arguments);
     };
+
+
 
     window.WebSocket = function (url, protocols) {
         const ws = protocols ? new OriginalWebSocket(url, protocols) : new OriginalWebSocket(url);
@@ -234,10 +187,12 @@
         return ws;
     };
 
+
+
     window.WebSocket.prototype = OriginalWebSocket.prototype;
     Object.assign(window.WebSocket, OriginalWebSocket);
 
-    // --- Fetch API Interception ---
+
     const originalFetch = window.fetch;
 
     window.fetch = async function (input, init) {
@@ -253,7 +208,7 @@
         return originalFetch.apply(this, arguments);
     };
 
-    // --- XMLHttpRequest Interception ---
+
     const originalXhrOpen = XMLHttpRequest.prototype.open;
     const originalXhrSend = XMLHttpRequest.prototype.send;
 
@@ -271,7 +226,7 @@
         return originalXhrSend.apply(this, arguments);
     };
 
-    // --- Beacon API Interception ---
+
     const originalBeacon = navigator.sendBeacon;
 
     navigator.sendBeacon = function (url, data) {
@@ -283,9 +238,6 @@
         return originalBeacon.apply(this, arguments);
     };
 
-    // ============================================================
-    // INITIALIZATION
-    // ============================================================
 
     console.log('👻 Ghostify v2.0.0 Active');
 
