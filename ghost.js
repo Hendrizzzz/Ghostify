@@ -1,21 +1,33 @@
-/**
- * @fileoverview Ghostify - Privacy control for Instagram & Messenger
- * @description Main interception script that runs in the MAIN world to access
- *              page JavaScript context and intercept network requests.
- * @version 2.0.0
- * @license MIT
- */
-
 (function () {
     'use strict';
 
+    // ============================================================
+    // 1. SERVICE WORKER ASSASSIN (Restored from the working version)
+    // ============================================================
+    // This stops Messenger from sending "Seen" via background threads.
+    if (window.location.hostname.includes('messenger.com') || window.location.hostname.includes('facebook.com')) {
+        if (navigator.serviceWorker) {
+            // Kill existing
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => {
+                    console.log('💀 Ghostify: Killing Service Worker', r);
+                    r.unregister();
+                });
+            });
+            // Block new ones
+            Object.defineProperty(navigator, 'serviceWorker', {
+                value: {
+                    register: () => new Promise(() => { }),
+                    getRegistrations: () => Promise.resolve([]),
+                    ready: new Promise(() => { })
+                }
+            });
+        }
+    }
+
     let SETTINGS = {
-        igTyping: true,
-        igSeen: true,
-        igStory: true,
-        msgTyping: false,
-        msgSeen: true,
-        msgStory: true
+        igTyping: true, igSeen: true, igStory: true,
+        msgTyping: false, msgSeen: true, msgStory: true
     };
 
     window.addEventListener('message', (event) => {
@@ -30,6 +42,21 @@
     const isMessenger = window.location.hostname.includes('messenger.com') ||
         window.location.hostname.includes('facebook.com');
 
+    // ============================================================
+    // IG VISIBILITY LOGIC (LOCKED - V2.0.2)
+    // ============================================================
+    function shouldSpoofVisibility() {
+        if (isInstagram && SETTINGS.igSeen) {
+            const path = window.location.pathname;
+            if (path.includes('/stories/') || path.includes('/reel')) {
+                return false;
+            }
+            return true;
+        }
+        // FB: DO NOT SPOOF. Breaks Feed.
+        return false;
+    }
+
     const TYPING_PATTERNS = [
         'indicate_activity',
         'typing_indicator',
@@ -37,47 +64,45 @@
         'is_typing'
     ];
 
-    const SEEN_PATTERNS = [
-        'mark_read',
-        'mark_seen',
-        'seen_state',
-        'thread_seen',
-        'DirectMarkAsSeen',
-        'MarkAsSeen',
+    const IG_SEEN_PATTERNS = [
+        'mark_read', 'mark_seen', 'thread_seen',
+        'DirectMarkAsSeen', 'MarkAsSeen',
         'DirectThreadMarkItemsSeen',
         'PolarisDirectMarkAsSeenMutation',
-        'DirectSeenMutation',
-        'seenByViewer',
-        'updateLastSeenAt',
-        '"label":"3"',
-        '"label":"5"',
-        'viewed_state',
+        'DirectSeenMutation', 'updateLastSeenAt',
         'last_activity_at'
     ];
 
-    const STORY_PATTERNS = [
-        'StoriesUpdateSeenMutation',
-        'PolarisStoriesSeenMutation',
-        'usePolarisStoriesV3SeenMutation',
-        'reelMediaSeen',
-        'storiesUpdateSeen',
-        'SeenStoriesUpdateMutation',
-        'mark_story_seen',
-        'update_seen_for_reel',
-        'SeenMutation',
-        'reel_seen',
-        'media_seen',
-        'reel_media',
-        'seen_at',
-        'viewer_seen',
-        'storiesSeen',
-        'stories_update_seen',
-        'mark_story_read',
-        'stories_viewer_stat_mutation'
+    const IG_STORY_PATTERNS = [
+        'StoriesUpdateSeenMutation', 'PolarisStoriesSeenMutation',
+        'usePolarisStoriesV3SeenMutation', 'reelMediaSeen',
+        'storiesUpdateSeen', 'SeenStoriesUpdateMutation',
+        'mark_story_seen', 'update_seen_for_reel',
+        'SeenMutation', 'reel_seen', 'media_seen', 'reel_media',
+        'seen_at', 'storiesSeen', 'stories_update_seen',
+        'mark_story_read', 'stories_viewer_stat_mutation'
     ];
 
+    // ============================================================
+    // FACEBOOK PATTERNS (V2.1.6 - Toxic Whitelist Logic)
+    // ============================================================
+    const FB_SEEN_PATTERNS = [
+        'mark_read', 'mark_seen', 'seen_state', 'thread_seen',
+        'DirectMarkAsSeen', 'MarkAsSeen', '"label":"3"', '"label":"5"',
+        'viewed_state', 'last_activity_at', 'read_receipt'
+        // REMOVED: 'delivery_receipt' (Handled manually below)
+    ];
 
-
+    const FB_STORY_PATTERNS = [
+        'stories_update_seen', 'storiesseen', 'story_view',
+        'stories_viewer_stat_mutation', 'mutation_token', 'update_seen', 'viewed',
+        'story_view_receipt',
+        'StoriesUpdateSeenMutation', 'PolarisStoriesSeenMutation',
+        'usePolarisStoriesV3SeenMutation', 'reelMediaSeen',
+        'storiesUpdateSeen', 'SeenStoriesUpdateMutation',
+        'mark_story_seen', 'update_seen_for_reel',
+        'SeenMutation', 'reel_seen', 'media_seen', 'reel_media'
+    ];
 
     function decode(data) {
         if (!data) return '';
@@ -93,9 +118,6 @@
         return '';
     }
 
-
-
-
     function shouldBlock(data, url = '') {
         if (url.includes('.mp4') || url.includes('.jpg') ||
             url.includes('.png') || url.includes('.webp')) {
@@ -104,58 +126,91 @@
 
         const str = (decode(data) + ' ' + url).toLowerCase();
 
+        // ============================================================
+        // FACEBOOK / MESSENGER LOGIC (V2.1.6)
+        // ============================================================
+        if (isMessenger) {
+            // 1. CHECK BLOCK LISTS FIRST (Priority)
+            if (SETTINGS.msgStory && FB_STORY_PATTERNS.some(p => str.includes(p.toLowerCase()))) return 'MSG_STORY';
+            if (SETTINGS.msgSeen && FB_SEEN_PATTERNS.some(p => str.includes(p.toLowerCase()))) return 'MSG_SEEN';
+
+            // 2. THE TOXIC WHITELIST (Delivery Receipt)
+            // Allows feed to load, but blocks if it contains ANY hidden seen receipt pattern.
+            // V2.1.8 Fix: Check against FULL list, not just mark_read.
+            if (str.includes('delivery_receipt')) {
+                if (SETTINGS.msgSeen && FB_SEEN_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
+                    return 'MSG_SEEN (Toxic Delivery)';
+                }
+                return null; // Safe to allow (Pure Delivery)
+            }
+
+            // 3. FEED WHITELIST
+            if (str.includes('pagination') || str.includes('cursor') || str.includes('feed')) return null;
+
+            if (SETTINGS.msgTyping && TYPING_PATTERNS.some(p => str.includes(p))) return 'MSG_TYPING';
+            return null;
+        }
+
+        // ============================================================
+        // INSTAGRAM LOGIC (LOCKED V2.0.2)
+        // ============================================================
+        if (str.includes('query_hash') || (str.includes('doc_id') && !str.includes('mutation'))) return null;
+
         if (TYPING_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
             if (isInstagram && SETTINGS.igTyping) return 'IG_TYPING';
             return null;
         }
 
-        if (STORY_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
+        if (IG_STORY_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
             if (isInstagram && SETTINGS.igStory) return 'IG_STORY';
-            if (isMessenger && SETTINGS.msgStory) return 'MSG_STORY';
             return null;
         }
 
-        if (SEEN_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
+        if (IG_SEEN_PATTERNS.some(p => str.includes(p.toLowerCase()))) {
             if (isInstagram && SETTINGS.igSeen) return 'IG_SEEN';
-            if (isMessenger && SETTINGS.msgSeen) return 'MSG_SEEN';
             return null;
         }
 
         return null;
     }
 
-
-
+    // ============================================================
+    // VISIBILITY SPOOFING
+    // ============================================================
 
     const originalHasFocus = document.hasFocus.bind(document);
-
     Object.defineProperty(document, 'hasFocus', {
         value: function () {
-            if (isInstagram && SETTINGS.igSeen) return false;
-            if (isMessenger && SETTINGS.msgSeen) return false;
+            if (shouldSpoofVisibility()) return false;
             return originalHasFocus();
         }
     });
 
+    Object.defineProperty(document, 'visibilityState', {
+        get: function () {
+            if (shouldSpoofVisibility()) return 'hidden';
+            return 'visible';
+        }
+    });
 
-
+    Object.defineProperty(document, 'hidden', {
+        get: function () {
+            if (shouldSpoofVisibility()) return true;
+            return false;
+        }
+    });
 
     const origAddEvt = EventTarget.prototype.addEventListener;
-
     EventTarget.prototype.addEventListener = function (type, listener, opt) {
         if (['visibilitychange', 'blur', 'focus'].includes(type)) {
             const wrappedListener = function (e) {
-                const seenOn = (isInstagram && SETTINGS.igSeen) ||
-                    (isMessenger && SETTINGS.msgSeen);
-                if (seenOn) return;
+                if (shouldSpoofVisibility()) return;
                 return listener.call(this, e);
             };
             return origAddEvt.call(this, type, wrappedListener, opt);
         }
         return origAddEvt.call(this, type, listener, opt);
     };
-
-
 
     const OriginalWebSocket = window.WebSocket;
     const originalWSSend = OriginalWebSocket.prototype.send;
@@ -168,8 +223,6 @@
         }
         return originalWSSend.apply(this, arguments);
     };
-
-
 
     window.WebSocket = function (url, protocols) {
         const ws = protocols ? new OriginalWebSocket(url, protocols) : new OriginalWebSocket(url);
@@ -187,11 +240,8 @@
         return ws;
     };
 
-
-
     window.WebSocket.prototype = OriginalWebSocket.prototype;
     Object.assign(window.WebSocket, OriginalWebSocket);
-
 
     const originalFetch = window.fetch;
 
@@ -202,12 +252,11 @@
         const blockType = shouldBlock(body, url);
         if (blockType) {
             console.log(`🚫 [${blockType}]`);
-            return new Response('{"status":"ok"}', { status: 200 });
+            return new Response('{"status":"ok"}', { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
         return originalFetch.apply(this, arguments);
     };
-
 
     const originalXhrOpen = XMLHttpRequest.prototype.open;
     const originalXhrSend = XMLHttpRequest.prototype.send;
@@ -226,7 +275,6 @@
         return originalXhrSend.apply(this, arguments);
     };
 
-
     const originalBeacon = navigator.sendBeacon;
 
     navigator.sendBeacon = function (url, data) {
@@ -238,7 +286,6 @@
         return originalBeacon.apply(this, arguments);
     };
 
-
-    console.log('👻 Ghostify v2.0.0 Active');
+    console.log('👻 Ghostify v2.1.8 Active - Comprehensive Toxic Check');
 
 })();
