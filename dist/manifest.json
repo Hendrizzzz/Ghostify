@@ -3,14 +3,15 @@
     "name": "Ghostify",
     "version": "1.0.0",
     "description": "Control your visibility on Instagram & Messenger. Hide typing indicators, read receipts, and story views.",
-    "author": "Your Name",
+    "author": "Hendrizzzz",
     "permissions": [
         "storage"
     ],
     "host_permissions": [
         "*://*.instagram.com/*",
         "*://*.messenger.com/*",
-        "*://*.facebook.com/*"
+        "*://*.facebook.com/*",
+        "https://raw.githubusercontent.com/*"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -29,7 +30,7 @@
                 "*://*.facebook.com/*"
             ],
             "js": [
-                "content.js"
+                "js/content.js"
             ],
             "run_at": "document_start",
             "world": "ISOLATED"
@@ -41,10 +42,22 @@
                 "*://*.facebook.com/*"
             ],
             "js": [
-                "ghost.js"
+                "js/ghost.js"
             ],
             "run_at": "document_start",
             "world": "MAIN"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "config/patterns.json"
+            ],
+            "matches": [
+                "*://*.instagram.com/*",
+                "*://*.messenger.com/*",
+                "*://*.facebook.com/*"
+            ]
         }
     ]
 }

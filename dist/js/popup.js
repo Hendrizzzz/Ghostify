@@ -21,6 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     attachEventListeners();
     attachRefreshButton();
+
+    const manifestData = chrome.runtime.getManifest();
+    const versionSpan = document.getElementById('version-number');
+    if (versionSpan) {
+        versionSpan.innerText = `v${manifestData.version}`;
+    }
 });
 
 

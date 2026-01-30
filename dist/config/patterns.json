@@ -1,0 +1,86 @@
+{
+    "version": "1.0.0",
+    "killSwitch": [],
+    "patterns": {
+        "igTyping": [
+            "indicate_activity",
+            "typing_indicator",
+            "activity_indicator",
+            "is_typing"
+        ],
+        "igSeen": [
+            "mark_read",
+            "mark_seen",
+            "thread_seen",
+            "DirectMarkAsSeen",
+            "MarkAsSeen",
+            "DirectThreadMarkItemsSeen",
+            "PolarisDirectMarkAsSeenMutation",
+            "DirectSeenMutation",
+            "updateLastSeenAt",
+            "last_activity_at"
+        ],
+        "igStory": [
+            "StoriesUpdateSeenMutation",
+            "PolarisStoriesSeenMutation",
+            "usePolarisStoriesV3SeenMutation",
+            "reelMediaSeen",
+            "storiesUpdateSeen",
+            "SeenStoriesUpdateMutation",
+            "mark_story_seen",
+            "update_seen_for_reel",
+            "SeenMutation",
+            "reel_seen",
+            "media_seen",
+            "reel_media",
+            "seen_at",
+            "storiesSeen",
+            "stories_update_seen",
+            "mark_story_read",
+            "stories_viewer_stat_mutation"
+        ],
+        "msgTyping": [
+            "indicate_activity",
+            "typing_indicator",
+            "activity_indicator",
+            "is_typing"
+        ],
+        "msgSeen": [
+            "mark_read",
+            "mark_seen",
+            "seen_state",
+            "thread_seen",
+            "DirectMarkAsSeen",
+            "MarkAsSeen",
+            "DirectThreadMarkItemsSeen",
+            "PolarisDirectMarkAsSeenMutation",
+            "DirectSeenMutation",
+            "seenByViewer",
+            "updateLastSeenAt",
+            "\"label\":\"3\"",
+            "\"label\":\"5\"",
+            "viewed_state",
+            "last_activity_at"
+        ],
+        "msgStory": [
+            "StoriesUpdateSeenMutation",
+            "PolarisStoriesSeenMutation",
+            "usePolarisStoriesV3SeenMutation",
+            "reelMediaSeen",
+            "storiesUpdateSeen",
+            "SeenStoriesUpdateMutation",
+            "mark_story_seen",
+            "update_seen_for_reel",
+            "SeenMutation",
+            "reel_seen",
+            "media_seen",
+            "reel_media",
+            "seen_at",
+            "viewer_seen",
+            "storiesSeen",
+            "stories_update_seen",
+            "mark_story_read",
+            "stories_viewer_stat_mutation"
+        ]
+    }
+}
