@@ -1,4 +1,4 @@
-const GITHUB_CONFIG_URL = null;
+const GITHUB_CONFIG_URL = 'https://raw.githubusercontent.com/Hendrizzzz/Ghostify/refs/heads/main/dist/config/patterns.json';
 
 const FALLBACK_CONFIG = {
     version: "0.0.0",
@@ -58,10 +58,8 @@ async function fetchRemoteConfig() {
             const freshConfig = await response.json();
             chrome.storage.local.set({ ghostifyConfig: freshConfig });
             sendConfigToGhost(freshConfig);
-            console.log('👻 Ghostify: Remote config synced (v' + freshConfig.version + ')');
         }
     } catch (e) {
-        console.warn('👻 Ghostify: Using cached config (GitHub fetch failed)');
     }
 }
 
@@ -73,11 +71,8 @@ async function fetchLocalConfig() {
             const localConfig = await response.json();
             chrome.storage.local.set({ ghostifyConfig: localConfig });
             sendConfigToGhost(localConfig);
-            console.log('👻 Ghostify: Local config loaded (v' + localConfig.version + ')');
         }
-    } catch (e) {
-        console.warn('👻 Ghostify: Using fallback config');
-    }
+    } catch (e) { }
 }
 
 function sendConfigToGhost(config) {

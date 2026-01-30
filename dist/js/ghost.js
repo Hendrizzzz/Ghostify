@@ -201,7 +201,7 @@
     OriginalWebSocket.prototype.send = function (data) {
         const blockType = shouldBlock(data);
         if (blockType) {
-            console.log(`🚫 [${blockType}] WS Blocked`);
+            if (isDebugMode()) console.log(`🚫 [${blockType}] WS Blocked`);
             return;
         }
         return originalWSSend.apply(this, arguments);
@@ -213,7 +213,7 @@
         ws.send = function (data) {
             const blockType = shouldBlock(data);
             if (blockType) {
-                console.log(`🚫 [${blockType}] WS Blocked`);
+                if (isDebugMode()) console.log(`🚫 [${blockType}] WS Blocked`);
                 return;
             }
             return boundSend(data);
@@ -229,7 +229,7 @@
         const body = init?.body || '';
         const blockType = shouldBlock(body, url);
         if (blockType) {
-            console.log(`🚫 [${blockType}] Fetch Blocked`);
+            if (isDebugMode()) console.log(`🚫 [${blockType}] Fetch Blocked`);
             return new Response('{"status":"ok"}', {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
@@ -249,7 +249,7 @@
     XMLHttpRequest.prototype.send = function (body) {
         const blockType = shouldBlock(body, this._ghostifyUrl || '');
         if (blockType) {
-            console.log(`🚫 [${blockType}] XHR Blocked`);
+            if (isDebugMode()) console.log(`🚫 [${blockType}] XHR Blocked`);
             return;
         }
         return originalXhrSend.apply(this, arguments);
@@ -259,16 +259,15 @@
     navigator.sendBeacon = function (url, data) {
         const blockType = shouldBlock(data, url);
         if (blockType) {
-            console.log(`🚫 [${blockType}] Beacon Blocked`);
+            if (isDebugMode()) console.log(`🚫 [${blockType}] Beacon Blocked`);
             return true;
         }
         return originalBeacon.apply(this, arguments);
     };
 
 
-    console.log('👻 Ghostify v2.0.0 Active - Dynamic Config Enabled');
     if (isDebugMode()) {
-        console.log('🐛 Debug Mode ON - Watching for privacy leaks...');
+        console.log('� Ghostify Active - Debug Mode ON');
         console.log('   To disable: localStorage.removeItem("GHOSTIFY_DEBUG")');
     }
 
