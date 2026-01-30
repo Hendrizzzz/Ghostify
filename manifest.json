@@ -1,7 +1,7 @@
 {
-    "manifest_version": 3,
+    "manifest_version": 1,
     "name": "Ghostify",
-    "version": "2.1.0",
+    "version": "1.0.0",
     "description": "Control your visibility on Instagram & Messenger. Hide typing indicators, read receipts, and story views.",
     "author": "Your Name",
     "permissions": [

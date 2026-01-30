@@ -20,6 +20,7 @@ const ELEMENT_MAP = {
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     attachEventListeners();
+    attachRefreshButton();
 });
 
 
@@ -45,6 +46,39 @@ function attachEventListeners() {
 }
 
 
+function attachRefreshButton() {
+    const refreshBtn = document.getElementById('refresh-fb');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.classList.add('spinning');
+
+            const tabs = await chrome.tabs.query({});
+            const fbTabs = tabs.filter(tab =>
+                tab.url && (
+                    tab.url.includes('facebook.com') ||
+                    tab.url.includes('messenger.com')
+                )
+            );
+
+            for (const tab of fbTabs) {
+                chrome.tabs.reload(tab.id);
+            }
+
+            setTimeout(() => {
+                refreshBtn.classList.remove('spinning');
+            }, 600);
+
+            if (fbTabs.length === 0) {
+                refreshBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+                setTimeout(() => {
+                    refreshBtn.style.background = '';
+                }, 1000);
+            }
+        });
+    }
+}
+
+
 function saveSettings() {
     const settings = {
         igTyping: document.getElementById('ig-typing')?.checked ?? true,
@@ -57,3 +91,4 @@ function saveSettings() {
 
     chrome.storage.local.set({ ghostifySettings: settings });
 }
+

@@ -80,8 +80,11 @@
     function shouldSpoofIG() {
         if (isInstagram && SETTINGS.igSeen) {
             const path = window.location.pathname;
-            if (path.includes('/stories/') || path.includes('/reel')) return false;
-            return true;
+            if (path.includes('/direct/')) {
+                return true;
+            }
+
+            return false;
         }
         return false;
     }
@@ -173,6 +176,6 @@
         return originalBeacon.apply(this, arguments);
     };
 
-    console.log('👻 Ghostify v3.3.0 Active - The 100% Merge');
+    console.log('👻 Ghostify v1.0.0 Active');
 
 })();
