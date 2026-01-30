@@ -1,0 +1,30 @@
+# Privacy Policy for Ghostify
+
+**Last Updated:** January 30, 2026
+
+## 1. Introduction
+Ghostify ("we," "our," or "the Extension") is a browser extension designed to enhance user privacy on social media platforms by preventing the transmission of "read receipts," "typing indicators," and "story view" telemetry. We are committed to protecting your personal information and your right to privacy.
+
+## 2. Data Collection and Usage
+**We do not collect, store, share, or sell your personal data.**
+
+The Extension operates entirely locally on your device ("client-side"). All data processing happens within your web browser's isolated environment. No user activity, browsing history, or login credentials are transmitted to our servers or any third-party servers.
+
+### 2.1. Permissions Justification
+To function correctly, the Extension requires specific permissions:
+*   **Host Permissions (`*://*.instagram.com/*`, etc.):** This is required to inject the content script that intercepts specific network requests (e.g., `mark_seen`) before they leave your browser. This interception happens locally.
+*   **Storage Permission:** Used to save your preferences (e.g., "Hide Seen: ON") locally in your browser's `chrome.storage.local`.
+
+## 3. Remote Configuration
+The Extension utilizes a "Remote Configuration" feature to maintain functionality when third-party platforms update their code.
+*   **How it works:** The Extension periodically fetches a static JSON configuration file from a public GitHub repository.
+*   **Data transmitted:** This process is a one-way `GET` request. No user data, identifiers, or usage statistics are sent to GitHub during this process.
+
+## 4. Third-Party Accounts
+This Extension interacts with third-party websites (Instagram, Facebook, Messenger). We are not affiliated with Meta Platforms, Inc. The Extension does not bypass authentication or gain access to your account credentials. You are subject to the Terms of Service and Privacy Policy of the respective platforms while using them.
+
+## 5. Changes to This Policy
+We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+
+## 6. Contact Us
+If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us via our [GitHub Repository](https://github.com/Hendrizzzz/Ghostify).
