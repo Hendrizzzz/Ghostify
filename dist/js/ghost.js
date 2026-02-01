@@ -145,7 +145,6 @@
 
 
 
-    // Track if user is actively scrolling
     let isScrolling = false;
     let scrollTimeout = null;
 
@@ -154,7 +153,7 @@
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
             isScrolling = false;
-        }, 500); // After 500ms of no scrolling, go back to hidden
+        }, 500);
     }, true);
 
     function shouldSpoofVisibility() {
@@ -162,17 +161,13 @@
             return 'unfocused';
         }
 
-        // Instagram: Scroll-Aware Visibility Spoofing
-        // When scrolling: report 'visible' so history loads
-        // When not scrolling: report 'hidden' so seen is blocked
         if (isInstagram && SETTINGS.igSeen && !isKilled('igSeen')) {
             const path = window.location.pathname;
             if (path.includes('/direct/t/')) {
-                // If user is scrolling, temporarily allow visibility for history loading
                 if (isScrolling) {
-                    return false; // No spoof = fully visible = history loads
+                    return false;
                 }
-                return 'hidden'; // Hidden = seen blocked
+                return 'hidden';
             }
         }
 
@@ -291,7 +286,7 @@
     };
 
 
-    console.log('👻 Ghostify v2.0.2 Active');
+    console.log('👻 Ghostify v1.0.0 Active');
     if (isDebugMode()) {
         console.log('👻 Ghostify Active - Debug Mode ON');
         console.log('   To disable: localStorage.removeItem("GHOSTIFY_DEBUG")');
