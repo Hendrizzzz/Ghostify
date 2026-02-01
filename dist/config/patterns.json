@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "killSwitch": [],
     "patterns": {
         "igTyping": [
@@ -17,8 +17,7 @@
             "DirectThreadMarkItemsSeen",
             "PolarisDirectMarkAsSeenMutation",
             "DirectSeenMutation",
-            "updateLastSeenAt",
-            "last_activity_at"
+            "usePolarisMarkThreadSeenMutation"
         ],
         "igStory": [
             "StoriesUpdateSeenMutation",
