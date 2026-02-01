@@ -105,6 +105,8 @@
         }
 
         if (isMessenger) {
+            if (str.includes('delivery_receipt')) return null;
+
             if (SETTINGS.msgTyping && !isKilled('msgTyping') && matchesPattern(str, CONFIG.patterns.msgTyping)) {
                 return 'MSG_TYPING';
             }
@@ -118,6 +120,10 @@
         }
 
         if (isInstagram) {
+            if (str.includes('cursor') || url.includes('cursor')) {
+                return null;
+            }
+
             if (str.includes('query_hash') || (str.includes('doc_id') && !str.includes('mutation'))) {
                 return null;
             }
@@ -139,6 +145,17 @@
 
 
 
+    let isScrolling = false;
+    let scrollTimeout = null;
+
+    window.addEventListener('scroll', () => {
+        isScrolling = true;
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+        }, 500);
+    }, true);
+
     function shouldSpoofVisibility() {
         if (isMessenger && SETTINGS.msgSeen && !isKilled('msgSeen')) {
             return 'unfocused';
@@ -146,7 +163,10 @@
 
         if (isInstagram && SETTINGS.igSeen && !isKilled('igSeen')) {
             const path = window.location.pathname;
-            if (path.includes('/direct/')) {
+            if (path.includes('/direct/t/')) {
+                if (isScrolling) {
+                    return false;
+                }
                 return 'hidden';
             }
         }
@@ -266,8 +286,9 @@
     };
 
 
+    console.log('👻 Ghostify v1.0.0 Active');
     if (isDebugMode()) {
-        console.log('� Ghostify Active - Debug Mode ON');
+        console.log('👻 Ghostify Active - Debug Mode ON');
         console.log('   To disable: localStorage.removeItem("GHOSTIFY_DEBUG")');
     }
 
