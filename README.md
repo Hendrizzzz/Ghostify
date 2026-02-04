@@ -94,6 +94,14 @@ Found a bug? Have a feature idea? Want to submit code?
 
 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines.
 
+## Disclaimer
+
+**Ghostify** is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by **Meta Platforms, Inc.**, **Instagram**, or **Facebook**.
+
+- All product names, logos, and brands are property of their respective owners.
+- The use of this extension is at your own discretion.
+- This tool is for educational and personal privacy purposes.
+
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.

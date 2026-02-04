@@ -5,6 +5,8 @@
 ## 1. Introduction
 Ghostify ("we," "our," or "the Extension") is a browser extension designed to enhance user privacy on social media platforms by preventing the transmission of "read receipts," "typing indicators," and "story view" telemetry. We are committed to protecting your personal information and your right to privacy.
 
+Ghostify does not collect or transmit any personal data to third parties. We are not affiliated with Meta Platforms, Inc.
+
 ## 2. Data Collection and Usage
 **We do not collect, store, share, or sell your personal data.**
 
