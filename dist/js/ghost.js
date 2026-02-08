@@ -99,7 +99,7 @@
             if (str.includes('seen') || str.includes('read') || str.includes('typing') || str.includes('presence')) {
                 console.groupCollapsed('🕵️ Ghostify Inspector');
                 console.log('URL:', url);
-                console.log('Payload:', str.substring(0, 500) + (str.length > 500 ? '...' : ''));
+                console.log('Payload:', str.substring(0, 5000) + (str.length > 5000 ? '...' : ''));
                 console.groupEnd();
             }
         }
