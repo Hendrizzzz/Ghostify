@@ -17,7 +17,8 @@
             "DirectThreadMarkItemsSeen",
             "PolarisDirectMarkAsSeenMutation",
             "DirectSeenMutation",
-            "usePolarisMarkThreadSeenMutation"
+            "usePolarisMarkThreadSeenMutation",
+            "useigdmarkthreadasreadmutation"
         ],
         "igStory": [
             "StoriesUpdateSeenMutation",
