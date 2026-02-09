@@ -1,14 +1,6 @@
-/**
- * Ghostify Background Service Worker
- * 
- * 1. Removes CSP headers from Facebook/Messenger using declarativeNetRequest
- * 2. Registers content scripts dynamically using chrome.scripting API
- */
 
-// =========================================================================
-// CSP HEADER REMOVAL
-// This is the KEY to making inline script injection work!
-// =========================================================================
+
+
 
 async function removeCSPHeaders() {
     const hostPatterns = [
