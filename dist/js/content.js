@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS = {
     igTyping: true,
     igSeen: true,
     igStory: true,
-    msgTyping: false,
+    msgTyping: true,
     msgSeen: true,
     msgStory: true
 };
@@ -85,20 +85,29 @@ function sendConfigToGhost(config) {
 
 
 function syncUserSettings() {
-    chrome.storage.local.get(['ghostifySettings'], (result) => {
-        const settings = result.ghostifySettings || DEFAULT_SETTINGS;
+    function sendSettingsToPage(settings) {
         window.postMessage({
             type: 'GHOSTIFY_SETTINGS_UPDATE',
             settings: settings
         }, '*');
-    });
+    }
 
-    chrome.storage.onChanged.addListener((changes) => {
-        if (changes.ghostifySettings) {
-            window.postMessage({
-                type: 'GHOSTIFY_SETTINGS_UPDATE',
-                settings: changes.ghostifySettings.newValue
-            }, '*');
+    function loadAndSend() {
+        chrome.storage.local.get(['ghostifySettings'], (result) => {
+            const settings = result.ghostifySettings || DEFAULT_SETTINGS;
+            sendSettingsToPage(settings);
+        });
+    }
+
+    loadAndSend();
+
+    setTimeout(loadAndSend, 500);
+    setTimeout(loadAndSend, 1500);
+
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes.ghostifySettings) {
+            const newSettings = changes.ghostifySettings.newValue;
+            sendSettingsToPage(newSettings);
         }
     });
 }
