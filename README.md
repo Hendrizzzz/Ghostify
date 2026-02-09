@@ -29,8 +29,7 @@
 ## Installation
 
 ### Option 1: Chrome Web Store (Recommended)
-[**Install Ghostify from the Chrome Web Store**](https://chrome.google.com/webstore/detail/ghostify-hide-seen-typin/YOUR_EXTENSION_ID)
-*(Link pending publication)*
+[**Install Ghostify from the Chrome Web Store**](https://chromewebstore.google.com/detail/flpnibonbhdmnpgflnbemgghghhblmpm?utm_source=item-share-cb)
 
 ### Option 2: Manual Install (Developer Mode)
 1. Clone or download this repository.
