@@ -12,7 +12,7 @@
 
     let SETTINGS = {
         igTyping: true, igSeen: true, igStory: true,
-        msgTyping: false, msgSeen: true, msgStory: true
+        msgTyping: true, msgSeen: true, msgStory: true
     };
 
     const isDebugMode = () => localStorage.getItem('GHOSTIFY_DEBUG') === 'true';
@@ -286,7 +286,7 @@
     };
 
 
-    console.log('👻 Ghostify v1.0.0 Active');
+    console.log('👻 Ghostify v1.0.2 Active');
     if (isDebugMode()) {
         console.log('👻 Ghostify Active - Debug Mode ON');
         console.log('   To disable: localStorage.removeItem("GHOSTIFY_DEBUG")');

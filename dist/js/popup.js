@@ -2,7 +2,7 @@ const DEFAULT_SETTINGS = {
     igTyping: true,
     igSeen: true,
     igStory: true,
-    msgTyping: false,
+    msgTyping: true,
     msgSeen: true,
     msgStory: true
 };
@@ -12,6 +12,7 @@ const ELEMENT_MAP = {
     'ig-typing': 'igTyping',
     'ig-seen': 'igSeen',
     'ig-story': 'igStory',
+    // msg-typing removed - always on
     'msg-seen': 'msgSeen',
     'msg-story': 'msgStory'
 };
@@ -90,7 +91,7 @@ function saveSettings() {
         igTyping: document.getElementById('ig-typing')?.checked ?? true,
         igSeen: document.getElementById('ig-seen')?.checked ?? true,
         igStory: document.getElementById('ig-story')?.checked ?? true,
-        msgTyping: false, // (not supported yet pi)
+        msgTyping: true, // Always on - can't be toggled
         msgSeen: document.getElementById('msg-seen')?.checked ?? true,
         msgStory: document.getElementById('msg-story')?.checked ?? true
     };
