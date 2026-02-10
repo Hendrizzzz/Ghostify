@@ -91,15 +91,17 @@
     function shouldBlock(data, url = '') {
         if (url.match(/\.(mp4|jpg|png|webp|gif|mp3|wav)$/i)) return null;
 
-        if (data && data.byteLength && data.byteLength > 5000) return null;
+        const isLargePayload = data && data.byteLength && data.byteLength > 5000;
 
-        const str = (decode(data) + ' ' + url).toLowerCase();
+        const str = isLargePayload
+            ? (decode(data).substring(0, 15000) + ' ' + url).toLowerCase()
+            : (decode(data) + ' ' + url).toLowerCase();
 
         if (isDebugMode()) {
             if (str.includes('seen') || str.includes('read') || str.includes('typing') || str.includes('presence')) {
                 console.groupCollapsed('🕵️ Ghostify Inspector');
                 console.log('URL:', url);
-                console.log('Payload:', str.substring(0, 5000) + (str.length > 5000 ? '...' : ''));
+                console.log('Payload:', str.substring(0, 5000));
                 console.groupEnd();
             }
         }
@@ -125,6 +127,10 @@
             }
 
             if (str.includes('query_hash') || (str.includes('doc_id') && !str.includes('mutation'))) {
+                return null;
+            }
+
+            if (isLargePayload && !str.includes('seen') && !str.includes('mark_read')) {
                 return null;
             }
 
@@ -162,13 +168,10 @@
         }
 
         if (isInstagram && SETTINGS.igSeen && !isKilled('igSeen')) {
-            const path = window.location.pathname;
-            if (path.includes('/direct/t/')) {
-                if (isScrolling) {
-                    return false;
-                }
-                return 'hidden';
+            if (isScrolling) {
+                return false;
             }
+            return 'unfocused';
         }
 
         return false;
