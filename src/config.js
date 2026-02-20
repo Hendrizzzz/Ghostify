@@ -1,4 +1,3 @@
-// src/config.js
 export const SETTINGS = {
     msgSeen: true,
     igSeen: true,

@@ -1,5 +1,3 @@
-// src/content.js
-
 const GITHUB_CONFIG_URL = 'https://raw.githubusercontent.com/Hendrizzzz/Ghostify/refs/heads/main/dist/config/patterns.json';
 
 const FALLBACK_CONFIG = {

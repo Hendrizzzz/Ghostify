@@ -1,4 +1,3 @@
-// src/platforms/facebook.js
 import { isFacebookDotCom, SETTINGS, isKilled } from '../config.js';
 
 let inVideoArea = false;
@@ -70,7 +69,6 @@ export function startFacebookProtection() {
             }
         }
 
-        // Expanded Video hit-box check
         if (!hoveringVid && !hoveringChat) {
             const videos = document.getElementsByTagName('video');
             for (let i = 0; i < videos.length; i++) {

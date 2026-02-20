@@ -1,13 +1,10 @@
-// src/utils/network.js
 import { isFacebookDotCom, isMessenger, isInstagram, isKilled, isDebugMode, SETTINGS } from '../config.js';
 
-// The global CONFIG pattern store, which will be populated from background.js
 export let PATTERNS = {
     igTyping: [], igSeen: [], igStory: [],
     msgTyping: [], msgSeen: [], msgStory: []
 };
 
-// Will be called by ghost.js when window receives GHOSTIFY_CONFIG_UPDATE message
 export function updatePatterns(newPatterns) {
     PATTERNS = newPatterns;
 }

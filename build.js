@@ -1,6 +1,5 @@
 const esbuild = require('esbuild');
 
-// Build ghost.js (The Main Entry Point)
 esbuild.build({
     entryPoints: ['src/ghost.js'],
     bundle: true,
@@ -11,7 +10,6 @@ esbuild.build({
     logLevel: 'info',
 }).catch(() => process.exit(1));
 
-// Build content.js (The Secondary Entry Point)
 esbuild.build({
     entryPoints: ['src/content.js'],
     bundle: true,
@@ -22,7 +20,6 @@ esbuild.build({
     logLevel: 'info',
 }).catch(() => process.exit(1));
 
-// Build background.js (The Service Worker Entry Point)
 esbuild.build({
     entryPoints: ['src/background.js'],
     bundle: true,
@@ -33,7 +30,6 @@ esbuild.build({
     logLevel: 'info',
 }).catch(() => process.exit(1));
 
-// Build messenger_patch.js (The Dynamic Injection Script)
 esbuild.build({
     entryPoints: ['src/messenger_patch.js'],
     bundle: true,

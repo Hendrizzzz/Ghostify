@@ -1,4 +1,3 @@
-// src/platforms/instagram.js
 import { isInstagram, SETTINGS, isKilled } from '../config.js';
 
 let isScrolling = false;
@@ -19,7 +18,6 @@ export function startInstagramProtection() {
 export function getInstagramSpoofState() {
     if (!SETTINGS.igSeen || isKilled('igSeen')) return null;
 
-    // Disable spoofing while physically scrolling so videos aren't paused
     if (isScrolling) {
         return false;
     }

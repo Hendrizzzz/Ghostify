@@ -1,4 +1,3 @@
-// src/core/interceptors/websocket.js
 import { isFacebookDotCom, SETTINGS, isKilled } from '../../config.js';
 import { shouldBlock } from '../../utils/network.js';
 

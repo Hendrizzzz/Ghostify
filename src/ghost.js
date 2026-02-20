@@ -1,4 +1,3 @@
-// src/ghost.js
 import { isMessenger, isDebugMode, KILLED_FEATURES, SETTINGS } from './config.js';
 import { updatePatterns } from './utils/network.js';
 import { hookWebSocket } from './core/interceptors/websocket.js';
@@ -12,7 +11,6 @@ import { startInstagramProtection } from './platforms/instagram.js';
     'use strict';
 
     if (isMessenger) {
-        // Unregister service workers to prevent push-notification based read receipts
         if (navigator.serviceWorker) {
             navigator.serviceWorker.getRegistrations().then(regs => {
                 regs.forEach(r => r.unregister());
@@ -27,7 +25,6 @@ import { startInstagramProtection } from './platforms/instagram.js';
         }
     }
 
-    // Listen for extension config updates from Background/Content scripts
     window.addEventListener('message', (event) => {
         if (event.source !== window) return;
 
@@ -48,13 +45,11 @@ import { startInstagramProtection } from './platforms/instagram.js';
         }
     });
 
-    // Initialize Global Interceptors
     hookVisibility();
     hookWebSocket();
     hookFetch();
     hookXHR();
 
-    // Initialize Site-Specific Observers
     startFacebookProtection();
     startInstagramProtection();
 

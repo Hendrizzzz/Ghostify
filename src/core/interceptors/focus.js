@@ -1,4 +1,3 @@
-// src/core/interceptors/focus.js
 import { isFacebookDotCom, isMessengerDotCom, isInstagram, isDebugMode } from '../../config.js';
 import { getFacebookSpoofState } from '../../platforms/facebook.js';
 import { getInstagramSpoofState } from '../../platforms/instagram.js';

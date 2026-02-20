@@ -1,4 +1,3 @@
-// src/core/interceptors/xhr.js
 import { isFacebookDotCom, SETTINGS, isKilled, isDebugMode } from '../../config.js';
 import { shouldBlock } from '../../utils/network.js';
 

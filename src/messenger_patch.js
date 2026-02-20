@@ -1,4 +1,3 @@
-// src/messenger_patch.js
 (function () {
     'use strict';
     const isMessenger = window.location.hostname.includes('messenger.com') ||
