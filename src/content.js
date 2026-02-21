@@ -88,7 +88,6 @@ function syncUserSettings() {
 
     loadAndSend();
 
-    // Redundant checks for slow-loading SPAs
     setTimeout(loadAndSend, 500);
     setTimeout(loadAndSend, 1500);
 

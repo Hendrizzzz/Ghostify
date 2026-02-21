@@ -1,5 +1,4 @@
 (() => {
-  // src/background.js
   async function removeCSPHeaders() {
     const hostPatterns = [
       "^https?://.*\\.facebook\\.com/.*",

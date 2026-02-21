@@ -11,7 +11,6 @@ export function hookWebSocket() {
             const raw = (data instanceof ArrayBuffer || ArrayBuffer.isView(data))
                 ? new TextDecoder().decode(data) : (typeof data === 'string' ? data : '');
             if (raw.includes('read_receipt')) return true;
-            // Block read watermarks only when NOT bundled with a message send
             if (raw.includes('last_read_watermark_ts') && !raw.includes('send_type')) return true;
         } catch (e) { }
         return false;

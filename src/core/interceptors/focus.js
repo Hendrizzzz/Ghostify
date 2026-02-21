@@ -55,14 +55,12 @@ export function hookVisibility() {
             const wrappedListener = function (e) {
                 const spoof = shouldSpoofVisibility();
                 if (spoof) {
-                    // During 'video' mode: swallow blur/focus but allow visibilitychange
                     if (spoof === 'video') {
                         if (type === 'blur' || type === 'focus' || type === 'focusin' || type === 'focusout') {
                             if (this === window || this === document || (e && (e.target === window || e.target === document))) {
                                 return;
                             }
                         }
-                        // Allow visibilitychange through for video playback
                         return listener.call(this, e);
                     }
 
