@@ -11,7 +11,7 @@ export function startInstagramProtection() {
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
             isScrolling = false;
-        }, 500);
+        }, 150);
     }, true);
 }
 

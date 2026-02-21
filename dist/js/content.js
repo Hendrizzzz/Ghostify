@@ -9,7 +9,7 @@
       igSeen: ["mark_read", "mark_seen", "thread_seen", "DirectMarkAsSeen"],
       igStory: ["StoriesUpdateSeenMutation", "reelMediaSeen"],
       msgTyping: ["typing_indicator"],
-      msgSeen: ["mark_read", "mark_seen", '"label":"3"'],
+      msgSeen: ["mark_read", "mark_seen", "thread_seen", "DirectMarkAsSeen"],
       msgStory: ["stories_update_seen", "StoriesUpdateSeenMutation"]
     }
   };

@@ -91,13 +91,13 @@ export function startFacebookProtection() {
         }
 
         inVideoArea = hoveringVid;
-        inChatHover = hoveringChat;
+        inChatHover = hoveringVid ? false : hoveringChat;
 
         if (e.type === 'mousedown') {
-            if (hoveringChat) {
-                allowFocusUntil = 0;
+            if (hoveringVid || !hoveringChat) {
+                allowFocusUntil = Date.now() + 1500;
             } else {
-                allowFocusUntil = Date.now() + 700;
+                allowFocusUntil = 0;
             }
         }
     };
@@ -144,7 +144,7 @@ export function getFacebookSpoofState() {
     }
 
     if (isAnyVideoPlaying || inVideoArea || Date.now() < allowFocusUntil) {
-        return false;
+        return 'video';
     }
 
     const now = Date.now();

@@ -99,17 +99,13 @@ export function shouldBlock(data, url = '') {
                 str.includes('messagelist_message_impression') ||
                 str.includes('verify_threads_activity_status') ||
                 (str.includes('armadillo_thread_id') && str.includes('impression')) ||
-                (str.includes('armadillo_cutover_client') && str.includes('completecutover')) ||
-                str.includes('set_pinned_message_search') ||
                 str.includes('in_thread_banner_fetch_activity_banners_queue') ||
-                str.includes('last_read_watermark_ts') ||
-                str.includes('last_seen_time_ms') ||
-                str.includes('open_message_thread_key') ||
-                str.includes('read_receipt') ||
-                str.includes('bump_timestamp_ms') ||
-                (str.includes('label') && str.includes('209') && str.includes('thread_fbid')) ||
-                (str.includes('label') && str.includes('145') && str.includes('reference_thread_key'))
+                str.includes('read_receipt')
             ) {
+                return 'MSG_SEEN';
+            }
+
+            if (str.includes('last_read_watermark_ts') && !str.includes('send_type')) {
                 return 'MSG_SEEN';
             }
 
@@ -132,7 +128,7 @@ export function shouldBlock(data, url = '') {
             return null;
         }
 
-        if (str.includes('query_hash') || (str.includes('doc_id') && !str.includes('mutation'))) {
+        if (str.includes('query_hash') || (str.includes('doc_id') && !str.includes('mutation') && !str.includes('mark_seen') && !str.includes('mark_read') && !str.includes('thread_seen'))) {
             return null;
         }
 

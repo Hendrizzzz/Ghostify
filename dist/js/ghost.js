@@ -100,7 +100,10 @@
     if (isMessenger) {
       if (str.includes("delivery_receipt")) return null;
       if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
-        if (str.includes("messagelist_message_impression") || str.includes("verify_threads_activity_status") || str.includes("armadillo_thread_id") && str.includes("impression") || str.includes("armadillo_cutover_client") && str.includes("completecutover") || str.includes("set_pinned_message_search") || str.includes("in_thread_banner_fetch_activity_banners_queue") || str.includes("last_read_watermark_ts") || str.includes("last_seen_time_ms") || str.includes("open_message_thread_key") || str.includes("read_receipt") || str.includes("bump_timestamp_ms") || str.includes("label") && str.includes("209") && str.includes("thread_fbid") || str.includes("label") && str.includes("145") && str.includes("reference_thread_key")) {
+        if (str.includes("messagelist_message_impression") || str.includes("verify_threads_activity_status") || str.includes("armadillo_thread_id") && str.includes("impression") || str.includes("in_thread_banner_fetch_activity_banners_queue") || str.includes("read_receipt")) {
+          return "MSG_SEEN";
+        }
+        if (str.includes("last_read_watermark_ts") && !str.includes("send_type")) {
           return "MSG_SEEN";
         }
         if (matchesPattern(str, PATTERNS.msgSeen)) {
@@ -119,7 +122,7 @@
       if (str.includes("cursor") || url.includes("cursor")) {
         return null;
       }
-      if (str.includes("query_hash") || str.includes("doc_id") && !str.includes("mutation")) {
+      if (str.includes("query_hash") || str.includes("doc_id") && !str.includes("mutation") && !str.includes("mark_seen") && !str.includes("mark_read") && !str.includes("thread_seen")) {
         return null;
       }
       if (isLargePayload && !str.includes("seen") && !str.includes("mark_read")) {
@@ -143,17 +146,18 @@
   function hookWebSocket() {
     const OriginalWebSocket = window.WebSocket;
     const originalWSSend = OriginalWebSocket.prototype.send;
-    OriginalWebSocket.prototype.send = function(data) {
-      if (isFacebookDotCom && SETTINGS.msgSeen && !isKilled("msgSeen")) {
-        try {
-          const raw = data instanceof ArrayBuffer || ArrayBuffer.isView(data) ? new TextDecoder().decode(data) : typeof data === "string" ? data : "";
-          if (raw.includes("last_read_watermark_ts") || raw.includes("last_seen_time_ms") || raw.includes("open_message_thread_key") || raw.includes("read_receipt") || raw.includes("bump_timestamp_ms") || raw.includes("label") && raw.includes("209") && raw.includes("thread_fbid") || raw.includes("label") && raw.includes("145") && raw.includes("reference_thread_key")) {
-            console.log("\u{1F6AB}\u{1F47B} [HARD BLOCK] read-receipt WS payload blocked!");
-            return;
-          }
-        } catch (e) {
-        }
+    function checkHardBlock(data) {
+      if (!(isFacebookDotCom && SETTINGS.msgSeen && !isKilled("msgSeen"))) return false;
+      try {
+        const raw = data instanceof ArrayBuffer || ArrayBuffer.isView(data) ? new TextDecoder().decode(data) : typeof data === "string" ? data : "";
+        if (raw.includes("read_receipt")) return true;
+        if (raw.includes("last_read_watermark_ts") && !raw.includes("send_type")) return true;
+      } catch (e) {
       }
+      return false;
+    }
+    OriginalWebSocket.prototype.send = function(data) {
+      if (checkHardBlock(data)) return;
       const blockType = shouldBlock(data);
       if (blockType) {
         console.log("\u{1F6AB}\u{1F47B} [" + blockType + "] WS Blocked");
@@ -165,16 +169,7 @@
       const ws = protocols ? new OriginalWebSocket(url, protocols) : new OriginalWebSocket(url);
       const boundSend = ws.send.bind(ws);
       ws.send = function(data) {
-        if (isFacebookDotCom && SETTINGS.msgSeen && !isKilled("msgSeen")) {
-          try {
-            const raw = data instanceof ArrayBuffer || ArrayBuffer.isView(data) ? new TextDecoder().decode(data) : typeof data === "string" ? data : "";
-            if (raw.includes("last_read_watermark_ts") || raw.includes("last_seen_time_ms") || raw.includes("open_message_thread_key") || raw.includes("read_receipt") || raw.includes("bump_timestamp_ms") || raw.includes("label") && raw.includes("209") && raw.includes("thread_fbid") || raw.includes("label") && raw.includes("145") && raw.includes("reference_thread_key")) {
-              console.log("\u{1F6AB}\u{1F47B} [HARD BLOCK] read-receipt WS payload blocked!");
-              return;
-            }
-          } catch (e) {
-          }
-        }
+        if (checkHardBlock(data)) return;
         const blockType = shouldBlock(data);
         if (blockType) {
           console.log("\u{1F6AB}\u{1F47B} [" + blockType + "] WS Blocked");
@@ -332,12 +327,12 @@
         }
       }
       inVideoArea = hoveringVid;
-      inChatHover = hoveringChat;
+      inChatHover = hoveringVid ? false : hoveringChat;
       if (e.type === "mousedown") {
-        if (hoveringChat) {
-          allowFocusUntil = 0;
+        if (hoveringVid || !hoveringChat) {
+          allowFocusUntil = Date.now() + 1500;
         } else {
-          allowFocusUntil = Date.now() + 700;
+          allowFocusUntil = 0;
         }
       }
     };
@@ -376,7 +371,7 @@
       return "unfocused";
     }
     if (isAnyVideoPlaying || inVideoArea || Date.now() < allowFocusUntil) {
-      return false;
+      return "video";
     }
     const now = Date.now();
     if (now - lastSpoofLog > 3e3) {
@@ -396,7 +391,7 @@
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         isScrolling = false;
-      }, 500);
+      }, 150);
     }, true);
   }
   function getInstagramSpoofState() {
@@ -460,6 +455,14 @@
         const wrappedListener = function(e) {
           const spoof = shouldSpoofVisibility();
           if (spoof) {
+            if (spoof === "video") {
+              if (type === "blur" || type === "focus" || type === "focusin" || type === "focusout") {
+                if (this === window || this === document || e && (e.target === window || e.target === document)) {
+                  return;
+                }
+              }
+              return listener.call(this, e);
+            }
             if (type === "blur" || type === "focus" || type === "focusin" || type === "focusout") {
               if (this === window || this === document || e && (e.target === window || e.target === document)) {
                 if (isDebugMode()) console.log(`\u{1F47B} [EVENT BLOCK] ${type} on window/document swallowed.`);
