@@ -246,6 +246,8 @@
             return shouldBlockFacebookSeenText(text);
         }
 
+        if (isMessengerSendWithBundledReadWatermarkText(text)) return false;
+
         if (isMessengerSeenBridgeText(text)) return true;
         if (text.includes('delivery_receipt') && !hasReadReceiptIntent(text) && !hasReadWatermarkTarget(text)) return false;
 
@@ -508,6 +510,14 @@
     function hasReadReceiptWriteShape(text) {
         return hasOutgoingMessengerEnvelope(text) &&
             (hasMessengerThreadTarget(text) || hasReadWatermarkTarget(text));
+    }
+
+    function isMessengerSendWithBundledReadWatermarkText(text) {
+        if (!text.includes('send_type')) return false;
+        if (!hasReadWatermarkTarget(text)) return false;
+        if (hasReadReceiptWriteIntent(text)) return false;
+
+        return hasOutgoingMessengerEnvelope(text) && hasMessengerThreadTarget(text);
     }
 
     function hasReadReceiptCommandTarget(text) {

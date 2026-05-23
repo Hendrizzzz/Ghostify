@@ -381,6 +381,8 @@ function isMessengerReadReceiptWrite(str, urlString) {
 
     if (isMessengerRealtimeReadBridgeWrite(str, urlString)) return true;
 
+    if (isMessengerSendWithBundledReadWatermark(str)) return false;
+
     if (hasMessengerReadReceiptSignal(str)) {
         return hasReadReceiptWriteContext(str);
     }
@@ -500,6 +502,14 @@ function hasRealtimeReadWatermarkWriteSignal(str) {
         'storedprocedure',
         'procedure'
     ]);
+}
+
+function isMessengerSendWithBundledReadWatermark(str) {
+    if (!str.includes('send_type')) return false;
+    if (!hasReadReceiptWatermarkContext(str)) return false;
+    if (hasMessengerReadReceiptWriteSignal(str)) return false;
+
+    return hasReadReceiptOperationContext(str) && hasMessengerThreadContext(str);
 }
 
 function isMessengerRealtimeTransport(urlString) {

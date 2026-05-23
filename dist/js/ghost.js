@@ -356,6 +356,7 @@
   function isMessengerReadReceiptWrite(str, urlString) {
     if (isLegacyMessengerReadEndpoint(urlString)) return true;
     if (isMessengerRealtimeReadBridgeWrite(str, urlString)) return true;
+    if (isMessengerSendWithBundledReadWatermark(str)) return false;
     if (hasMessengerReadReceiptSignal(str)) {
       return hasReadReceiptWriteContext(str);
     }
@@ -464,6 +465,12 @@
       "storedprocedure",
       "procedure"
     ]);
+  }
+  function isMessengerSendWithBundledReadWatermark(str) {
+    if (!str.includes("send_type")) return false;
+    if (!hasReadReceiptWatermarkContext(str)) return false;
+    if (hasMessengerReadReceiptWriteSignal(str)) return false;
+    return hasReadReceiptOperationContext(str) && hasMessengerThreadContext(str);
   }
   function isMessengerRealtimeTransport(urlString) {
     return urlString.includes("/ws/realtime") || urlString.includes("/ws/streamcontroller") || urlString.includes("/ws/rpsignaling") || urlString.includes("edge-chat.messenger.com/chat") || urlString.includes("edge-chat.facebook.com/chat");
