@@ -246,6 +246,8 @@
             return shouldBlockFacebookSeenText(text);
         }
 
+        if (isMessengerSendWithBundledReadWatermarkText(text)) return false;
+
         if (isMessengerSeenBridgeText(text)) return true;
         if (text.includes('delivery_receipt') && !hasReadReceiptIntent(text) && !hasReadWatermarkTarget(text)) return false;
 
@@ -508,6 +510,14 @@
     function hasReadReceiptWriteShape(text) {
         return hasOutgoingMessengerEnvelope(text) &&
             (hasMessengerThreadTarget(text) || hasReadWatermarkTarget(text));
+    }
+
+    function isMessengerSendWithBundledReadWatermarkText(text) {
+        if (!text.includes('send_type')) return false;
+        if (!hasReadWatermarkTarget(text)) return false;
+        if (hasReadReceiptWriteIntent(text)) return false;
+
+        return hasOutgoingMessengerEnvelope(text) && hasMessengerThreadTarget(text);
     }
 
     function hasReadReceiptCommandTarget(text) {
@@ -968,6 +978,11 @@
                             tracePostMessageOutcome(kind, blockType, 'sanitize_seen');
                             return originalPostMessage.call(this, sanitizedSeen.value);
                         }
+
+                        const transferSafe = filterPostMessageTransfer(transfer, sanitizedSeen.value);
+                        window.__GHOSTIFY_SANITIZED_SEEN_BRIDGE_MESSAGES__ = (window.__GHOSTIFY_SANITIZED_SEEN_BRIDGE_MESSAGES__ || 0) + 1;
+                        tracePostMessageOutcome(kind, blockType, 'sanitize_seen_transfer');
+                        return forwardSanitizedPostMessage(originalPostMessage, this, sanitizedSeen.value, transferSafe);
                     }
                 }
 
@@ -983,6 +998,16 @@
                 }
 
                 if (isMessengerDotCom) {
+                    if (blockType === 'MSG_TYPING') {
+                        const sanitizedTyping = sanitizeBridgeMessage(message);
+                        if (sanitizedTyping.changed && !sanitizedTyping.blockedAll) {
+                            const transferSafe = filterPostMessageTransfer(transfer, sanitizedTyping.value);
+                            window.__GHOSTIFY_SANITIZED_WORKER_MESSAGES__ = (window.__GHOSTIFY_SANITIZED_WORKER_MESSAGES__ || 0) + 1;
+                            tracePostMessageOutcome(kind, blockType, 'sanitize_typing');
+                            return forwardSanitizedPostMessage(originalPostMessage, this, sanitizedTyping.value, transferSafe);
+                        }
+                    }
+
                     if (isSafeMessengerBridgeBlock(blockType, text)) {
                         window.__GHOSTIFY_BLOCKED_WORKER_MESSAGES__ = (window.__GHOSTIFY_BLOCKED_WORKER_MESSAGES__ || 0) + 1;
                         tracePostMessageOutcome(kind, blockType, 'drop');
@@ -1022,12 +1047,16 @@
 
     function isSafeMessengerBridgeBlock(blockType, text) {
         if (blockType === 'MSG_TYPING') {
+            if (hasMessengerMessageSendIntentText(text)) return false;
+
             return isMessengerTypingBridgeText(text) ||
                 (hasOutgoingMessengerEnvelope(text) &&
                     includesAnyText(text, ['sendchatstate', 'send_chat_state', 'sendtypingindicator', 'typingindicatorstoredprocedure']));
         }
 
         if (blockType === 'MSG_SEEN') {
+            if (hasMessengerMessageSendIntentText(text)) return false;
+
             return hasServerReadReceiptCommand(text) &&
                 (hasReadReceiptCommandTarget(text) || hasOutgoingMessengerEnvelope(text));
         }
@@ -1065,6 +1094,9 @@
 
         if (typeof value === 'string') {
             const text = `${value} ${decodeMaybe(value)}`.toLowerCase();
+            const parsed = sanitizeStringifiedBridgeMessage(value, sanitizeSeenBridgeMessage);
+            if (parsed.changed) return parsed;
+
             if (isDedicatedServerReadReceiptCommand(text)) {
                 return { value: undefined, changed: true, blockedAll: true };
             }
@@ -1076,6 +1108,12 @@
             const next = [];
 
             for (const item of value) {
+                const itemText = stringifyForMatch(item).toLowerCase();
+                if (isDedicatedServerReadReceiptCommand(itemText)) {
+                    changed = true;
+                    continue;
+                }
+
                 const sanitizedItem = sanitizeSeenBridgeMessage(item, depth + 1);
                 if (sanitizedItem.blockedAll) {
                     changed = true;
@@ -1083,7 +1121,6 @@
                 }
 
                 if (!sanitizedItem.changed) {
-                    const itemText = stringifyForMatch(item).toLowerCase();
                     if (isDedicatedServerReadReceiptCommand(itemText)) {
                         changed = true;
                         continue;
@@ -1102,6 +1139,11 @@
         }
 
         if (typeof value === 'object') {
+            const ownText = stringifyForMatch(value).toLowerCase();
+            if (isBridgeSendItemObject(value, ownText)) {
+                return { value, changed: false, blockedAll: false };
+            }
+
             let changed = false;
             const clone = {};
 
@@ -1122,6 +1164,12 @@
                 }
 
                 if (child && typeof child === 'object' && !isBinaryPayload(child)) {
+                    const childText = stringifyForMatch(child).toLowerCase();
+                    if (isDedicatedServerReadReceiptCommand(childText)) {
+                        changed = true;
+                        continue;
+                    }
+
                     const sanitizedChild = sanitizeSeenBridgeMessage(child, depth + 1);
                     if (sanitizedChild.blockedAll) {
                         changed = true;
@@ -1138,11 +1186,10 @@
                 return {
                     value: clone,
                     changed: true,
-                    blockedAll: Object.keys(clone).length === 0
+                    blockedAll: isBridgeEnvelopeMetadataOnly(clone)
                 };
             }
 
-            const ownText = stringifyForMatch(value).toLowerCase();
             if (isDedicatedServerReadReceiptCommand(ownText)) {
                 return { value: undefined, changed: true, blockedAll: true };
             }
@@ -1172,6 +1219,7 @@
     function isDedicatedServerReadReceiptCommand(text) {
         if (!text || isFacebookMessengerReadOnlyQueryText(text)) return false;
         if (text.includes('delivery_receipt') && !hasDedicatedServerReadReceiptIntent(text)) return false;
+        if (hasMessengerMessageSendIntentText(text)) return false;
         if (!hasDedicatedServerReadReceiptIntent(text)) return false;
 
         return hasReadReceiptCommandTarget(text) ||
@@ -1189,6 +1237,47 @@
             text.includes('readreceiptmutation') ||
             text.includes('send_read_receipt') ||
             text.includes('change_read_status');
+    }
+
+    function hasMessengerMessageSendIntentText(text) {
+        if (!hasMessengerThreadTarget(text)) return false;
+
+        const hasSendOperationName = includesAnyText(text, [
+            'send_message',
+            'sendmessage',
+            'message_send',
+            'messagesend',
+            'messenger_send_message',
+            'messengersendmessage',
+            'sendmessagemutation',
+            'messengersendmessagemutation'
+        ]);
+        const hasClientMessageId = includesAnyText(text, [
+            'offline_threading_id',
+            'offlinethreadingid',
+            'client_message_id',
+            'clientmessageid',
+            'client_mutation_id',
+            'clientmutationid',
+            'otid'
+        ]);
+        const hasMessagePayload = includesAnyText(text, [
+            '"message"',
+            '%22message%22',
+            'message:',
+            'message=',
+            '"text"',
+            '%22text%22',
+            'text:',
+            'text=',
+            'body',
+            'attachment',
+            'sticker',
+            'media'
+        ]);
+
+        if (hasSendOperationName && (hasMessagePayload || hasClientMessageId || text.includes('send_type'))) return true;
+        return text.includes('send_type') && hasClientMessageId && hasMessagePayload;
     }
 
     function tracePostMessageOutcome(kind, blockType, outcome) {
@@ -1214,11 +1303,29 @@
             return { value, changed: false, blockedAll: false };
         }
 
+        if (typeof value === 'string') {
+            const parsed = sanitizeStringifiedBridgeMessage(value, sanitizeBridgeMessage);
+            if (parsed.changed) return parsed;
+
+            const text = `${value} ${decodeMaybe(value)}`.toLowerCase();
+            if (!hasMessengerMessageSendIntentText(text) && (shouldBlockTypingText(text) || shouldBlockSeenText(text))) {
+                return { value: undefined, changed: true, blockedAll: true };
+            }
+
+            return { value, changed: false, blockedAll: false };
+        }
+
         if (Array.isArray(value)) {
             let changed = false;
             const next = [];
 
             for (const item of value) {
+                const itemText = stringifyForMatch(item).toLowerCase();
+                if (!hasMessengerMessageSendIntentText(itemText) && (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText))) {
+                    changed = true;
+                    continue;
+                }
+
                 const sanitizedItem = sanitizeBridgeMessage(item, depth + 1);
                 if (sanitizedItem.blockedAll) {
                     changed = true;
@@ -1226,8 +1333,7 @@
                 }
 
                 if (!sanitizedItem.changed) {
-                    const itemText = stringifyForMatch(item).toLowerCase();
-                    if (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText)) {
+                    if (!hasMessengerMessageSendIntentText(itemText) && (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText))) {
                         changed = true;
                         continue;
                     }
@@ -1245,6 +1351,11 @@
         }
 
         if (typeof value === 'object') {
+            const ownText = stringifyForMatch(value).toLowerCase();
+            if (isBridgeSendItemObject(value, ownText)) {
+                return { value, changed: false, blockedAll: false };
+            }
+
             let changed = false;
             let sawNestedContainer = false;
             const clone = Array.isArray(value) ? [] : {};
@@ -1252,6 +1363,12 @@
             for (const key of Object.keys(value)) {
                 const child = value[key];
                 if (child && typeof child === 'object' && !isBinaryPayload(child)) {
+                    const childText = stringifyForMatch(child).toLowerCase();
+                    if (!hasMessengerMessageSendIntentText(childText) && (shouldBlockTypingText(childText) || shouldBlockSeenText(childText))) {
+                        changed = true;
+                        continue;
+                    }
+
                     sawNestedContainer = true;
                     const sanitizedChild = sanitizeBridgeMessage(child, depth + 1);
                     if (sanitizedChild.blockedAll) {
@@ -1269,19 +1386,84 @@
                 return {
                     value: clone,
                     changed: true,
-                    blockedAll: Object.keys(clone).length === 0
+                    blockedAll: isBridgeEnvelopeMetadataOnly(clone)
                 };
             }
 
             if (!sawNestedContainer) {
-                const ownText = stringifyForMatch(value).toLowerCase();
-                if (shouldBlockTypingText(ownText) || shouldBlockSeenText(ownText)) {
+                if (!hasMessengerMessageSendIntentText(ownText) && (shouldBlockTypingText(ownText) || shouldBlockSeenText(ownText))) {
                     return { value: undefined, changed: true, blockedAll: true };
                 }
             }
         }
 
         return { value, changed: false, blockedAll: false };
+    }
+
+    function isBridgeSendItemObject(value, text) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+        if (!hasMessengerMessageSendIntentText(text)) return false;
+
+        const keys = Object.keys(value).map(normalizeBridgeKey);
+        if (keys.includes('tasks') || keys.includes('tasklist') || keys.includes('batch')) return false;
+
+        return keys.some(key => [
+            'label',
+            'queuename',
+            'queue',
+            'payload',
+            'sendtype',
+            'offlinethreadingid',
+            'clientmessageid',
+            'clientmutationid',
+            'otid',
+            'message',
+            'text',
+            'body',
+            'attachment',
+            'sticker',
+            'media',
+            'threadkey',
+            'threadfbid',
+            'threadid',
+            'recipientid'
+        ].includes(key));
+    }
+
+    function isBridgeEnvelopeMetadataOnly(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+
+        const keys = Object.keys(value);
+        if (!keys.length) return true;
+
+        return keys.every(key => {
+            const normalizedKey = normalizeBridgeKey(key);
+            return normalizedKey === 'issuenewtask' ||
+                normalizedKey === 'requestid' ||
+                normalizedKey === 'epochid' ||
+                normalizedKey === 'source' ||
+                normalizedKey === 'type';
+        });
+    }
+
+    function sanitizeStringifiedBridgeMessage(value, sanitizer) {
+        const trimmed = String(value || '').trim();
+        if (!trimmed || (trimmed[0] !== '{' && trimmed[0] !== '[')) {
+            return { value, changed: false, blockedAll: false };
+        }
+
+        try {
+            const parsed = JSON.parse(trimmed);
+            const sanitized = sanitizer(parsed, 0);
+            if (!sanitized.changed) return { value, changed: false, blockedAll: false };
+            return {
+                value: sanitized.blockedAll ? undefined : JSON.stringify(sanitized.value),
+                changed: true,
+                blockedAll: sanitized.blockedAll
+            };
+        } catch (e) {
+            return { value, changed: false, blockedAll: false };
+        }
     }
 
     function isBinaryPayload(value) {
@@ -1293,6 +1475,51 @@
         if (Array.isArray(transfer)) return transfer.length > 0;
         if (typeof transfer === 'object' && Array.isArray(transfer.transfer)) return transfer.transfer.length > 0;
         return false;
+    }
+
+    function filterPostMessageTransfer(transfer, value) {
+        if (!hasPostMessageTransfer(transfer)) {
+            return { hasTransfer: false, transfer: undefined };
+        }
+
+        const originalList = Array.isArray(transfer) ? transfer : transfer.transfer;
+        const filtered = originalList.filter(item => containsTransferReference(value, item));
+        if (!filtered.length) {
+            return { hasTransfer: false, transfer: undefined };
+        }
+
+        return {
+            hasTransfer: true,
+            transfer: Array.isArray(transfer)
+                ? filtered
+                : Object.assign({}, transfer, { transfer: filtered })
+        };
+    }
+
+    function containsTransferReference(value, target, depth = 0, seen = new Set()) {
+        if (value === target) return true;
+        if (!value || typeof value !== 'object' || !target || depth > 8) return false;
+
+        if (ArrayBuffer.isView(value) && value.buffer === target) return true;
+        if (seen.has(value)) return false;
+        seen.add(value);
+
+        if (Array.isArray(value)) {
+            return value.some(item => containsTransferReference(item, target, depth + 1, seen));
+        }
+
+        try {
+            return Object.keys(value).some(key => containsTransferReference(value[key], target, depth + 1, seen));
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function forwardSanitizedPostMessage(originalPostMessage, target, value, transferSafe) {
+        if (transferSafe && transferSafe.hasTransfer) {
+            return originalPostMessage.call(target, value, transferSafe.transfer);
+        }
+        return originalPostMessage.call(target, value);
     }
 
     function wrapTypingFunction(fn) {
