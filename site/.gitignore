@@ -1,0 +1,7 @@
+.next
+node_modules
+tsconfig.tsbuildinfo
+dev.out.log
+dev.err.log
+*.log
+qa
