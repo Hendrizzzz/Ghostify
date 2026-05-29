@@ -1,4 +1,4 @@
-import { shouldBlock } from '../../utils/network.js';
+import { sanitizeMessengerNetworkPayload, shouldBlock, shouldBypassNativeMessageRequestTransport } from '../../utils/network.js';
 import { markGhostifyHook, traceMessengerObservation, traceNetwork } from '../../utils/debug.js';
 import { createBlockedPayload } from '../../utils/responses.js';
 
@@ -11,14 +11,31 @@ export function hookFetch() {
 
     window.fetch = async function (input, init) {
         const url = getFetchUrl(input);
-        const body = await getFetchBody(input, init);
         const method = getFetchMethod(input, init);
+        const earlyBody = init && init.body !== undefined ? init.body : '';
+        if (shouldBypassNativeMessageRequestTransport(earlyBody, url, { method })) {
+            return originalFetch.apply(this, arguments);
+        }
 
-        const blockType = shouldBlock(body, url, { method });
-        traceNetwork('fetch', url, body, blockType);
-        traceMessengerObservation('fetch', url, body, blockType);
+        const body = await getFetchBody(input, init);
+        const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
+        const inspectBody = sanitized.changed ? sanitized.data : body;
+
+        const blockType = shouldBlock(inspectBody, url, { method });
+        traceNetwork('fetch', url, inspectBody, blockType);
+        traceMessengerObservation('fetch', url, inspectBody, blockType);
         if (blockType) {
-            return createBlockedFetchResponse(blockType, url, body);
+            return createBlockedFetchResponse(blockType, url, inspectBody);
+        }
+
+        if (sanitized.changed) {
+            if (init && init.body !== undefined) {
+                return originalFetch.call(this, input, { ...init, body: sanitized.data });
+            }
+
+            if (typeof Request !== 'undefined' && input instanceof Request) {
+                return originalFetch.call(this, cloneRequestWithBody(input, sanitized.data));
+            }
         }
 
         return originalFetch.apply(this, arguments);
@@ -27,10 +44,18 @@ export function hookFetch() {
     const originalBeacon = navigator.sendBeacon;
     if (typeof originalBeacon === 'function') {
         navigator.sendBeacon = function (url, data) {
-            const blockType = shouldBlock(data, getFetchUrl(url), { method: 'POST' });
-            traceNetwork('beacon', getFetchUrl(url), data, blockType);
-            traceMessengerObservation('beacon', getFetchUrl(url), data, blockType);
+            const fetchUrl = getFetchUrl(url);
+            if (shouldBypassNativeMessageRequestTransport(data, fetchUrl, { method: 'POST' })) {
+                return originalBeacon.apply(this, arguments);
+            }
+
+            const sanitized = sanitizeMessengerNetworkPayload(data, fetchUrl, { method: 'POST' });
+            const inspectData = sanitized.changed ? sanitized.data : data;
+            const blockType = shouldBlock(inspectData, fetchUrl, { method: 'POST' });
+            traceNetwork('beacon', fetchUrl, inspectData, blockType);
+            traceMessengerObservation('beacon', fetchUrl, inspectData, blockType);
             if (blockType) return true;
+            if (sanitized.changed) return originalBeacon.call(this, url, sanitized.data);
             return originalBeacon.apply(this, arguments);
         };
     }
@@ -79,6 +104,29 @@ async function readBody(body) {
     }
 
     return body;
+}
+
+function cloneRequestWithBody(request, body) {
+    try {
+        return new Request(request, { body });
+    } catch (e) {
+        try {
+            return new Request(request.url, {
+                method: request.method,
+                headers: request.headers,
+                body,
+                mode: request.mode,
+                credentials: request.credentials,
+                cache: request.cache,
+                redirect: request.redirect,
+                referrer: request.referrer,
+                integrity: request.integrity,
+                keepalive: request.keepalive
+            });
+        } catch (err) {
+            return request;
+        }
+    }
 }
 
 function createBlockedFetchResponse(blockType, url, body) {

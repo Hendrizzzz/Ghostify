@@ -539,6 +539,7 @@
   function isMessageRequestHydrationRequest(str, urlString, method) {
     if (!hasMessageRequestContext(str, urlString)) return false;
     if (hasExplicitMessengerReadWriteCommand(str)) return false;
+    if (isMessengerTypingWrite(str, urlString)) return false;
     return isGraphQLRequest(str, urlString) || isMessengerRealtimeTransport(urlString) || includesAny(str, [
       "ls_req",
       "/ls_req",
@@ -732,6 +733,7 @@
   function sanitizeMessengerNetworkPayload(data, url = "", options = {}) {
     if (!isMessenger) return { data, changed: false };
     if (!shouldSanitizeMessengerNetworkPayload()) return { data, changed: false };
+    if (shouldBypassNativeMessageRequestTransport(data, url, options)) return { data, changed: false };
     if (typeof URLSearchParams !== "undefined" && data instanceof URLSearchParams) {
       return sanitizeMessengerUrlSearchParams(data, String(url || "").toLowerCase(), options);
     }
@@ -1522,6 +1524,7 @@
     const urlString = String(url || "");
     const method = String(options.method || "").toUpperCase();
     if (isStaticAsset(urlString, method)) return null;
+    if (shouldBypassNativeMessageRequestTransport(data, urlString, { method })) return null;
     const decodedBody = decode(data).toLowerCase();
     const str = `${decodedBody} ${urlString}`.toLowerCase();
     const isFacebookPage = isFacebookDotCom && !isMessengerDotCom;
@@ -1600,6 +1603,22 @@
       return null;
     }
     return null;
+  }
+  function isNativeMessageRequestBypassActive() {
+    try {
+      if (typeof window === "undefined") return false;
+      return Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0) > Date.now();
+    } catch (e) {
+      return false;
+    }
+  }
+  function shouldBypassNativeMessageRequestTransport(data, url = "", options = {}) {
+    if (!isNativeMessageRequestBypassActive()) return false;
+    const urlString = String(url || "").toLowerCase();
+    const method = String(options.method || "").toUpperCase();
+    const decodedBody = decode(data).toLowerCase();
+    const str = `${decodedBody} ${urlString}`;
+    return isMessageRequestHydrationRequest(str, urlString, method);
   }
 
   // src/utils/debug.js
@@ -2173,6 +2192,9 @@
     if (typeof originalPrototypeSend === "function") {
       OriginalWebSocket.prototype.send = function(data) {
         const socketUrl = socketUrls.get(this) || this.url || "";
+        if (shouldBypassNativeMessageRequestTransport(data, socketUrl)) {
+          return originalPrototypeSend.apply(this, arguments);
+        }
         const inspected = inspectSend(data, socketUrl);
         if (inspected.drop) return;
         if (inspected.data !== data) return originalPrototypeSend.call(this, inspected.data);
@@ -2256,8 +2278,12 @@
     markGhostifyHook("fetch.install", { hasFetch: typeof originalFetch === "function" });
     window.fetch = async function(input, init) {
       const url = getFetchUrl(input);
-      const body = await getFetchBody(input, init);
       const method = getFetchMethod(input, init);
+      const earlyBody = init && init.body !== void 0 ? init.body : "";
+      if (shouldBypassNativeMessageRequestTransport(earlyBody, url, { method })) {
+        return originalFetch.apply(this, arguments);
+      }
+      const body = await getFetchBody(input, init);
       const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
       const inspectBody = sanitized.changed ? sanitized.data : body;
       const blockType = shouldBlock(inspectBody, url, { method });
@@ -2280,6 +2306,9 @@
     if (typeof originalBeacon === "function") {
       navigator.sendBeacon = function(url, data) {
         const fetchUrl = getFetchUrl(url);
+        if (shouldBypassNativeMessageRequestTransport(data, fetchUrl, { method: "POST" })) {
+          return originalBeacon.apply(this, arguments);
+        }
         const sanitized = sanitizeMessengerNetworkPayload(data, fetchUrl, { method: "POST" });
         const inspectData = sanitized.changed ? sanitized.data : data;
         const blockType = shouldBlock(inspectData, fetchUrl, { method: "POST" });
@@ -2379,6 +2408,9 @@
     XMLHttpRequest.prototype.send = function(body) {
       const url = this._ghostifyUrl || "";
       const method = this._ghostifyMethod || "GET";
+      if (shouldBypassNativeMessageRequestTransport(body, url, { method })) {
+        return originalXhrSend.apply(this, arguments);
+      }
       const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
       const inspectBody = sanitized.changed ? sanitized.data : body;
       const blockType = shouldBlock(inspectBody, url, { method });
@@ -2404,16 +2436,81 @@
   }
 
   // src/platforms/facebook.js
+  var REQUEST_NATIVE_GRACE_MS = 15e3;
   function startFacebookProtection() {
+    if (window.__GHOSTIFY_FACEBOOK_PROTECTION__) return;
     window.__GHOSTIFY_FACEBOOK_PROTECTION__ = true;
+    const markRequestIntent = (event) => {
+      if (isFacebookMessageRequestNavigationTarget(event == null ? void 0 : event.target)) {
+        const until = Date.now() + REQUEST_NATIVE_GRACE_MS;
+        window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ = until;
+        window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ = until;
+        emitNativeFocusSignals();
+      }
+    };
+    document.addEventListener("pointerdown", markRequestIntent, true);
+    document.addEventListener("click", markRequestIntent, true);
+    document.addEventListener("keydown", (event) => {
+      if ((event == null ? void 0 : event.key) !== "Enter" && (event == null ? void 0 : event.key) !== " ") return;
+      markRequestIntent(event);
+    }, true);
   }
   function getFacebookSpoofState() {
+    if (hasRecentMessageRequestIntent()) return null;
     if (isFacebookMessageRequestSurface()) return null;
     if (!isFacebookMessagingSurface()) return null;
     if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
       return "unfocused";
     }
     return null;
+  }
+  function hasRecentMessageRequestIntent() {
+    return Math.max(
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ || 0),
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0)
+    ) > Date.now();
+  }
+  function emitNativeFocusSignals() {
+    dispatchEventSafe(window, "focus");
+    dispatchEventSafe(document, "visibilitychange");
+    dispatchEventSafe(document, "webkitvisibilitychange");
+    dispatchEventSafe(document, "focusin");
+  }
+  function dispatchEventSafe(target, type) {
+    try {
+      if (!target || typeof target.dispatchEvent !== "function") return;
+      const event = typeof Event === "function" ? new Event(type, { bubbles: type === "focusin", cancelable: false }) : { type, target };
+      target.dispatchEvent(event);
+    } catch (e) {
+    }
+  }
+  function isFacebookMessageRequestNavigationTarget(target) {
+    const element = getClosestRequestElement(target);
+    if (!element) return false;
+    const href = getElementAttribute(element, "href");
+    const label = [
+      getElementAttribute(element, "aria-label"),
+      getElementAttribute(element, "title"),
+      element.innerText,
+      element.textContent,
+      href
+    ].filter(Boolean).join(" ").toLowerCase();
+    return href.includes("/messages/requests") || href.includes("/messages/message-requests") || href.includes("/messages/message_requests") || href.includes("folder=message_requests") || label.includes("message requests") || label.includes("message_requests") || label.includes("message-requests");
+  }
+  function getClosestRequestElement(target) {
+    if (!target || typeof target !== "object") return null;
+    if (typeof target.closest === "function") {
+      return target.closest('a,button,[role="link"],[role="button"],[aria-label]') || target;
+    }
+    return target;
+  }
+  function getElementAttribute(element, name) {
+    var _a;
+    try {
+      return String(((_a = element == null ? void 0 : element.getAttribute) == null ? void 0 : _a.call(element, name)) || "");
+    } catch (e) {
+      return "";
+    }
   }
   function isFacebookMessagingSurface() {
     var _a, _b, _c;
@@ -2464,12 +2561,80 @@
   }
 
   // src/platforms/messenger.js
+  var REQUEST_NATIVE_GRACE_MS2 = 15e3;
+  function startMessengerProtection() {
+    if (window.__GHOSTIFY_MESSENGER_PROTECTION__) return;
+    window.__GHOSTIFY_MESSENGER_PROTECTION__ = true;
+    const markRequestIntent = (event) => {
+      if (isMessageRequestNavigationTarget(event == null ? void 0 : event.target)) {
+        const until = Date.now() + REQUEST_NATIVE_GRACE_MS2;
+        window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ = until;
+        window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ = until;
+        emitNativeFocusSignals2();
+      }
+    };
+    document.addEventListener("pointerdown", markRequestIntent, true);
+    document.addEventListener("click", markRequestIntent, true);
+    document.addEventListener("keydown", (event) => {
+      if ((event == null ? void 0 : event.key) !== "Enter" && (event == null ? void 0 : event.key) !== " ") return;
+      markRequestIntent(event);
+    }, true);
+  }
   function getMessengerSpoofState() {
+    if (hasRecentMessageRequestIntent2()) return null;
     if (isMessengerMessageRequestSurface()) return null;
     if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
       return "unfocused";
     }
     return null;
+  }
+  function hasRecentMessageRequestIntent2() {
+    return Math.max(
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ || 0),
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0)
+    ) > Date.now();
+  }
+  function emitNativeFocusSignals2() {
+    dispatchEventSafe2(window, "focus");
+    dispatchEventSafe2(document, "visibilitychange");
+    dispatchEventSafe2(document, "webkitvisibilitychange");
+    dispatchEventSafe2(document, "focusin");
+  }
+  function dispatchEventSafe2(target, type) {
+    try {
+      if (!target || typeof target.dispatchEvent !== "function") return;
+      const event = typeof Event === "function" ? new Event(type, { bubbles: type === "focusin", cancelable: false }) : { type, target };
+      target.dispatchEvent(event);
+    } catch (e) {
+    }
+  }
+  function isMessageRequestNavigationTarget(target) {
+    const element = getClosestRequestElement2(target);
+    if (!element) return false;
+    const href = getElementAttribute2(element, "href");
+    const label = [
+      getElementAttribute2(element, "aria-label"),
+      getElementAttribute2(element, "title"),
+      element.innerText,
+      element.textContent,
+      href
+    ].filter(Boolean).join(" ").toLowerCase();
+    return href.includes("/requests") || href.includes("message_requests") || href.includes("message-requests") || label.includes("message requests") || label.includes("message_requests") || label.includes("message-requests") || /^requests(?:\s|[^\w\s]|$)/.test(label.trim());
+  }
+  function getClosestRequestElement2(target) {
+    if (!target || typeof target !== "object") return null;
+    if (typeof target.closest === "function") {
+      return target.closest('a,button,[role="link"],[role="button"],[aria-label]') || target;
+    }
+    return target;
+  }
+  function getElementAttribute2(element, name) {
+    var _a;
+    try {
+      return String(((_a = element == null ? void 0 : element.getAttribute) == null ? void 0 : _a.call(element, name)) || "");
+    } catch (e) {
+      return "";
+    }
   }
   function isMessengerMessageRequestSurface() {
     var _a, _b, _c;
@@ -2628,6 +2793,7 @@
     hookFetch();
     hookXHR();
     startFacebookProtection();
+    startMessengerProtection();
     startInstagramProtection();
   })();
   function normalizeSettings(settings) {

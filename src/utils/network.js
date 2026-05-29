@@ -572,6 +572,7 @@ function hasExplicitMessengerReadWriteCommand(str) {
 function isMessageRequestHydrationRequest(str, urlString, method) {
     if (!hasMessageRequestContext(str, urlString)) return false;
     if (hasExplicitMessengerReadWriteCommand(str)) return false;
+    if (isMessengerTypingWrite(str, urlString)) return false;
 
     return isGraphQLRequest(str, urlString) ||
         isMessengerRealtimeTransport(urlString) ||
@@ -794,6 +795,7 @@ function hasMessengerDeliveryAckIntent(str) {
 export function sanitizeMessengerNetworkPayload(data, url = '', options = {}) {
     if (!isMessenger) return { data, changed: false };
     if (!shouldSanitizeMessengerNetworkPayload()) return { data, changed: false };
+    if (shouldBypassNativeMessageRequestTransport(data, url, options)) return { data, changed: false };
     if (typeof URLSearchParams !== 'undefined' && data instanceof URLSearchParams) {
         return sanitizeMessengerUrlSearchParams(data, String(url || '').toLowerCase(), options);
     }
@@ -1744,6 +1746,7 @@ export function shouldBlock(data, url = '', options = {}) {
     const urlString = String(url || '');
     const method = String(options.method || '').toUpperCase();
     if (isStaticAsset(urlString, method)) return null;
+    if (shouldBypassNativeMessageRequestTransport(data, urlString, { method })) return null;
 
     const decodedBody = decode(data).toLowerCase();
     const str = `${decodedBody} ${urlString}`.toLowerCase();
@@ -1881,4 +1884,24 @@ export function shouldBlock(data, url = '', options = {}) {
     }
 
     return null;
+}
+
+export function isNativeMessageRequestBypassActive() {
+    try {
+        if (typeof window === 'undefined') return false;
+        return Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0) > Date.now();
+    } catch (e) {
+        return false;
+    }
+}
+
+export function shouldBypassNativeMessageRequestTransport(data, url = '', options = {}) {
+    if (!isNativeMessageRequestBypassActive()) return false;
+
+    const urlString = String(url || '').toLowerCase();
+    const method = String(options.method || '').toUpperCase();
+    const decodedBody = decode(data).toLowerCase();
+    const str = `${decodedBody} ${urlString}`;
+
+    return isMessageRequestHydrationRequest(str, urlString, method);
 }

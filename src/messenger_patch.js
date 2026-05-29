@@ -449,6 +449,14 @@
         return false;
     }
 
+    function hasNativeMessageRequestBypass() {
+        try {
+            return Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0) > Date.now();
+        } catch (e) {
+            return false;
+        }
+    }
+
     function hasFacebookMessengerWriteContext(text) {
         return text.includes('/ls_req') ||
             text.includes('ls_req') ||
@@ -623,7 +631,19 @@
     }
 
     function isMessageRequestHydrationText(text) {
-        const hasRequestContext = text.includes('message_requests') ||
+        const hasRequestContext = hasMessageRequestContextText(text);
+        if (!hasRequestContext) return false;
+        if (hasExplicitBridgeReadWriteCommand(text)) return false;
+
+        return hasMessageRequestHydrationShapeText(text);
+    }
+
+    function isLocalReadMessageRequestHydrationText(text) {
+        return hasMessageRequestContextText(text) && hasMessageRequestHydrationShapeText(text);
+    }
+
+    function hasMessageRequestContextText(text) {
+        return text.includes('message_requests') ||
             text.includes('message request') ||
             text.includes('message_request') ||
             text.includes('messagerequests') ||
@@ -635,9 +655,9 @@
             text.includes('filteredthreads') ||
             text.includes('spam_threads') ||
             text.includes('spamthreads');
-        if (!hasRequestContext) return false;
-        if (hasExplicitBridgeReadWriteCommand(text)) return false;
+    }
 
+    function hasMessageRequestHydrationShapeText(text) {
         return text.includes('fb_api_req_friendly_name') ||
             text.includes('doc_id') ||
             text.includes('ls_req') ||
@@ -1147,6 +1167,10 @@
                 window.__ghostify_shouldBlockTyping() ||
                 window.__ghostify_shouldBlockMessengerSeen();
             const text = needsInspection ? stringifyForMatch(message).toLowerCase() : '';
+            if (hasNativeMessageRequestBypass() && isMessageRequestHydrationText(text)) {
+                return originalPostMessage.apply(this, arguments);
+            }
+
             const blockType = shouldBlockTypingText(text) ? 'MSG_TYPING' :
                 (shouldBlockSeenText(text) ? 'MSG_SEEN' : null);
 
@@ -1791,6 +1815,10 @@
             apply(target, thisArg, args) {
                 if (window.__ghostify_shouldBlockMessengerSeen()) {
                     if (mode === 'sanitize') {
+                        const argsText = stringifyForMatch(args).toLowerCase();
+                        if (isCurrentMessageRequestSurface() || isLocalReadMessageRequestHydrationText(argsText)) {
+                            return Reflect.apply(target, thisArg, args);
+                        }
                         const sanitizedArgs = sanitizeSeenBridgeMessage(args);
                         if (sanitizedArgs.changed && Array.isArray(sanitizedArgs.value)) {
                             window.__GHOSTIFY_SANITIZED_READ_EXPORT_CALLS__ = (window.__GHOSTIFY_SANITIZED_READ_EXPORT_CALLS__ || 0) + 1;
@@ -1995,6 +2023,7 @@
                 const localReadReceiptRequire = isLocalReadReceiptDependency(moduleName) ||
                     (options.inspectExports && hasLocalReadReceiptExport(protectedExport));
                 if (shouldPatchReadReceiptModules() &&
+                    (shouldPatchLocalReadReceiptModules() || !localReadReceiptRequire) &&
                     !shouldLeaveLocalReadReceiptModuleUnpatched(localReadReceiptRequire) &&
                     (isReadReceiptDependency(moduleName) || isLocalReadReceiptDependency(moduleName) || (options.inspectExports && hasReadReceiptExport(protectedExport)))) {
                     protectedExport = wrapReadReceiptExport(
@@ -2145,8 +2174,12 @@
         return isMessenger;
     }
 
+    function shouldPatchLocalReadReceiptModules() {
+        return isInstagram;
+    }
+
     function shouldLeaveLocalReadReceiptModuleUnpatched(isLocalReadReceiptModule) {
-        return isLocalReadReceiptModule && isCurrentMessageRequestSurface();
+        return isLocalReadReceiptModule && (!shouldPatchLocalReadReceiptModules() || isCurrentMessageRequestSurface());
     }
 
     function shouldProcessModule(moduleName, dependencies) {
@@ -2166,7 +2199,15 @@
                 (Array.isArray(dependencies) && dependencies.some(isReadReceiptDependency));
         }
 
+        const hasBlockingReadReceiptModule = isReadReceiptDependency(moduleName) ||
+            hasBlockingReadReceiptExportCallback(moduleName) ||
+            (Array.isArray(dependencies) && dependencies.some(isReadReceiptDependency));
+
         if (!shouldPatchReadReceiptModules()) return hasTypingModule;
+
+        if (!shouldPatchLocalReadReceiptModules()) {
+            return hasTypingModule || hasBlockingReadReceiptModule;
+        }
 
         return hasTypingModule ||
             isReadReceiptDependency(moduleName) ||
@@ -2198,7 +2239,10 @@
                             const avoidFactoryMutation = shouldLeaveLocalReadReceiptModuleUnpatched(localReadReceiptModule);
                             const needsTypingExportWrap = isTypingDependency(moduleName);
                             const readReceiptMode = isLocalReadReceiptDependency(moduleName) ? 'sanitize' : 'block';
-                            const needsReadReceiptExportWrap = shouldPatchReadReceiptModules() && (isReadReceiptDependency(moduleName) || isLocalReadReceiptDependency(moduleName));
+                            const needsReadReceiptExportWrap = shouldPatchReadReceiptModules() && (
+                                isReadReceiptDependency(moduleName) ||
+                                (shouldPatchLocalReadReceiptModules() && isLocalReadReceiptDependency(moduleName))
+                            );
                             const patchedFactory = originalFactory;
                             const factory = function (...factoryArgs) {
                                 if (!avoidFactoryMutation) {

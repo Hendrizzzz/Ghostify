@@ -6,6 +6,7 @@ import { hookXHR } from './core/interceptors/xhr.js';
 import { hookVisibility } from './core/interceptors/focus.js';
 import { startFacebookProtection } from './platforms/facebook.js';
 import { startInstagramProtection } from './platforms/instagram.js';
+import { startMessengerProtection } from './platforms/messenger.js';
 import { traceMessengerHealth } from './utils/debug.js';
 
 (function () {
@@ -58,6 +59,7 @@ import { traceMessengerHealth } from './utils/debug.js';
     hookXHR();
 
     startFacebookProtection();
+    startMessengerProtection();
     startInstagramProtection();
 
 
