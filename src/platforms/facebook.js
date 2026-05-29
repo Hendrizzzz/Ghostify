@@ -5,9 +5,22 @@ export function startFacebookProtection() {
 }
 
 export function getFacebookSpoofState() {
+    if (!isFacebookMessagingSurface()) return null;
+
     if (SETTINGS.msgSeen && !isKilled('msgSeen')) {
         return 'unfocused';
     }
 
     return null;
+}
+
+function isFacebookMessagingSurface() {
+    const path = String(window.location?.pathname || '').toLowerCase();
+    const search = String(window.location?.search || '').toLowerCase();
+    const hash = String(window.location?.hash || '').toLowerCase();
+
+    if (path.startsWith('/messages') || path.startsWith('/messenger')) return true;
+    if (search.includes('sk=messages') || hash.includes('messages')) return true;
+
+    return false;
 }

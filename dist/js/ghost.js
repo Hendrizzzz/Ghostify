@@ -217,6 +217,26 @@
   function includesAny(str, terms) {
     return terms.some((term) => str.includes(term));
   }
+  function escapeRegExp(str) {
+    return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  function hasTruthyField(str, fields) {
+    const text = String(str || "");
+    return fields.some((field) => {
+      const escaped = escapeRegExp(field);
+      return new RegExp(`(?:^|[&\\s"{,])${escaped}"?\\s*[:=]\\s*(?:"?(?:true|1)"?)`).test(text);
+    });
+  }
+  function hasFieldValue(str, fields, values) {
+    const text = String(str || "");
+    return fields.some((field) => {
+      const escapedField = escapeRegExp(field);
+      return values.some((value) => {
+        const escapedValue = escapeRegExp(value);
+        return new RegExp(`(?:^|[&\\s"{,])${escapedField}"?\\s*[:=]\\s*"?(?:${escapedValue})"?`).test(text);
+      });
+    });
+  }
   function hasExplicitStorySeenSignal(str) {
     return includesAny(str, [
       "storiesupdateseenmutation",
@@ -351,6 +371,69 @@
       "watermark_timestamp",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
+    ]);
+  }
+  function hasFacebookMessengerSeenWriteIntent(str) {
+    return includesAny(str, [
+      "markthreadasread",
+      "mark_thread_read",
+      "markthreadreadmutation",
+      "markthreadread",
+      "markasread",
+      "lsmarkthreadread",
+      "mwmarkthreadread",
+      "lssendreadreceipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "lsupdatethreadreadwatermark",
+      "lsupdatelastreadwatermark",
+      "updatelastreadwatermark",
+      "readreceiptmutation"
+    ]) || hasTruthyField(str, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read"
+    ]);
+  }
+  function hasFacebookMessengerTypingWriteIntent(str) {
+    return includesAny(str, [
+      "sendtypingindicator",
+      "lssendtypingindicator",
+      "lssendtypingindicatorstoredprocedure",
+      "send_typing_indicator",
+      "send_typing",
+      "sendchatstatefromcomposer",
+      "sendchatstate",
+      "send_chat_state",
+      "typingindicatorstoredprocedure",
+      "mawsecuretypingstate",
+      "securetypingstate"
+    ]) || hasTruthyField(str, [
+      "istyping",
+      "is_typing",
+      "iscomposing",
+      "is_composing",
+      "typingindicator",
+      "typing_indicator"
+    ]) || hasFieldValue(str, [
+      "chatstate",
+      "chat_state",
+      "typingstate",
+      "typing_status",
+      "send_type"
+    ], [
+      "typing",
+      "composing",
+      "typing_indicator"
     ]);
   }
   function isMessengerReadReceiptWrite(str, urlString) {
@@ -538,8 +621,148 @@
     }
     return includesAny(str, ["viewseenat"]) && includesAny(str, ["reelmediaid", "reelmediaownerid", "reelmediatakenat", "reelid"]);
   }
-  function isStaticAsset(url) {
-    return /\.(mp4|jpg|jpeg|png|webp|gif|mp3|wav|m4a|aac|css|js|mjs|woff2?)($|\?)/i.test(url) || url.includes("static.xx.fbcdn.net/") || url.includes("/rsrc.php") || url.includes("/ajax/bootloader-endpoint/");
+  function hasInstagramStorySeenWriteIntent(str) {
+    return isInstagramStorySeenWrite(str) || includesAny(str, [
+      "storiesupdateseenmutation",
+      "polarisstoriesseenmutation",
+      "usepolarisstoriesv3seenmutation",
+      "reelmediaseen",
+      "storiesupdateseen",
+      "seenstoriesupdatemutation",
+      "xdt_mark_story_reel_seen",
+      "api/v1/stories/reel/seen",
+      "stories/reel/seen"
+    ]) || hasTruthyField(str, [
+      "mark_story_seen",
+      "markstoryseen",
+      "update_seen_for_reel",
+      "updateseenforreel",
+      "reel_seen",
+      "reelseen",
+      "stories_update_seen",
+      "storiesupdateseen",
+      "mark_story_read",
+      "markstoryread"
+    ]);
+  }
+  function isStaticAsset(url, method = "") {
+    const safeMethod = !method || method === "GET" || method === "HEAD";
+    if (!safeMethod) return false;
+    return /\.(mp4|m4v|mov|webm|m3u8|mpd|m4s|ts|jpg|jpeg|png|webp|gif|mp3|wav|m4a|aac|css|js|mjs|woff2?)($|\?)/i.test(url) || url.includes("static.xx.fbcdn.net/") || url.includes("video.xx.fbcdn.net/") || url.includes("/rsrc.php") || url.includes("/ajax/bootloader-endpoint/");
+  }
+  function isMediaAdOrPlayerRequest(str, urlString, method = "") {
+    const text = `${str} ${urlString}`;
+    if (isExplicitPrivacyWriteText(text, urlString)) return false;
+    if (isStaticAsset(urlString, method)) return true;
+    if (!["GET", "HEAD"].includes(String(method || "").toUpperCase()) && isMediaCdnUrl(urlString)) return false;
+    if (isMediaCdnUrl(urlString)) return true;
+    const hasMediaContext = includesAny(text, [
+      "video",
+      "reel",
+      "reels",
+      "watch",
+      "player",
+      "playback",
+      "playable",
+      "playable_url",
+      "dash",
+      "dash_info",
+      "manifest",
+      "m3u8",
+      "mpd",
+      "m4s",
+      "fbcdn",
+      "scontent",
+      "cdninstagram",
+      "audio",
+      "media"
+    ]);
+    const hasAdContext = includesAny(text, [
+      "adbreak",
+      "ad_break",
+      "instream_ad",
+      "instreamads",
+      "commercial_break",
+      "sponsored_video",
+      "video_ad",
+      "ad_client_token",
+      "ad_creative",
+      "ad_pod",
+      "adsmanager",
+      "adinterface"
+    ]);
+    if (!hasMediaContext && !hasAdContext) return false;
+    if (isGraphQLRequest(text, urlString)) {
+      const friendlyName = getFacebookGraphQLFriendlyName(text);
+      if (friendlyName && includesAny(friendlyName, [
+        "video",
+        "watch",
+        "player",
+        "reel",
+        "media",
+        "adbreak",
+        "ad_break",
+        "instream",
+        "ads",
+        "cometufi"
+      ])) {
+        return true;
+      }
+      return hasAdContext || includesAny(text, [
+        "playable_url",
+        "dash_info",
+        "video_versions",
+        "video_dash_manifest",
+        "browser_native_sd_url",
+        "browser_native_hd_url",
+        "ad_break",
+        "adbreak",
+        "watch_time",
+        "player_state",
+        "stream_type",
+        "media_id",
+        "video_id",
+        "reel_media_id"
+      ]);
+    }
+    return hasAdContext || includesAny(urlString, [
+      "/video/",
+      "/videos/",
+      "/reel/",
+      "/reels/",
+      "/watch/",
+      "/media/",
+      "/ads/"
+    ]);
+  }
+  function isMediaCdnUrl(urlString) {
+    return urlString.includes("video.xx.fbcdn.net/") || urlString.includes("/video/") || urlString.includes("/videos/") || /\.(mp4|m4v|mov|webm|m3u8|mpd|m4s|ts)($|\?)/i.test(urlString);
+  }
+  function isExplicitPrivacyWriteText(str, urlString) {
+    return isLegacyMessengerReadEndpoint(urlString) || hasInstagramStorySeenWriteIntent(str) || isInstagramDirectTypingWrite(str, urlString) || isInstagramDirectSeenWrite(str, urlString) || hasServerReadReceiptOrTypingCommand(str) || hasMessengerReadReceiptWriteSignal(str) || hasReadReceiptWatermarkContext(str);
+  }
+  function hasServerReadReceiptOrTypingCommand(str) {
+    return includesAny(str, [
+      "sendreadreceipt",
+      "lssendreadreceipt",
+      "readreceiptmutation",
+      "send_read_receipt",
+      "markthreadasread",
+      "mark_thread_read",
+      "markthreadreadmutation",
+      "lsmarkthreadread",
+      "mwmarkthreadread",
+      "lsupdatethreadreadwatermark",
+      "lsupdatelastreadwatermark",
+      "sendtypingindicator",
+      "lssendtypingindicator",
+      "lssendtypingindicatorstoredprocedure",
+      "send_typing_indicator",
+      "sendchatstatefromcomposer",
+      "sendchatstate",
+      "send_chat_state",
+      "typingindicatorstoredprocedure"
+    ]);
   }
   function isFacebookExplicitMessengerSeenWrite(str, urlString) {
     if (urlString.includes("/ajax/mercury/change_read_status.php")) return true;
@@ -604,12 +827,17 @@
     return urlString.includes("/api/graphql") || str.includes("fb_api_req_friendly_name") || str.includes("doc_id");
   }
   function isFacebookGraphQLMessengerSeenWrite(str) {
-    if (isFacebookGraphQLMessengerQuery(str)) return false;
     const hasNamedWrite = includesAny(str, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
       "markthreadread",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read",
       "lsmarkthreadread",
       "mwmarkthreadread",
       "lssendreadreceipt",
@@ -640,10 +868,10 @@
       "markthread"
     ]);
     if (!hasNamedWrite && !hasWatermarkWrite) return false;
+    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerSeenWriteIntent(str)) return false;
     return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || hasReadReceiptWatermarkContext(str);
   }
   function isFacebookGraphQLMessengerTypingWrite(str) {
-    if (isFacebookGraphQLMessengerQuery(str)) return false;
     const hasExplicitWrite = includesAny(str, [
       "sendtypingindicator",
       "lssendtypingindicator",
@@ -664,11 +892,15 @@
       "typingstate"
     ]);
     if (!hasExplicitWrite) return false;
+    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerTypingWriteIntent(str)) return false;
     return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || includesAny(str, ["composer", "typing_indicator", "chatstate", "typingstate", "typing_status", "maw"]);
   }
   function isFacebookGraphQLMessengerQuery(str) {
     const friendlyName = getFacebookGraphQLFriendlyName(str);
+    const operationName = getFacebookGraphQLOperationName(str);
+    if (friendlyName && friendlyName.includes("mutation") || operationName && operationName.includes("mutation")) return false;
     if (friendlyName && friendlyName.includes("query") && !friendlyName.includes("mutation")) return true;
+    if (operationName && operationName.includes("query") && !operationName.includes("mutation")) return true;
     return includesAny(str, [
       "ebmessagemetadataquery",
       "messagehistoryquery",
@@ -677,11 +909,26 @@
       "searchmessengerquery",
       "messengerthreadquery",
       "messengerthreadlistquery",
-      "messengerinboxquery"
+      "messengerinboxquery",
+      "messagerequestsquery",
+      "messagerequestquery",
+      "message_requests",
+      "message request",
+      "messagerequests",
+      "filteredthreads",
+      "filtered_threads",
+      "pendingthreads",
+      "pending_threads",
+      "spamthreads",
+      "spam_threads"
     ]);
   }
   function getFacebookGraphQLFriendlyName(str) {
     const match = String(str || "").match(/fb_api_req_friendly_name=([^&\s]+)/) || String(str || "").match(/"fb_api_req_friendly_name"\s*:\s*"([^"]+)/);
+    return match ? String(match[1] || "").toLowerCase() : "";
+  }
+  function getFacebookGraphQLOperationName(str) {
+    const match = String(str || "").match(/operationname=([^&\s]+)/) || String(str || "").match(/"operationname"\s*:\s*"([^"]+)/) || String(str || "").match(/"operation_name"\s*:\s*"([^"]+)/);
     return match ? String(match[1] || "").toLowerCase() : "";
   }
   function hasStrictFacebookMessengerWriteContext(str) {
@@ -830,10 +1077,41 @@
     }
     return (str.includes("cursor") || urlString.includes("cursor") || str.includes("query_hash") || str.includes("doc_id")) && includesAny(str, ["direct", "inbox", "thread"]);
   }
+  function isMessengerReadOnlyNavigationRequest(str, urlString, method) {
+    if (isExplicitPrivacyWriteText(str, urlString)) return false;
+    if ((method === "GET" || method === "HEAD") && isGraphQLRequest(str, urlString)) return true;
+    const friendlyName = getFacebookGraphQLFriendlyName(str);
+    const operationName = getFacebookGraphQLOperationName(str);
+    if (friendlyName && friendlyName.includes("mutation") || operationName && operationName.includes("mutation")) return false;
+    if (isFacebookGraphQLMessengerQuery(str)) return true;
+    return isGraphQLRequest(str, urlString) && includesAny(str, [
+      "message_requests",
+      "message request",
+      "messagerequests",
+      "message_request",
+      "inbox",
+      "mailbox",
+      "threadlist",
+      "thread_list",
+      "messagehistory",
+      "message_history",
+      "messagelist",
+      "message_list",
+      "filteredthreads",
+      "filtered_threads",
+      "pendingthreads",
+      "pending_threads",
+      "spamthreads",
+      "spam_threads",
+      "folder",
+      "pagination",
+      "cursor"
+    ]);
+  }
   function shouldBlock(data, url = "", options = {}) {
     const urlString = String(url || "");
-    if (isStaticAsset(urlString)) return null;
     const method = String(options.method || "").toUpperCase();
+    if (isStaticAsset(urlString, method)) return null;
     const decodedBody = decode(data).toLowerCase();
     const str = `${decodedBody} ${urlString}`.toLowerCase();
     const isFacebookPage = isFacebookDotCom && !isMessengerDotCom;
@@ -853,6 +1131,8 @@
       if (SETTINGS.msgStory && !isKilled("msgStory") && hasExplicitStorySeenSignal(str) && matchesPattern(str, PATTERNS.msgStory)) {
         return "MSG_STORY";
       }
+      if (isMediaAdOrPlayerRequest(str, urlString, method)) return null;
+      if (isMessengerReadOnlyNavigationRequest(str, urlString, method)) return null;
       return null;
     }
     if (isMessenger) {
@@ -868,6 +1148,8 @@
       if (SETTINGS.msgStory && !isKilled("msgStory") && (!isFacebookPage || hasExplicitStorySeenSignal(str)) && matchesPattern(str, PATTERNS.msgStory)) {
         return "MSG_STORY";
       }
+      if (isMediaAdOrPlayerRequest(str, urlString, method)) return null;
+      if (isMessengerReadOnlyNavigationRequest(str, urlString, method)) return null;
       return null;
     }
     if (isInstagram) {
@@ -882,6 +1164,11 @@
       }
       if (SETTINGS.igSeen && !isKilled("igSeen") && isInstagramDirectSeenWrite(instagramMatchText, urlString)) {
         return "IG_SEEN";
+      }
+      if (isMediaAdOrPlayerRequest(instagramMatchText, urlString, method)) return null;
+      if (instagramMatchText.includes("cursor") || urlString.includes("cursor") || instagramMatchText.includes("query_hash") || instagramMatchText.includes("doc_id")) {
+        const hasFallbackPrivacyPattern = SETTINGS.igStory && !isKilled("igStory") && !storyViewerLookup && matchesPattern(instagramMatchText, PATTERNS.igStory) || SETTINGS.igTyping && !isKilled("igTyping") && matchesPattern(instagramMatchText, PATTERNS.igTyping) || SETTINGS.igSeen && !isKilled("igSeen") && matchesPattern(instagramMatchText, PATTERNS.igSeen);
+        if (!hasFallbackPrivacyPattern) return null;
       }
       if (isInstagramDirectSafeRequest(instagramMatchText, urlString, method)) return null;
       if (SETTINGS.igStory && !isKilled("igStory") && !storyViewerLookup && matchesPattern(instagramMatchText, PATTERNS.igStory)) {
@@ -1660,10 +1947,20 @@
     window.__GHOSTIFY_FACEBOOK_PROTECTION__ = true;
   }
   function getFacebookSpoofState() {
+    if (!isFacebookMessagingSurface()) return null;
     if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
       return "unfocused";
     }
     return null;
+  }
+  function isFacebookMessagingSurface() {
+    var _a, _b, _c;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    const search = String(((_b = window.location) == null ? void 0 : _b.search) || "").toLowerCase();
+    const hash = String(((_c = window.location) == null ? void 0 : _c.hash) || "").toLowerCase();
+    if (path.startsWith("/messages") || path.startsWith("/messenger")) return true;
+    if (search.includes("sk=messages") || hash.includes("messages")) return true;
+    return false;
   }
 
   // src/platforms/instagram.js
