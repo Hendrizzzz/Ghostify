@@ -14,6 +14,8 @@ export function getInstagramSpoofState() {
         return 'unfocused';
     }
 
+    if (isMediaPlaybackSurface()) return null;
+
     if (seenEnabled && !isDirectSurface()) {
         return 'unfocused';
     }
@@ -28,4 +30,19 @@ function isStorySurface() {
 function isDirectSurface() {
     const path = window.location.pathname;
     return path === '/direct/' || path.startsWith('/direct/');
+}
+
+function isMediaPlaybackSurface() {
+    const path = String(window.location?.pathname || '').toLowerCase();
+    return path === '/' ||
+        path === '/reel' ||
+        path.startsWith('/reel/') ||
+        path === '/reels' ||
+        path.startsWith('/reels/') ||
+        path === '/p' ||
+        path.startsWith('/p/') ||
+        path === '/tv' ||
+        path.startsWith('/tv/') ||
+        path === '/explore' ||
+        path.startsWith('/explore/');
 }

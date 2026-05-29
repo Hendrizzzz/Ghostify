@@ -244,6 +244,24 @@
       return new RegExp(`(?:^|[^a-z0-9_])${escaped}(?:$|[^a-z0-9_])`).test(text);
     });
   }
+  function stripFalseyPrivacyFields(str) {
+    const text = String(str || "");
+    let decoded = "";
+    try {
+      decoded = decodeURIComponent(text.replace(/\+/g, " "));
+    } catch (e) {
+    }
+    return `${stripFalseyPrivacyFieldsOnce(text)} ${stripFalseyPrivacyFieldsOnce(decoded)}`;
+  }
+  function stripFalseyPrivacyFieldsOnce(str) {
+    return String(str || "").replace(
+      /"?(?:shouldsendreadreceipt|should_send_read_receipt|sendreadreceipt|send_read_receipt|readreceipt|read_receipt|markread|mark_read|markseen|mark_seen|markasread|mark_as_read|threadseen|thread_seen|seenbyviewer|seen_by_viewer|istyping|is_typing|iscomposing|is_composing|typingindicator|typing_indicator)"?\s*[:=]\s*"?(?:false|0|null)"?/g,
+      ""
+    ).replace(
+      /(?:%22)?(?:shouldsendreadreceipt|should_send_read_receipt|sendreadreceipt|send_read_receipt|readreceipt|read_receipt|markread|mark_read|markseen|mark_seen|markasread|mark_as_read|threadseen|thread_seen|seenbyviewer|seen_by_viewer|istyping|is_typing|iscomposing|is_composing|typingindicator|typing_indicator)(?:%22)?\s*(?:%3a|%3d)\s*(?:false|0|null)/g,
+      ""
+    );
+  }
   function hasExplicitStorySeenSignal(str) {
     return includesAny(str, [
       "storiesupdateseenmutation",
@@ -297,7 +315,8 @@
     ]);
   }
   function hasMessengerReadReceiptSignal(str) {
-    return hasMessengerReadReceiptWriteSignal(str) || includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return hasMessengerReadReceiptWriteSignal(text) || includesAny(text, [
       "last_read_watermark",
       "lastreadwatermark",
       "last_read_watermark_ts",
@@ -311,7 +330,8 @@
     ]);
   }
   function hasMessengerReadReceiptWriteSignal(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
@@ -337,6 +357,23 @@
       "markasread",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
+    ]) || hasTruthyField(str, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read",
+      "threadseen",
+      "thread_seen",
+      "seenbyviewer",
+      "seen_by_viewer"
     ]);
   }
   function hasReadReceiptWriteContext(str) {
@@ -381,7 +418,8 @@
     ]);
   }
   function hasFacebookMessengerSeenWriteIntent(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
@@ -451,11 +489,18 @@
       "message_request",
       "messagerequests",
       "message-requests",
-      "/requests"
+      "/requests",
+      "pending_threads",
+      "pendingthreads",
+      "filtered_threads",
+      "filteredthreads",
+      "spam_threads",
+      "spamthreads"
     ]);
   }
   function hasExplicitMessengerReadWriteCommand(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
@@ -469,10 +514,10 @@
       "updatelastreadwatermark",
       "update_last_read_watermark",
       "change_read_status"
-    ]) || includesStandaloneTerm(str, [
+    ]) || includesStandaloneTerm(text, [
       "sendreadreceipt",
       "send_read_receipt"
-    ]) || hasTruthyField(str, [
+    ]) || hasTruthyField(text, [
       "shouldsendreadreceipt",
       "should_send_read_receipt",
       "sendreadreceipt",
@@ -1084,7 +1129,8 @@
     return isLegacyMessengerReadEndpoint(urlString) || hasInstagramStorySeenWriteIntent(str) || isInstagramDirectTypingWrite(str, urlString) || isInstagramDirectSeenWrite(str, urlString) || hasServerReadReceiptOrTypingCommand(str) || hasMessengerReadReceiptWriteSignal(str) || hasReadReceiptWatermarkContext(str);
   }
   function hasServerReadReceiptOrTypingCommand(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
       "sendreadreceipt",
       "lssendreadreceipt",
       "readreceiptmutation",
@@ -1169,7 +1215,8 @@
     return urlString.includes("/api/graphql") || str.includes("fb_api_req_friendly_name") || str.includes("doc_id");
   }
   function isFacebookGraphQLMessengerSeenWrite(str) {
-    const hasNamedWrite = includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    const hasNamedWrite = includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
@@ -1193,6 +1240,19 @@
       "updatelastreadwatermark",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
+    ]) || hasTruthyField(str, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read"
     ]);
     const hasWatermarkWrite = includesAny(str, [
       "last_read_watermark",
@@ -1214,7 +1274,8 @@
     return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || hasReadReceiptWatermarkContext(str);
   }
   function isFacebookGraphQLMessengerTypingWrite(str) {
-    const hasExplicitWrite = includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    const hasExplicitWrite = includesAny(text, [
       "sendtypingindicator",
       "lssendtypingindicator",
       "lssendtypingindicatorstoredprocedure",
@@ -1232,10 +1293,17 @@
       "mawsecuretypingstate",
       "securetypingstate",
       "typingstate"
+    ]) || hasTruthyField(str, [
+      "istyping",
+      "is_typing",
+      "iscomposing",
+      "is_composing",
+      "typingindicator",
+      "typing_indicator"
     ]);
     if (!hasExplicitWrite) return false;
-    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerTypingWriteIntent(str)) return false;
-    return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || includesAny(str, ["composer", "typing_indicator", "chatstate", "typingstate", "typing_status", "maw"]);
+    if (isFacebookGraphQLMessengerQuery(text) && !hasFacebookMessengerTypingWriteIntent(text)) return false;
+    return hasStrictFacebookMessengerWriteContext(text) || hasMessengerThreadContext(text) || includesAny(text, ["composer", "typing_indicator", "chatstate", "typingstate", "typing_status", "maw"]);
   }
   function isFacebookGraphQLMessengerQuery(str) {
     const friendlyName = getFacebookGraphQLFriendlyName(str);
@@ -2376,6 +2444,7 @@
     if (storyEnabled && isStorySurface()) {
       return "unfocused";
     }
+    if (isMediaPlaybackSurface()) return null;
     if (seenEnabled && !isDirectSurface()) {
       return "unfocused";
     }
@@ -2388,6 +2457,11 @@
     const path = window.location.pathname;
     return path === "/direct/" || path.startsWith("/direct/");
   }
+  function isMediaPlaybackSurface() {
+    var _a;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    return path === "/" || path === "/reel" || path.startsWith("/reel/") || path === "/reels" || path.startsWith("/reels/") || path === "/p" || path.startsWith("/p/") || path === "/tv" || path.startsWith("/tv/") || path === "/explore" || path.startsWith("/explore/");
+  }
 
   // src/platforms/messenger.js
   function getMessengerSpoofState() {
@@ -2398,9 +2472,12 @@
     return null;
   }
   function isMessengerMessageRequestSurface() {
-    var _a;
+    var _a, _b, _c;
     const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
-    return path.startsWith("/requests") || path.startsWith("/message-requests") || path.startsWith("/message_requests");
+    const search = String(((_b = window.location) == null ? void 0 : _b.search) || "").toLowerCase();
+    const hash = String(((_c = window.location) == null ? void 0 : _c.hash) || "").toLowerCase();
+    const route = `${path} ${search} ${hash}`;
+    return path.startsWith("/requests") || path.startsWith("/message-requests") || path.startsWith("/message_requests") || route.includes("folder=message_requests") || route.includes("message_requests") || route.includes("message-requests");
   }
 
   // src/core/interceptors/focus.js

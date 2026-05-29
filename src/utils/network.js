@@ -241,6 +241,26 @@ function includesStandaloneTerm(str, terms) {
     });
 }
 
+function stripFalseyPrivacyFields(str) {
+    const text = String(str || '');
+    let decoded = '';
+    try {
+        decoded = decodeURIComponent(text.replace(/\+/g, ' '));
+    } catch (e) { }
+
+    return `${stripFalseyPrivacyFieldsOnce(text)} ${stripFalseyPrivacyFieldsOnce(decoded)}`;
+}
+
+function stripFalseyPrivacyFieldsOnce(str) {
+    return String(str || '').replace(
+        /"?(?:shouldsendreadreceipt|should_send_read_receipt|sendreadreceipt|send_read_receipt|readreceipt|read_receipt|markread|mark_read|markseen|mark_seen|markasread|mark_as_read|threadseen|thread_seen|seenbyviewer|seen_by_viewer|istyping|is_typing|iscomposing|is_composing|typingindicator|typing_indicator)"?\s*[:=]\s*"?(?:false|0|null)"?/g,
+        ''
+    ).replace(
+        /(?:%22)?(?:shouldsendreadreceipt|should_send_read_receipt|sendreadreceipt|send_read_receipt|readreceipt|read_receipt|markread|mark_read|markseen|mark_seen|markasread|mark_as_read|threadseen|thread_seen|seenbyviewer|seen_by_viewer|istyping|is_typing|iscomposing|is_composing|typingindicator|typing_indicator)(?:%22)?\s*(?:%3a|%3d)\s*(?:false|0|null)/g,
+        ''
+    );
+}
+
 function hasExplicitStorySeenSignal(str) {
     return includesAny(str, [
         'storiesupdateseenmutation',
@@ -298,8 +318,9 @@ function hasFacebookMessengerContext(str) {
 }
 
 function hasMessengerReadReceiptSignal(str) {
-    return hasMessengerReadReceiptWriteSignal(str) ||
-        includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return hasMessengerReadReceiptWriteSignal(text) ||
+        includesAny(text, [
             'last_read_watermark',
             'lastreadwatermark',
             'last_read_watermark_ts',
@@ -314,7 +335,8 @@ function hasMessengerReadReceiptSignal(str) {
 }
 
 function hasMessengerReadReceiptWriteSignal(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
         'markthreadasread',
         'mark_thread_read',
         'markthreadreadmutation',
@@ -340,6 +362,23 @@ function hasMessengerReadReceiptWriteSignal(str) {
         'markasread',
         'shouldsendreadreceipt',
         'should_send_read_receipt'
+    ]) || hasTruthyField(str, [
+        'shouldsendreadreceipt',
+        'should_send_read_receipt',
+        'sendreadreceipt',
+        'send_read_receipt',
+        'readreceipt',
+        'read_receipt',
+        'markread',
+        'mark_read',
+        'markseen',
+        'mark_seen',
+        'markasread',
+        'mark_as_read',
+        'threadseen',
+        'thread_seen',
+        'seenbyviewer',
+        'seen_by_viewer'
     ]);
 }
 
@@ -408,7 +447,8 @@ function hasReadReceiptWatermarkContext(str) {
 }
 
 function hasFacebookMessengerSeenWriteIntent(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
         'markthreadasread',
         'mark_thread_read',
         'markthreadreadmutation',
@@ -480,12 +520,19 @@ function hasMessageRequestContext(str, urlString = '') {
         'message_request',
         'messagerequests',
         'message-requests',
-        '/requests'
+        '/requests',
+        'pending_threads',
+        'pendingthreads',
+        'filtered_threads',
+        'filteredthreads',
+        'spam_threads',
+        'spamthreads'
     ]);
 }
 
 function hasExplicitMessengerReadWriteCommand(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
         'markthreadasread',
         'mark_thread_read',
         'markthreadreadmutation',
@@ -499,10 +546,10 @@ function hasExplicitMessengerReadWriteCommand(str) {
         'updatelastreadwatermark',
         'update_last_read_watermark',
         'change_read_status'
-    ]) || includesStandaloneTerm(str, [
+    ]) || includesStandaloneTerm(text, [
         'sendreadreceipt',
         'send_read_receipt'
-    ]) || hasTruthyField(str, [
+    ]) || hasTruthyField(text, [
         'shouldsendreadreceipt',
         'should_send_read_receipt',
         'sendreadreceipt',
@@ -1233,7 +1280,8 @@ function isExplicitPrivacyWriteText(str, urlString) {
 }
 
 function hasServerReadReceiptOrTypingCommand(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
         'sendreadreceipt',
         'lssendreadreceipt',
         'readreceiptmutation',
@@ -1339,7 +1387,8 @@ function isGraphQLRequest(str, urlString) {
 }
 
 function isFacebookGraphQLMessengerSeenWrite(str) {
-    const hasNamedWrite = includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    const hasNamedWrite = includesAny(text, [
         'markthreadasread',
         'mark_thread_read',
         'markthreadreadmutation',
@@ -1363,6 +1412,19 @@ function isFacebookGraphQLMessengerSeenWrite(str) {
         'updatelastreadwatermark',
         'shouldsendreadreceipt',
         'should_send_read_receipt'
+    ]) || hasTruthyField(str, [
+        'shouldsendreadreceipt',
+        'should_send_read_receipt',
+        'sendreadreceipt',
+        'send_read_receipt',
+        'readreceipt',
+        'read_receipt',
+        'markread',
+        'mark_read',
+        'markseen',
+        'mark_seen',
+        'markasread',
+        'mark_as_read'
     ]);
 
     const hasWatermarkWrite = includesAny(str, [
@@ -1390,7 +1452,8 @@ function isFacebookGraphQLMessengerSeenWrite(str) {
 }
 
 function isFacebookGraphQLMessengerTypingWrite(str) {
-    const hasExplicitWrite = includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    const hasExplicitWrite = includesAny(text, [
         'sendtypingindicator',
         'lssendtypingindicator',
         'lssendtypingindicatorstoredprocedure',
@@ -1408,14 +1471,21 @@ function isFacebookGraphQLMessengerTypingWrite(str) {
         'mawsecuretypingstate',
         'securetypingstate',
         'typingstate'
+    ]) || hasTruthyField(str, [
+        'istyping',
+        'is_typing',
+        'iscomposing',
+        'is_composing',
+        'typingindicator',
+        'typing_indicator'
     ]);
 
     if (!hasExplicitWrite) return false;
-    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerTypingWriteIntent(str)) return false;
+    if (isFacebookGraphQLMessengerQuery(text) && !hasFacebookMessengerTypingWriteIntent(text)) return false;
 
-    return hasStrictFacebookMessengerWriteContext(str) ||
-        hasMessengerThreadContext(str) ||
-        includesAny(str, ['composer', 'typing_indicator', 'chatstate', 'typingstate', 'typing_status', 'maw']);
+    return hasStrictFacebookMessengerWriteContext(text) ||
+        hasMessengerThreadContext(text) ||
+        includesAny(text, ['composer', 'typing_indicator', 'chatstate', 'typingstate', 'typing_status', 'maw']);
 }
 
 function isFacebookGraphQLMessengerQuery(str) {
