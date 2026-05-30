@@ -11,12 +11,14 @@
   var KILLED_FEATURES = /* @__PURE__ */ new Set();
   var SETTINGS_READY = false;
   var hostname = window.location.hostname.toLowerCase();
+  var pathname = window.location.pathname.toLowerCase();
   function isHost(domain) {
     return hostname === domain || hostname.endsWith(`.${domain}`);
   }
   var isFacebookDotCom = isHost("facebook.com");
   var isMessengerDotCom = isHost("messenger.com");
-  var isMessenger = isFacebookDotCom || isMessengerDotCom;
+  var isFacebookMessengerProxy = hostname === "www.fbsbx.com" && pathname.startsWith("/maw_proxy_page");
+  var isMessenger = isFacebookDotCom || isMessengerDotCom || isFacebookMessengerProxy;
   var isInstagram = isHost("instagram.com");
   function isKilled(feature) {
     return KILLED_FEATURES.has(feature);
@@ -217,6 +219,51 @@
   function includesAny(str, terms) {
     return terms.some((term) => str.includes(term));
   }
+  function escapeRegExp(str) {
+    return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  function hasTruthyField(str, fields) {
+    const text = String(str || "");
+    return fields.some((field) => {
+      const escaped = escapeRegExp(field);
+      return new RegExp(`(?:^|[&\\s"{,])${escaped}"?\\s*[:=]\\s*(?:"?(?:true|1)"?)`).test(text);
+    });
+  }
+  function hasFieldValue(str, fields, values) {
+    const text = String(str || "");
+    return fields.some((field) => {
+      const escapedField = escapeRegExp(field);
+      return values.some((value) => {
+        const escapedValue = escapeRegExp(value);
+        return new RegExp(`(?:^|[&\\s"{,])${escapedField}"?\\s*[:=]\\s*"?(?:${escapedValue})"?`).test(text);
+      });
+    });
+  }
+  function includesStandaloneTerm(str, terms) {
+    const text = String(str || "");
+    return terms.some((term) => {
+      const escaped = escapeRegExp(term);
+      return new RegExp(`(?:^|[^a-z0-9_])${escaped}(?:$|[^a-z0-9_])`).test(text);
+    });
+  }
+  function stripFalseyPrivacyFields(str) {
+    const text = String(str || "");
+    let decoded = "";
+    try {
+      decoded = decodeURIComponent(text.replace(/\+/g, " "));
+    } catch (e) {
+    }
+    return `${stripFalseyPrivacyFieldsOnce(text)} ${stripFalseyPrivacyFieldsOnce(decoded)}`;
+  }
+  function stripFalseyPrivacyFieldsOnce(str) {
+    return String(str || "").replace(
+      /"?(?:shouldsendreadreceipt|should_send_read_receipt|sendreadreceipt|send_read_receipt|readreceipt|read_receipt|markread|mark_read|markseen|mark_seen|markasread|mark_as_read|threadseen|thread_seen|seenbyviewer|seen_by_viewer|istyping|is_typing|iscomposing|is_composing|typingindicator|typing_indicator)"?\s*[:=]\s*"?(?:false|0|null)"?/g,
+      ""
+    ).replace(
+      /(?:%22)?(?:shouldsendreadreceipt|should_send_read_receipt|sendreadreceipt|send_read_receipt|readreceipt|read_receipt|markread|mark_read|markseen|mark_seen|markasread|mark_as_read|threadseen|thread_seen|seenbyviewer|seen_by_viewer|istyping|is_typing|iscomposing|is_composing|typingindicator|typing_indicator)(?:%22)?\s*(?:%3a|%3d)\s*(?:false|0|null)/g,
+      ""
+    );
+  }
   function hasExplicitStorySeenSignal(str) {
     return includesAny(str, [
       "storiesupdateseenmutation",
@@ -270,7 +317,8 @@
     ]);
   }
   function hasMessengerReadReceiptSignal(str) {
-    return hasMessengerReadReceiptWriteSignal(str) || includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return hasMessengerReadReceiptWriteSignal(text) || includesAny(text, [
       "last_read_watermark",
       "lastreadwatermark",
       "last_read_watermark_ts",
@@ -284,7 +332,8 @@
     ]);
   }
   function hasMessengerReadReceiptWriteSignal(str) {
-    return includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
@@ -310,6 +359,23 @@
       "markasread",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
+    ]) || hasTruthyField(str, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read",
+      "threadseen",
+      "thread_seen",
+      "seenbyviewer",
+      "seen_by_viewer"
     ]);
   }
   function hasReadReceiptWriteContext(str) {
@@ -347,17 +413,160 @@
       "lastreadwatermarkts",
       "read_watermark",
       "readwatermark",
+      "last_seen_time_ms",
+      "lastseentimems",
       "watermarktimestamp",
       "watermark_timestamp",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
     ]);
   }
+  function hasFacebookMessengerSeenWriteIntent(str) {
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
+      "markthreadasread",
+      "mark_thread_read",
+      "markthreadreadmutation",
+      "markthreadread",
+      "markasread",
+      "lsmarkthreadread",
+      "mwmarkthreadread",
+      "lssendreadreceipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "lsupdatethreadreadwatermark",
+      "lsupdatelastreadwatermark",
+      "updatelastreadwatermark",
+      "readreceiptmutation"
+    ]) || hasTruthyField(str, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read"
+    ]);
+  }
+  function hasFacebookMessengerTypingWriteIntent(str) {
+    return includesAny(str, [
+      "sendtypingindicator",
+      "lssendtypingindicator",
+      "lssendtypingindicatorstoredprocedure",
+      "send_typing_indicator",
+      "send_typing",
+      "sendchatstatefromcomposer",
+      "sendchatstate",
+      "send_chat_state",
+      "typingindicatorstoredprocedure",
+      "mawsecuretypingstate",
+      "securetypingstate"
+    ]) || hasTruthyField(str, [
+      "istyping",
+      "is_typing",
+      "iscomposing",
+      "is_composing",
+      "typingindicator",
+      "typing_indicator"
+    ]) || hasFieldValue(str, [
+      "chatstate",
+      "chat_state",
+      "typingstate",
+      "typing_status",
+      "send_type"
+    ], [
+      "typing",
+      "composing",
+      "typing_indicator"
+    ]);
+  }
+  function hasMessageRequestContext(str, urlString = "") {
+    const text = `${str} ${urlString}`;
+    return includesAny(text, [
+      "message_requests",
+      "message request",
+      "message_request",
+      "messagerequests",
+      "message-requests",
+      "/requests",
+      "pending_threads",
+      "pendingthreads",
+      "filtered_threads",
+      "filteredthreads",
+      "spam_threads",
+      "spamthreads"
+    ]);
+  }
+  function hasExplicitMessengerReadWriteCommand(str) {
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
+      "markthreadasread",
+      "mark_thread_read",
+      "markthreadreadmutation",
+      "markthreadread",
+      "lsmarkthreadread",
+      "mwmarkthreadread",
+      "lssendreadreceipt",
+      "readreceiptmutation",
+      "lsupdatethreadreadwatermark",
+      "lsupdatelastreadwatermark",
+      "updatelastreadwatermark",
+      "update_last_read_watermark",
+      "change_read_status"
+    ]) || includesStandaloneTerm(text, [
+      "sendreadreceipt",
+      "send_read_receipt"
+    ]) || hasTruthyField(text, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read",
+      "threadseen",
+      "thread_seen",
+      "seenbyviewer",
+      "seen_by_viewer"
+    ]);
+  }
+  function isMessageRequestHydrationRequest(str, urlString, method) {
+    if (!hasMessageRequestContext(str, urlString)) return false;
+    if (hasExplicitMessengerReadWriteCommand(str)) return false;
+    if (isMessengerTypingWrite(str, urlString)) return false;
+    return isGraphQLRequest(str, urlString) || isMessengerRealtimeTransport(urlString) || includesAny(str, [
+      "ls_req",
+      "/ls_req",
+      "issue_new_task",
+      "issuenewtask",
+      "threadlist",
+      "thread_list",
+      "messagerequestsquery",
+      "routepreload",
+      "route_preload",
+      "fetch_thread_list",
+      "mwchat_fetch_thread_list",
+      "folder",
+      "pagination",
+      "cursor"
+    ]) || method === "GET" || method === "HEAD";
+  }
   function isMessengerReadReceiptWrite(str, urlString) {
     if (isLegacyMessengerReadEndpoint(urlString)) return true;
     if (hasMessengerMessageSendIntent(str)) return false;
     if (isMessengerRealtimeReadBridgeWrite(str, urlString)) return true;
     if (isMessengerSendWithBundledReadWatermark(str)) return false;
+    if (isMessageRequestHydrationRequest(str, urlString, "")) return false;
     if (hasMessengerReadReceiptSignal(str)) {
       return hasReadReceiptWriteContext(str);
     }
@@ -420,6 +629,8 @@
       "lastreadwatermarkts",
       "read_watermark",
       "readwatermark",
+      "last_seen_time_ms",
+      "lastseentimems",
       "watermarktimestamp",
       "watermark_timestamp",
       "shouldsendreadreceipt",
@@ -440,12 +651,15 @@
       "lastreadwatermarkts",
       "read_watermark",
       "readwatermark",
+      "last_seen_time_ms",
+      "lastseentimems",
       "watermarktimestamp",
       "watermark_timestamp",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
     ]);
     if (!hasWatermark) return false;
+    if (isRealtimeReadReceiptLabelTask(str)) return true;
     return includesAny(str, [
       "markthread",
       "markread",
@@ -459,12 +673,30 @@
       "updatelastreadwatermark",
       "shouldsendreadreceipt",
       "should_send_read_receipt",
-      "ls_req",
-      "/ls_req",
-      "issue_new_task",
-      "issuenewtask",
-      "storedprocedure",
-      "procedure"
+      "storedprocedure"
+    ]);
+  }
+  function isRealtimeReadReceiptLabelTask(str) {
+    return isRealtimeReadWatermarkLabelTask(str) || isRealtimeLastSeenLabelTask(str);
+  }
+  function isRealtimeReadWatermarkLabelTask(str) {
+    return hasSerializedFieldValue(str, "label", "21") && includesAny(str, ["last_read_watermark_ts", "lastreadwatermarkts"]) && hasMessengerThreadContext(str);
+  }
+  function isRealtimeLastSeenLabelTask(str) {
+    return hasSerializedFieldValue(str, "label", "6") && includesAny(str, ["last_seen_time_ms", "lastseentimems"]) && includesAny(str, ["parent_thread_key", "parentthreadkey"]);
+  }
+  function hasSerializedFieldValue(str, field, value) {
+    const unescaped = String(str || "").replace(/\\/g, "");
+    return includesAny(str, [
+      `"${field}":"${value}"`,
+      `"${field}": "${value}"`,
+      `\\"${field}\\":\\"${value}\\"`,
+      `\\"${field}\\": \\"${value}\\"`,
+      `%22${field}%22%3a%22${value}%22`,
+      `%22${field}%22%3A%22${value}%22`
+    ]) || includesAny(unescaped, [
+      `"${field}":"${value}"`,
+      `"${field}": "${value}"`
     ]);
   }
   function isMessengerSendWithBundledReadWatermark(str) {
@@ -528,6 +760,7 @@
   function sanitizeMessengerNetworkPayload(data, url = "", options = {}) {
     if (!isMessenger) return { data, changed: false };
     if (!shouldSanitizeMessengerNetworkPayload()) return { data, changed: false };
+    if (shouldBypassNativeMessageRequestTransport(data, url, options)) return { data, changed: false };
     if (typeof URLSearchParams !== "undefined" && data instanceof URLSearchParams) {
       return sanitizeMessengerUrlSearchParams(data, String(url || "").toLowerCase(), options);
     }
@@ -732,7 +965,7 @@
     ]);
   }
   function isMessengerRealtimeTransport(urlString) {
-    return urlString.includes("/ws/realtime") || urlString.includes("/ws/streamcontroller") || urlString.includes("/ws/rpsignaling") || urlString.includes("edge-chat.messenger.com/chat") || urlString.includes("edge-chat.facebook.com/chat");
+    return urlString.includes("/ws/realtime") || urlString.includes("/ws/lightspeed") || urlString.includes("/ws/streamcontroller") || urlString.includes("/ws/rpsignaling") || urlString.includes("edge-chat.messenger.com/chat") || urlString.includes("edge-chat.facebook.com/chat");
   }
   function isMessengerTypingWrite(str, urlString) {
     if (urlString.includes("/ajax/messaging/typ.php") || urlString.includes("/ajax/chat/typ.php") || urlString.includes("/ajax/mercury/typ.php")) {
@@ -804,8 +1037,149 @@
     }
     return includesAny(str, ["viewseenat"]) && includesAny(str, ["reelmediaid", "reelmediaownerid", "reelmediatakenat", "reelid"]);
   }
-  function isStaticAsset(url) {
-    return /\.(mp4|jpg|jpeg|png|webp|gif|mp3|wav|m4a|aac|css|js|mjs|woff2?)($|\?)/i.test(url) || url.includes("static.xx.fbcdn.net/") || url.includes("/rsrc.php") || url.includes("/ajax/bootloader-endpoint/");
+  function hasInstagramStorySeenWriteIntent(str) {
+    return isInstagramStorySeenWrite(str) || includesAny(str, [
+      "storiesupdateseenmutation",
+      "polarisstoriesseenmutation",
+      "usepolarisstoriesv3seenmutation",
+      "reelmediaseen",
+      "storiesupdateseen",
+      "seenstoriesupdatemutation",
+      "xdt_mark_story_reel_seen",
+      "api/v1/stories/reel/seen",
+      "stories/reel/seen"
+    ]) || hasTruthyField(str, [
+      "mark_story_seen",
+      "markstoryseen",
+      "update_seen_for_reel",
+      "updateseenforreel",
+      "reel_seen",
+      "reelseen",
+      "stories_update_seen",
+      "storiesupdateseen",
+      "mark_story_read",
+      "markstoryread"
+    ]);
+  }
+  function isStaticAsset(url, method = "") {
+    const safeMethod = !method || method === "GET" || method === "HEAD";
+    if (!safeMethod) return false;
+    return /\.(mp4|m4v|mov|webm|m3u8|mpd|m4s|ts|jpg|jpeg|png|webp|gif|mp3|wav|m4a|aac|css|js|mjs|woff2?)($|\?)/i.test(url) || url.includes("static.xx.fbcdn.net/") || url.includes("video.xx.fbcdn.net/") || url.includes("/rsrc.php") || url.includes("/ajax/bootloader-endpoint/");
+  }
+  function isMediaAdOrPlayerRequest(str, urlString, method = "") {
+    const text = `${str} ${urlString}`;
+    if (isExplicitPrivacyWriteText(text, urlString)) return false;
+    if (isStaticAsset(urlString, method)) return true;
+    if (!["GET", "HEAD"].includes(String(method || "").toUpperCase()) && isMediaCdnUrl(urlString)) return false;
+    if (isMediaCdnUrl(urlString)) return true;
+    const hasMediaContext = includesAny(text, [
+      "video",
+      "reel",
+      "reels",
+      "watch",
+      "player",
+      "playback",
+      "playable",
+      "playable_url",
+      "dash",
+      "dash_info",
+      "manifest",
+      "m3u8",
+      "mpd",
+      "m4s",
+      "fbcdn",
+      "scontent",
+      "cdninstagram",
+      "audio",
+      "media"
+    ]);
+    const hasAdContext = includesAny(text, [
+      "adbreak",
+      "ad_break",
+      "instream_ad",
+      "instreamads",
+      "commercial_break",
+      "sponsored_video",
+      "video_ad",
+      "ad_client_token",
+      "ad_creative",
+      "ad_pod",
+      "adsmanager",
+      "adinterface"
+    ]);
+    if (!hasMediaContext && !hasAdContext) return false;
+    if (isGraphQLRequest(text, urlString)) {
+      const friendlyName = getFacebookGraphQLFriendlyName(text);
+      if (friendlyName && includesAny(friendlyName, [
+        "video",
+        "watch",
+        "player",
+        "reel",
+        "media",
+        "adbreak",
+        "ad_break",
+        "instream",
+        "ads",
+        "cometufi"
+      ])) {
+        return true;
+      }
+      return hasAdContext || includesAny(text, [
+        "playable_url",
+        "dash_info",
+        "video_versions",
+        "video_dash_manifest",
+        "browser_native_sd_url",
+        "browser_native_hd_url",
+        "ad_break",
+        "adbreak",
+        "watch_time",
+        "player_state",
+        "stream_type",
+        "media_id",
+        "video_id",
+        "reel_media_id"
+      ]);
+    }
+    return hasAdContext || includesAny(urlString, [
+      "/video/",
+      "/videos/",
+      "/reel/",
+      "/reels/",
+      "/watch/",
+      "/media/",
+      "/ads/"
+    ]);
+  }
+  function isMediaCdnUrl(urlString) {
+    return urlString.includes("video.xx.fbcdn.net/") || urlString.includes("/video/") || urlString.includes("/videos/") || /\.(mp4|m4v|mov|webm|m3u8|mpd|m4s|ts)($|\?)/i.test(urlString);
+  }
+  function isExplicitPrivacyWriteText(str, urlString) {
+    return isLegacyMessengerReadEndpoint(urlString) || hasInstagramStorySeenWriteIntent(str) || isInstagramDirectTypingWrite(str, urlString) || isInstagramDirectSeenWrite(str, urlString) || hasServerReadReceiptOrTypingCommand(str) || hasMessengerReadReceiptWriteSignal(str) || hasReadReceiptWatermarkContext(str);
+  }
+  function hasServerReadReceiptOrTypingCommand(str) {
+    const text = stripFalseyPrivacyFields(str);
+    return includesAny(text, [
+      "sendreadreceipt",
+      "lssendreadreceipt",
+      "readreceiptmutation",
+      "send_read_receipt",
+      "markthreadasread",
+      "mark_thread_read",
+      "markthreadreadmutation",
+      "lsmarkthreadread",
+      "mwmarkthreadread",
+      "lsupdatethreadreadwatermark",
+      "lsupdatelastreadwatermark",
+      "sendtypingindicator",
+      "lssendtypingindicator",
+      "lssendtypingindicatorstoredprocedure",
+      "send_typing_indicator",
+      "sendchatstatefromcomposer",
+      "sendchatstate",
+      "send_chat_state",
+      "typingindicatorstoredprocedure"
+    ]);
   }
   function isFacebookExplicitMessengerSeenWrite(str, urlString) {
     if (urlString.includes("/ajax/mercury/change_read_status.php")) return true;
@@ -870,12 +1244,18 @@
     return urlString.includes("/api/graphql") || str.includes("fb_api_req_friendly_name") || str.includes("doc_id");
   }
   function isFacebookGraphQLMessengerSeenWrite(str) {
-    if (isFacebookGraphQLMessengerQuery(str)) return false;
-    const hasNamedWrite = includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    const hasNamedWrite = includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
       "markthreadread",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read",
       "lsmarkthreadread",
       "mwmarkthreadread",
       "lssendreadreceipt",
@@ -889,6 +1269,19 @@
       "updatelastreadwatermark",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
+    ]) || hasTruthyField(str, [
+      "shouldsendreadreceipt",
+      "should_send_read_receipt",
+      "sendreadreceipt",
+      "send_read_receipt",
+      "readreceipt",
+      "read_receipt",
+      "markread",
+      "mark_read",
+      "markseen",
+      "mark_seen",
+      "markasread",
+      "mark_as_read"
     ]);
     const hasWatermarkWrite = includesAny(str, [
       "last_read_watermark",
@@ -906,11 +1299,12 @@
       "markthread"
     ]);
     if (!hasNamedWrite && !hasWatermarkWrite) return false;
+    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerSeenWriteIntent(str)) return false;
     return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || hasReadReceiptWatermarkContext(str);
   }
   function isFacebookGraphQLMessengerTypingWrite(str) {
-    if (isFacebookGraphQLMessengerQuery(str)) return false;
-    const hasExplicitWrite = includesAny(str, [
+    const text = stripFalseyPrivacyFields(str);
+    const hasExplicitWrite = includesAny(text, [
       "sendtypingindicator",
       "lssendtypingindicator",
       "lssendtypingindicatorstoredprocedure",
@@ -928,13 +1322,24 @@
       "mawsecuretypingstate",
       "securetypingstate",
       "typingstate"
+    ]) || hasTruthyField(str, [
+      "istyping",
+      "is_typing",
+      "iscomposing",
+      "is_composing",
+      "typingindicator",
+      "typing_indicator"
     ]);
     if (!hasExplicitWrite) return false;
-    return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || includesAny(str, ["composer", "typing_indicator", "chatstate", "typingstate", "typing_status", "maw"]);
+    if (isFacebookGraphQLMessengerQuery(text) && !hasFacebookMessengerTypingWriteIntent(text)) return false;
+    return hasStrictFacebookMessengerWriteContext(text) || hasMessengerThreadContext(text) || includesAny(text, ["composer", "typing_indicator", "chatstate", "typingstate", "typing_status", "maw"]);
   }
   function isFacebookGraphQLMessengerQuery(str) {
     const friendlyName = getFacebookGraphQLFriendlyName(str);
+    const operationName = getFacebookGraphQLOperationName(str);
+    if (friendlyName && friendlyName.includes("mutation") || operationName && operationName.includes("mutation")) return false;
     if (friendlyName && friendlyName.includes("query") && !friendlyName.includes("mutation")) return true;
+    if (operationName && operationName.includes("query") && !operationName.includes("mutation")) return true;
     return includesAny(str, [
       "ebmessagemetadataquery",
       "messagehistoryquery",
@@ -943,11 +1348,26 @@
       "searchmessengerquery",
       "messengerthreadquery",
       "messengerthreadlistquery",
-      "messengerinboxquery"
+      "messengerinboxquery",
+      "messagerequestsquery",
+      "messagerequestquery",
+      "message_requests",
+      "message request",
+      "messagerequests",
+      "filteredthreads",
+      "filtered_threads",
+      "pendingthreads",
+      "pending_threads",
+      "spamthreads",
+      "spam_threads"
     ]);
   }
   function getFacebookGraphQLFriendlyName(str) {
     const match = String(str || "").match(/fb_api_req_friendly_name=([^&\s]+)/) || String(str || "").match(/"fb_api_req_friendly_name"\s*:\s*"([^"]+)/);
+    return match ? String(match[1] || "").toLowerCase() : "";
+  }
+  function getFacebookGraphQLOperationName(str) {
+    const match = String(str || "").match(/operationname=([^&\s]+)/) || String(str || "").match(/"operationname"\s*:\s*"([^"]+)/) || String(str || "").match(/"operation_name"\s*:\s*"([^"]+)/);
     return match ? String(match[1] || "").toLowerCase() : "";
   }
   function hasStrictFacebookMessengerWriteContext(str) {
@@ -1096,14 +1516,47 @@
     }
     return (str.includes("cursor") || urlString.includes("cursor") || str.includes("query_hash") || str.includes("doc_id")) && includesAny(str, ["direct", "inbox", "thread"]);
   }
+  function isMessengerReadOnlyNavigationRequest(str, urlString, method) {
+    if (isExplicitPrivacyWriteText(str, urlString)) return false;
+    if ((method === "GET" || method === "HEAD") && isGraphQLRequest(str, urlString)) return true;
+    const friendlyName = getFacebookGraphQLFriendlyName(str);
+    const operationName = getFacebookGraphQLOperationName(str);
+    if (friendlyName && friendlyName.includes("mutation") || operationName && operationName.includes("mutation")) return false;
+    if (isFacebookGraphQLMessengerQuery(str)) return true;
+    return isGraphQLRequest(str, urlString) && includesAny(str, [
+      "message_requests",
+      "message request",
+      "messagerequests",
+      "message_request",
+      "inbox",
+      "mailbox",
+      "threadlist",
+      "thread_list",
+      "messagehistory",
+      "message_history",
+      "messagelist",
+      "message_list",
+      "filteredthreads",
+      "filtered_threads",
+      "pendingthreads",
+      "pending_threads",
+      "spamthreads",
+      "spam_threads",
+      "folder",
+      "pagination",
+      "cursor"
+    ]);
+  }
   function shouldBlock(data, url = "", options = {}) {
     const urlString = String(url || "");
-    if (isStaticAsset(urlString)) return null;
     const method = String(options.method || "").toUpperCase();
+    if (isStaticAsset(urlString, method)) return null;
+    if (shouldBypassNativeMessageRequestTransport(data, urlString, { method })) return null;
     const decodedBody = decode(data).toLowerCase();
     const str = `${decodedBody} ${urlString}`.toLowerCase();
     const isFacebookPage = isFacebookDotCom && !isMessengerDotCom;
     if (isFacebookPage) {
+      if (isMessageRequestHydrationRequest(str, urlString, method)) return null;
       if (SETTINGS.msgSeen && !isKilled("msgSeen") && isGraphQLRequest(str, urlString) && isFacebookGraphQLMessengerSeenWrite(str)) {
         return "MSG_SEEN";
       }
@@ -1119,11 +1572,14 @@
       if (SETTINGS.msgStory && !isKilled("msgStory") && hasExplicitStorySeenSignal(str) && matchesPattern(str, PATTERNS.msgStory)) {
         return "MSG_STORY";
       }
+      if (isMediaAdOrPlayerRequest(str, urlString, method)) return null;
+      if (isMessengerReadOnlyNavigationRequest(str, urlString, method)) return null;
       return null;
     }
     if (isMessenger) {
       if (hasMessengerMessageSendIntent(str)) return null;
       if (hasMessengerDeliveryAckIntent(str)) return null;
+      if (isMessageRequestHydrationRequest(str, urlString, method)) return null;
       if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
         if (isMessengerReadReceiptWrite(str, urlString)) {
           return "MSG_SEEN";
@@ -1136,6 +1592,8 @@
       if (SETTINGS.msgStory && !isKilled("msgStory") && (!isFacebookPage || hasExplicitStorySeenSignal(str)) && matchesPattern(str, PATTERNS.msgStory)) {
         return "MSG_STORY";
       }
+      if (isMediaAdOrPlayerRequest(str, urlString, method)) return null;
+      if (isMessengerReadOnlyNavigationRequest(str, urlString, method)) return null;
       return null;
     }
     if (isInstagram) {
@@ -1150,6 +1608,11 @@
       }
       if (SETTINGS.igSeen && !isKilled("igSeen") && isInstagramDirectSeenWrite(instagramMatchText, urlString)) {
         return "IG_SEEN";
+      }
+      if (isMediaAdOrPlayerRequest(instagramMatchText, urlString, method)) return null;
+      if (instagramMatchText.includes("cursor") || urlString.includes("cursor") || instagramMatchText.includes("query_hash") || instagramMatchText.includes("doc_id")) {
+        const hasFallbackPrivacyPattern = SETTINGS.igStory && !isKilled("igStory") && !storyViewerLookup && matchesPattern(instagramMatchText, PATTERNS.igStory) || SETTINGS.igTyping && !isKilled("igTyping") && matchesPattern(instagramMatchText, PATTERNS.igTyping) || SETTINGS.igSeen && !isKilled("igSeen") && matchesPattern(instagramMatchText, PATTERNS.igSeen);
+        if (!hasFallbackPrivacyPattern) return null;
       }
       if (isInstagramDirectSafeRequest(instagramMatchText, urlString, method)) return null;
       if (SETTINGS.igStory && !isKilled("igStory") && !storyViewerLookup && matchesPattern(instagramMatchText, PATTERNS.igStory)) {
@@ -1167,6 +1630,22 @@
       return null;
     }
     return null;
+  }
+  function isNativeMessageRequestBypassActive() {
+    try {
+      if (typeof window === "undefined") return false;
+      return Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0) > Date.now();
+    } catch (e) {
+      return false;
+    }
+  }
+  function shouldBypassNativeMessageRequestTransport(data, url = "", options = {}) {
+    if (!isNativeMessageRequestBypassActive()) return false;
+    const urlString = String(url || "").toLowerCase();
+    const method = String(options.method || "").toUpperCase();
+    const decodedBody = decode(data).toLowerCase();
+    const str = `${decodedBody} ${urlString}`;
+    return isMessageRequestHydrationRequest(str, urlString, method);
   }
 
   // src/utils/debug.js
@@ -1473,7 +1952,7 @@
     var _a, _b;
     try {
       const host = window.location.hostname.toLowerCase();
-      const supportedHost = host === "messenger.com" || host.endsWith(".messenger.com") || host === "facebook.com" || host.endsWith(".facebook.com");
+      const supportedHost = host === "messenger.com" || host.endsWith(".messenger.com") || host === "facebook.com" || host.endsWith(".facebook.com") || host === "fbsbx.com" || host.endsWith(".fbsbx.com");
       return supportedHost && ((_a = window.localStorage) == null ? void 0 : _a.ghostifyDebug) === "1" && ((_b = window.localStorage) == null ? void 0 : _b.ghostifyMessengerObserve) === "1";
     } catch (e) {
       return false;
@@ -1488,7 +1967,7 @@
   function isMessengerHost() {
     try {
       const host = window.location.hostname.toLowerCase();
-      return host === "messenger.com" || host.endsWith(".messenger.com") || host === "facebook.com" || host.endsWith(".facebook.com");
+      return host === "messenger.com" || host.endsWith(".messenger.com") || host === "facebook.com" || host.endsWith(".facebook.com") || host === "fbsbx.com" || host.endsWith(".fbsbx.com");
     } catch (e) {
       return false;
     }
@@ -1740,6 +2219,9 @@
     if (typeof originalPrototypeSend === "function") {
       OriginalWebSocket.prototype.send = function(data) {
         const socketUrl = socketUrls.get(this) || this.url || "";
+        if (shouldBypassNativeMessageRequestTransport(data, socketUrl)) {
+          return originalPrototypeSend.apply(this, arguments);
+        }
         const inspected = inspectSend(data, socketUrl);
         if (inspected.drop) return;
         if (inspected.data !== data) return originalPrototypeSend.call(this, inspected.data);
@@ -1823,8 +2305,12 @@
     markGhostifyHook("fetch.install", { hasFetch: typeof originalFetch === "function" });
     window.fetch = async function(input, init) {
       const url = getFetchUrl(input);
-      const body = await getFetchBody(input, init);
       const method = getFetchMethod(input, init);
+      const earlyBody = init && init.body !== void 0 ? init.body : "";
+      if (shouldBypassNativeMessageRequestTransport(earlyBody, url, { method })) {
+        return originalFetch.apply(this, arguments);
+      }
+      const body = await getFetchBody(input, init);
       const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
       const inspectBody = sanitized.changed ? sanitized.data : body;
       const blockType = shouldBlock(inspectBody, url, { method });
@@ -1847,6 +2333,9 @@
     if (typeof originalBeacon === "function") {
       navigator.sendBeacon = function(url, data) {
         const fetchUrl = getFetchUrl(url);
+        if (shouldBypassNativeMessageRequestTransport(data, fetchUrl, { method: "POST" })) {
+          return originalBeacon.apply(this, arguments);
+        }
         const sanitized = sanitizeMessengerNetworkPayload(data, fetchUrl, { method: "POST" });
         const inspectData = sanitized.changed ? sanitized.data : data;
         const blockType = shouldBlock(inspectData, fetchUrl, { method: "POST" });
@@ -1946,6 +2435,9 @@
     XMLHttpRequest.prototype.send = function(body) {
       const url = this._ghostifyUrl || "";
       const method = this._ghostifyMethod || "GET";
+      if (shouldBypassNativeMessageRequestTransport(body, url, { method })) {
+        return originalXhrSend.apply(this, arguments);
+      }
       const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
       const inspectBody = sanitized.changed ? sanitized.data : body;
       const blockType = shouldBlock(inspectBody, url, { method });
@@ -1971,14 +2463,202 @@
   }
 
   // src/platforms/facebook.js
+  var REQUEST_NATIVE_GRACE_MS = 15e3;
+  var ROOT_NATIVE_GRACE_MS = 3e4;
+  var CHAT_OPEN_NATIVE_GRACE_MS = 4e3;
   function startFacebookProtection() {
+    if (window.__GHOSTIFY_FACEBOOK_PROTECTION__) return;
     window.__GHOSTIFY_FACEBOOK_PROTECTION__ = true;
+    if (isFacebookFeedRootRoute()) {
+      activateRootNativeGrace(Date.now() + ROOT_NATIVE_GRACE_MS);
+    }
+    const markRequestIntent = (event) => {
+      if (isFacebookMessageRequestNavigationTarget(event == null ? void 0 : event.target)) {
+        const until = Date.now() + REQUEST_NATIVE_GRACE_MS;
+        activateRequestNativeGrace(until);
+      }
+    };
+    const markConversationOpenIntent = (event) => {
+      if (isFacebookMessageRequestNavigationTarget(event == null ? void 0 : event.target)) return;
+      if (isFacebookFeedConversationNavigationTarget(event == null ? void 0 : event.target)) {
+        activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS);
+      }
+    };
+    document.addEventListener("pointerdown", markRequestIntent, true);
+    document.addEventListener("pointerdown", markConversationOpenIntent, true);
+    document.addEventListener("click", markRequestIntent, true);
+    document.addEventListener("click", markConversationOpenIntent, true);
+    document.addEventListener("keydown", (event) => {
+      if ((event == null ? void 0 : event.key) !== "Enter" && (event == null ? void 0 : event.key) !== " ") return;
+      markRequestIntent(event);
+      markConversationOpenIntent(event);
+    }, true);
   }
   function getFacebookSpoofState() {
+    if (hasRecentMessageRequestIntent()) return null;
+    if (isFacebookMessageRequestSurface()) return null;
     if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
+      if (isFacebookRestoredMiniChatLoadingSurface()) return null;
+      if (hasRecentChatOpenIntent()) return null;
+      if (isFacebookFeedMessengerSurface()) return "unfocused-passive";
+      if (isFacebookFeedRootSurface()) return hasRootNativeGrace() ? null : "unfocused-passive";
+      if (!isFacebookMessagingSurface()) return null;
       return "unfocused";
     }
     return null;
+  }
+  function activateRequestNativeGrace(until) {
+    window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ = until;
+    window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ = until;
+    emitNativeFocusSignals();
+  }
+  function activateRootNativeGrace(until) {
+    window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ = Math.max(
+      Number(window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ || 0),
+      until
+    );
+    emitNativeFocusSignals();
+  }
+  function activateChatOpenNativeGrace(until) {
+    window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Math.max(
+      Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0),
+      until
+    );
+    emitNativeFocusSignals();
+  }
+  function hasRecentMessageRequestIntent() {
+    return Math.max(
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ || 0),
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0)
+    ) > Date.now();
+  }
+  function hasRecentChatOpenIntent() {
+    return Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0) > Date.now();
+  }
+  function hasRootNativeGrace() {
+    return isFacebookFeedRootRoute() && Number(window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ || 0) > Date.now();
+  }
+  function emitNativeFocusSignals() {
+    dispatchEventSafe(window, "focus");
+    dispatchEventSafe(document, "visibilitychange");
+    dispatchEventSafe(document, "webkitvisibilitychange");
+    dispatchEventSafe(document, "focusin");
+  }
+  function dispatchEventSafe(target, type) {
+    try {
+      if (!target || typeof target.dispatchEvent !== "function") return;
+      const event = typeof Event === "function" ? new Event(type, { bubbles: type === "focusin", cancelable: false }) : { type, target };
+      target.dispatchEvent(event);
+    } catch (e) {
+    }
+  }
+  function isFacebookMessageRequestNavigationTarget(target) {
+    const element = getClosestRequestElement(target);
+    if (!element) return false;
+    const href = getElementAttribute(element, "href");
+    const label = [
+      getElementAttribute(element, "aria-label"),
+      getElementAttribute(element, "title"),
+      element.innerText,
+      element.textContent,
+      href
+    ].filter(Boolean).join(" ").toLowerCase();
+    return href.includes("/messages/requests") || href.includes("/messages/message-requests") || href.includes("/messages/message_requests") || href.includes("folder=message_requests") || label.includes("message requests") || label.includes("message_requests") || label.includes("message-requests");
+  }
+  function isFacebookFeedConversationNavigationTarget(target) {
+    if (!isFacebookFeedRootRoute()) return false;
+    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
+    const element = getClosestRequestElement(target);
+    if (!element) return false;
+    const href = getElementAttribute(element, "href");
+    const label = getElementContextText(element).toLowerCase();
+    if (!label && !href) return false;
+    return href.includes("/messages/t/") || href.includes("/messages/e2ee/t/") || label.includes("unread message:") || label.includes("active now") || /\b(?:now|\d+\s*[mhdw])\b/.test(label);
+  }
+  function getClosestRequestElement(target) {
+    if (!target || typeof target !== "object") return null;
+    if (typeof target.closest === "function") {
+      return target.closest('a,button,[role="link"],[role="button"],[aria-label]') || target;
+    }
+    return target;
+  }
+  function getElementAttribute(element, name) {
+    var _a;
+    try {
+      return String(((_a = element == null ? void 0 : element.getAttribute) == null ? void 0 : _a.call(element, name)) || "");
+    } catch (e) {
+      return "";
+    }
+  }
+  function getElementContextText(element) {
+    const parts = [];
+    let current = element;
+    for (let depth = 0; current && depth < 5; depth += 1) {
+      parts.push(
+        getElementAttribute(current, "aria-label"),
+        getElementAttribute(current, "title"),
+        current.innerText,
+        current.textContent,
+        getElementAttribute(current, "href")
+      );
+      current = current.parentElement;
+    }
+    return parts.filter(Boolean).join(" ");
+  }
+  function isFacebookMessagingSurface() {
+    var _a, _b, _c;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    const search = String(((_b = window.location) == null ? void 0 : _b.search) || "").toLowerCase();
+    const hash = String(((_c = window.location) == null ? void 0 : _c.hash) || "").toLowerCase();
+    if (path.startsWith("/messages") || path.startsWith("/messenger")) return true;
+    if (search.includes("sk=messages") || hash.includes("messages")) return true;
+    if (isFacebookFeedMessengerSurface()) return true;
+    return false;
+  }
+  function isFacebookFeedRootSurface() {
+    if (!isFacebookFeedRootRoute()) return false;
+    if (isFacebookFeedMessengerSurface()) return false;
+    return true;
+  }
+  function isFacebookFeedRootRoute() {
+    var _a, _b, _c;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    const search = String(((_b = window.location) == null ? void 0 : _b.search) || "").toLowerCase();
+    const hash = String(((_c = window.location) == null ? void 0 : _c.hash) || "").toLowerCase();
+    if (path !== "/" && path !== "/home.php") return false;
+    if (search.includes("sk=messages") || hash.includes("messages")) return false;
+    return true;
+  }
+  function isFacebookFeedMessengerSurface() {
+    const hasMessengerPopover = hasDomElement('[role="dialog"][aria-label="Messenger"]') && hasDomElement('[role="grid"][aria-label="Chats"]');
+    if (hasMessengerPopover) return true;
+    const hasMiniChatChrome = hasDomElement('[aria-label="Minimize chat"]') || hasDomElement('[aria-label="Close chat"]');
+    if (!hasMiniChatChrome) return false;
+    return hasDomElement('[role="textbox"][contenteditable="true"]') || hasDomElement('[aria-label^="Write to"]') || hasDomElement('[aria-label^="Messages in conversation"]') || hasDomElement('[aria-label^="Conversation titled"]');
+  }
+  function isFacebookRestoredMiniChatLoadingSurface() {
+    const log = getDomElement('[aria-label^="Messages in conversation"]');
+    if (!log) return false;
+    const text = String(log.innerText || log.textContent || "").replace(/\s+/g, " ").trim();
+    return /^Loading(?:\.{3})?$/i.test(text);
+  }
+  function hasDomElement(selector) {
+    return !!getDomElement(selector);
+  }
+  function getDomElement(selector) {
+    try {
+      return typeof (document == null ? void 0 : document.querySelector) === "function" ? document.querySelector(selector) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function isFacebookMessageRequestSurface() {
+    var _a, _b, _c;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    const search = String(((_b = window.location) == null ? void 0 : _b.search) || "").toLowerCase();
+    const hash = String(((_c = window.location) == null ? void 0 : _c.hash) || "").toLowerCase();
+    const route = `${path} ${search} ${hash}`;
+    return route.includes("/messages/requests") || route.includes("/messages/message-requests") || route.includes("/messages/message_requests") || route.includes("folder=message_requests") || route.includes("message_requests");
   }
 
   // src/platforms/instagram.js
@@ -1992,6 +2672,7 @@
     if (storyEnabled && isStorySurface()) {
       return "unfocused";
     }
+    if (isMediaPlaybackSurface()) return null;
     if (seenEnabled && !isDirectSurface()) {
       return "unfocused";
     }
@@ -2004,19 +2685,105 @@
     const path = window.location.pathname;
     return path === "/direct/" || path.startsWith("/direct/");
   }
+  function isMediaPlaybackSurface() {
+    var _a;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    return path === "/" || path === "/reel" || path.startsWith("/reel/") || path === "/reels" || path.startsWith("/reels/") || path === "/p" || path.startsWith("/p/") || path === "/tv" || path.startsWith("/tv/") || path === "/explore" || path.startsWith("/explore/");
+  }
 
   // src/platforms/messenger.js
+  var REQUEST_NATIVE_GRACE_MS2 = 15e3;
+  function startMessengerProtection() {
+    if (window.__GHOSTIFY_MESSENGER_PROTECTION__) return;
+    window.__GHOSTIFY_MESSENGER_PROTECTION__ = true;
+    const markRequestIntent = (event) => {
+      if (isMessageRequestNavigationTarget(event == null ? void 0 : event.target)) {
+        const until = Date.now() + REQUEST_NATIVE_GRACE_MS2;
+        activateRequestNativeGrace2(until);
+      }
+    };
+    document.addEventListener("pointerdown", markRequestIntent, true);
+    document.addEventListener("click", markRequestIntent, true);
+    document.addEventListener("keydown", (event) => {
+      if ((event == null ? void 0 : event.key) !== "Enter" && (event == null ? void 0 : event.key) !== " ") return;
+      markRequestIntent(event);
+    }, true);
+  }
   function getMessengerSpoofState() {
+    if (hasRecentMessageRequestIntent2()) return null;
+    if (isMessengerMessageRequestSurface()) return null;
     if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
+      if (isFacebookMessengerProxy) return "unfocused-passive";
       return "unfocused";
     }
     return null;
+  }
+  function activateRequestNativeGrace2(until) {
+    window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ = until;
+    window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ = until;
+    emitNativeFocusSignals2();
+  }
+  function hasRecentMessageRequestIntent2() {
+    return Math.max(
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ || 0),
+      Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0)
+    ) > Date.now();
+  }
+  function emitNativeFocusSignals2() {
+    dispatchEventSafe2(window, "focus");
+    dispatchEventSafe2(document, "visibilitychange");
+    dispatchEventSafe2(document, "webkitvisibilitychange");
+    dispatchEventSafe2(document, "focusin");
+  }
+  function dispatchEventSafe2(target, type) {
+    try {
+      if (!target || typeof target.dispatchEvent !== "function") return;
+      const event = typeof Event === "function" ? new Event(type, { bubbles: type === "focusin", cancelable: false }) : { type, target };
+      target.dispatchEvent(event);
+    } catch (e) {
+    }
+  }
+  function isMessageRequestNavigationTarget(target) {
+    const element = getClosestRequestElement2(target);
+    if (!element) return false;
+    const href = getElementAttribute2(element, "href");
+    const label = [
+      getElementAttribute2(element, "aria-label"),
+      getElementAttribute2(element, "title"),
+      element.innerText,
+      element.textContent,
+      href
+    ].filter(Boolean).join(" ").toLowerCase();
+    return href.includes("/requests") || href.includes("message_requests") || href.includes("message-requests") || label.includes("message requests") || label.includes("message_requests") || label.includes("message-requests") || /^requests(?:\s|[^\w\s]|$)/.test(label.trim());
+  }
+  function getClosestRequestElement2(target) {
+    if (!target || typeof target !== "object") return null;
+    if (typeof target.closest === "function") {
+      return target.closest('a,button,[role="link"],[role="button"],[aria-label]') || target;
+    }
+    return target;
+  }
+  function getElementAttribute2(element, name) {
+    var _a;
+    try {
+      return String(((_a = element == null ? void 0 : element.getAttribute) == null ? void 0 : _a.call(element, name)) || "");
+    } catch (e) {
+      return "";
+    }
+  }
+  function isMessengerMessageRequestSurface() {
+    var _a, _b, _c;
+    const path = String(((_a = window.location) == null ? void 0 : _a.pathname) || "").toLowerCase();
+    const search = String(((_b = window.location) == null ? void 0 : _b.search) || "").toLowerCase();
+    const hash = String(((_c = window.location) == null ? void 0 : _c.hash) || "").toLowerCase();
+    const route = `${path} ${search} ${hash}`;
+    return path.startsWith("/requests") || path.startsWith("/message-requests") || path.startsWith("/message_requests") || route.includes("folder=message_requests") || route.includes("message_requests") || route.includes("message-requests");
   }
 
   // src/core/interceptors/focus.js
   var FOCUS_EVENTS = ["visibilitychange", "webkitvisibilitychange", "blur", "focus", "focusin", "focusout"];
   function shouldSpoofVisibility() {
-    if (isMessengerDotCom) {
+    if (isMessengerDotCom || isFacebookMessengerProxy) {
       const state = getMessengerSpoofState();
       if (state !== null) return state;
     }
@@ -2042,7 +2809,7 @@
     Object.defineProperty(document, "hasFocus", {
       value: function() {
         const spoof = shouldSpoofVisibility();
-        if (spoof === "hidden" || spoof === "unfocused") return false;
+        if (spoof === "hidden" || spoof === "unfocused" || spoof === "unfocused-passive") return false;
         return originalHasFocus();
       },
       configurable: true
@@ -2094,7 +2861,8 @@
     const wrapped = function(event) {
       const spoof = shouldSpoofVisibility();
       if (spoof) {
-        if (type === "blur" || type === "focus" || type === "focusin" || type === "focusout") {
+        const suppressFocusEvents = spoof === "hidden" || spoof === "unfocused";
+        if (suppressFocusEvents && (type === "blur" || type === "focus" || type === "focusin" || type === "focusout")) {
           if (this === window || this === document || event && (event.target === window || event.target === document)) {
             return;
           }
@@ -2155,12 +2923,13 @@
       }
     });
     hookWebSocket();
-    if (isInstagram || isMessengerDotCom || isFacebookDotCom) {
+    if (isInstagram || isMessengerDotCom || isFacebookDotCom || isFacebookMessengerProxy) {
       hookVisibility();
     }
     hookFetch();
     hookXHR();
     startFacebookProtection();
+    startMessengerProtection();
     startInstagramProtection();
   })();
   function normalizeSettings(settings) {

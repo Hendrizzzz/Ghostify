@@ -1,4 +1,4 @@
-import { sanitizeMessengerNetworkPayload, shouldBlock } from '../../utils/network.js';
+import { sanitizeMessengerNetworkPayload, shouldBlock, shouldBypassNativeMessageRequestTransport } from '../../utils/network.js';
 import { markGhostifyHook, traceMessengerObservation, traceNetwork } from '../../utils/debug.js';
 import { createBlockedPayload } from '../../utils/responses.js';
 
@@ -11,8 +11,13 @@ export function hookFetch() {
 
     window.fetch = async function (input, init) {
         const url = getFetchUrl(input);
-        const body = await getFetchBody(input, init);
         const method = getFetchMethod(input, init);
+        const earlyBody = init && init.body !== undefined ? init.body : '';
+        if (shouldBypassNativeMessageRequestTransport(earlyBody, url, { method })) {
+            return originalFetch.apply(this, arguments);
+        }
+
+        const body = await getFetchBody(input, init);
         const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
         const inspectBody = sanitized.changed ? sanitized.data : body;
 
@@ -40,6 +45,10 @@ export function hookFetch() {
     if (typeof originalBeacon === 'function') {
         navigator.sendBeacon = function (url, data) {
             const fetchUrl = getFetchUrl(url);
+            if (shouldBypassNativeMessageRequestTransport(data, fetchUrl, { method: 'POST' })) {
+                return originalBeacon.apply(this, arguments);
+            }
+
             const sanitized = sanitizeMessengerNetworkPayload(data, fetchUrl, { method: 'POST' });
             const inspectData = sanitized.changed ? sanitized.data : data;
             const blockType = shouldBlock(inspectData, fetchUrl, { method: 'POST' });

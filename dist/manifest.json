@@ -11,7 +11,8 @@
     "host_permissions": [
         "https://*.instagram.com/*",
         "https://*.messenger.com/*",
-        "https://*.facebook.com/*"
+        "https://*.facebook.com/*",
+        "https://www.fbsbx.com/*"
     ],
     "background": {
         "service_worker": "background.js"
@@ -30,7 +31,8 @@
             "matches": [
                 "https://*.instagram.com/*",
                 "https://*.messenger.com/*",
-                "https://*.facebook.com/*"
+                "https://*.facebook.com/*",
+                "https://www.fbsbx.com/*"
             ],
             "js": [
                 "js/content.js"
@@ -43,7 +45,8 @@
         {
             "matches": [
                 "https://*.messenger.com/*",
-                "https://*.facebook.com/*"
+                "https://*.facebook.com/*",
+                "https://www.fbsbx.com/*"
             ],
             "js": [
                 "js/messenger_patch.js"
@@ -57,7 +60,8 @@
             "matches": [
                 "https://*.instagram.com/*",
                 "https://*.messenger.com/*",
-                "https://*.facebook.com/*"
+                "https://*.facebook.com/*",
+                "https://www.fbsbx.com/*"
             ],
             "js": [
                 "js/ghost.js"
@@ -76,7 +80,8 @@
             "matches": [
                 "https://*.instagram.com/*",
                 "https://*.messenger.com/*",
-                "https://*.facebook.com/*"
+                "https://*.facebook.com/*",
+                "https://www.fbsbx.com/*"
             ]
         }
     ]

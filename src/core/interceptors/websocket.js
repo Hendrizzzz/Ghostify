@@ -1,4 +1,4 @@
-import { sanitizeMessengerNetworkPayload, shouldBlock } from '../../utils/network.js';
+import { sanitizeMessengerNetworkPayload, shouldBlock, shouldBypassNativeMessageRequestTransport } from '../../utils/network.js';
 import { markGhostifyHook, traceMessengerObservation, traceNetwork } from '../../utils/debug.js';
 import { isMessengerDotCom } from '../../config.js';
 
@@ -28,6 +28,10 @@ export function hookWebSocket() {
     if (typeof originalPrototypeSend === 'function') {
         OriginalWebSocket.prototype.send = function (data) {
             const socketUrl = socketUrls.get(this) || this.url || '';
+            if (shouldBypassNativeMessageRequestTransport(data, socketUrl)) {
+                return originalPrototypeSend.apply(this, arguments);
+            }
+
             const inspected = inspectSend(data, socketUrl);
             if (inspected.drop) return;
             if (inspected.data !== data) return originalPrototypeSend.call(this, inspected.data);

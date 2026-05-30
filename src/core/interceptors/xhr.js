@@ -1,4 +1,4 @@
-import { sanitizeMessengerNetworkPayload, shouldBlock } from '../../utils/network.js';
+import { sanitizeMessengerNetworkPayload, shouldBlock, shouldBypassNativeMessageRequestTransport } from '../../utils/network.js';
 import { markGhostifyHook, traceMessengerObservation, traceNetwork } from '../../utils/debug.js';
 import { createBlockedPayload } from '../../utils/responses.js';
 
@@ -23,6 +23,10 @@ export function hookXHR() {
     XMLHttpRequest.prototype.send = function (body) {
         const url = this._ghostifyUrl || '';
         const method = this._ghostifyMethod || 'GET';
+        if (shouldBypassNativeMessageRequestTransport(body, url, { method })) {
+            return originalXhrSend.apply(this, arguments);
+        }
+
         const sanitized = sanitizeMessengerNetworkPayload(body, url, { method });
         const inspectBody = sanitized.changed ? sanitized.data : body;
         const blockType = shouldBlock(inspectBody, url, { method });
