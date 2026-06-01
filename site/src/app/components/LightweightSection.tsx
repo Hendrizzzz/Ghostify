@@ -56,13 +56,13 @@ export function LightweightSection() {
         aria-hidden
         style={{
           position: 'absolute',
-          bottom: -60,
-          right: -40,
+          bottom: 'clamp(28px, 7vw, 86px)',
+          right: 'clamp(28px, 6vw, 92px)',
           fontFamily: 'var(--g-display)',
-          fontSize: 'clamp(100px, 22vw, 260px)',
+          fontSize: 'clamp(86px, 17vw, 220px)',
           fontWeight: 700,
           fontStyle: 'italic',
-          color: 'rgba(240,230,210,0.018)',
+          color: 'rgba(240,230,210,0.014)',
           lineHeight: 0.85,
           userSelect: 'none',
           pointerEvents: 'none',

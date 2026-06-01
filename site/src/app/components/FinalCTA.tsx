@@ -15,7 +15,7 @@ export function FinalCTA() {
       <div aria-hidden style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', height: 380, background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(196,72,48,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Giant watermark */}
-      <div aria-hidden style={{ position: 'absolute', bottom: -80, right: -60, fontFamily: 'var(--g-display)', fontSize: 'clamp(140px, 26vw, 320px)', fontWeight: 700, fontStyle: 'italic', color: 'rgba(240,230,210,0.016)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
+      <div aria-hidden style={{ position: 'absolute', bottom: 'clamp(30px, 8vw, 96px)', right: 'clamp(24px, 5vw, 72px)', fontFamily: 'var(--g-display)', fontSize: 'clamp(96px, 18vw, 240px)', fontWeight: 700, fontStyle: 'italic', color: 'rgba(240,230,210,0.012)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
         quiet
       </div>
 

@@ -21,7 +21,7 @@ function dispatchMascot(type: string) {
 /* ── Cursor waypoints (% of browser container dims) ──── */
 const P = {
   rest:        { x: 60, y: 72 },
-  extIcon:     { x: 96, y: 10 },   // far-right tab bar, extension icon
+  extIcon:     { x: 96.4, y: 10 }, // far-right tab bar, extension icon
   msgTab:      { x: 9,  y: 10 },
   fbTab:       { x: 22, y: 10 },
   igTab:       { x: 34, y: 10 },
@@ -31,7 +31,7 @@ const P = {
   composer:    { x: 56, y: 95 },
   storyBubble: { x: 4,  y: 23 },   // first story circle in IG left rail
   chatArea:    { x: 56, y: 64 },
-  mfSeenToggle:{ x: 95, y: 44 },   // "Hide Seen" toggle in M/F popup group
+  mfSeenToggle:{ x: 95, y: 54 },   // "Hide Seen" toggle in M/F popup group
 } as const;
 
 /* ── Demo cursor ─────────────────────────────────────── */
@@ -65,8 +65,8 @@ function DemoCursor({ x, y, clickKey }: { x: number; y: number; clickKey: number
 /* ── Visual toggle (display-only, state-driven) ─────── */
 function PopupToggle({ on }: { on: boolean }) {
   return (
-    <div style={{ width: 32, height: 18, borderRadius: 9, background: on ? 'var(--g-accent)' : 'rgba(240,230,210,0.14)', position: 'relative', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', top: 3, left: on ? 15 : 3, width: 12, height: 12, borderRadius: 6, background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 0.18s ease' }} />
+    <div style={{ width: 32, height: 18, borderRadius: 9, backgroundColor: on ? 'var(--g-accent)' : 'rgba(240,230,210,0.14)', position: 'relative', flexShrink: 0, overflow: 'hidden', contain: 'paint', transition: 'background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+      <div style={{ position: 'absolute', top: 3, left: 3, width: 12, height: 12, borderRadius: 6, backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transform: on ? 'translate3d(14px, 0, 0)' : 'translate3d(0, 0, 0)', transition: 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1)', willChange: 'transform', backfaceVisibility: 'hidden' }} />
     </div>
   );
 }
@@ -173,11 +173,12 @@ const THREADS: Record<string, { them: boolean; text: string }[]> = {
 };
 
 function MessengerView({
-  activeChatId, typingText, unreadBadges,
+  activeChatId, typingText, unreadBadges, composerFocused,
 }: {
   activeChatId: string;
   typingText: string;
   unreadBadges: UnreadBadges;
+  composerFocused: boolean;
 }) {
   const activeChat = CHATS.find((c) => c.id === activeChatId) ?? CHATS[0];
   const messages = THREADS[activeChatId] ?? THREADS.alex;
@@ -261,8 +262,8 @@ function MessengerView({
         {/* Composer */}
         <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
           <div style={{ height: 34, borderRadius: 17, background: 'rgba(255,255,255,0.07)', padding: '0 13px', fontFamily: 'var(--g-sans)', fontSize: 12.5, color: typingText ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center' }}>
-            {typingText || 'Aa'}
-            {typingText && <span style={{ display: 'inline-block', width: 1, height: 14, background: '#0082FB', marginLeft: 1, animation: 'ghostBlink 1s ease-in-out infinite', verticalAlign: 'middle' }} />}
+            {typingText || (composerFocused ? '' : 'Aa')}
+            {(typingText || composerFocused) && <span style={{ display: 'inline-block', width: 1, height: 14, background: '#0082FB', marginLeft: typingText ? 1 : 0, animation: 'ghostBlink 1s ease-in-out infinite', verticalAlign: 'middle' }} />}
           </div>
         </div>
       </div>
@@ -305,7 +306,7 @@ function InstagramView({ showStory, igUnreadBadge, activeIgDm }: { showStory: bo
     { name: 'sol.r',    color: '#00BFA5' },
   ];
   const dms = [
-    { name: 'cami.v',   msg: 'you will not BELIEVE it', color: '#E1306C', unreadCount: 0 },
+    { name: 'cami.v',   msg: 'You: I\'m watching',      color: '#E1306C', unreadCount: 0 },
     { name: 'marco_p',  msg: 'ok I sent it',             color: '#FF6D00', unreadCount: 0 },
     { name: 'h.nakano', msg: 'wait did you see that??',  color: '#7C4DFF', unreadCount: 2 },
     { name: 'sol.r',    msg: 'omg no way',               color: '#00BFA5', unreadCount: 0 },
@@ -541,6 +542,7 @@ function HeroBrowserScene() {
   const [fbActiveChatId, setFbActiveChatId] = useState('claire');
   const [activeIgDm, setActiveIgDm]       = useState('cami.v');
   const [typingText, setTypingText]       = useState('');
+  const [composerFocused, setComposerFocused] = useState(false);
   const [showStory, setShowStory]         = useState(false);
   const [cursorPos, setCursorPos]         = useState(P.rest);
   const [clickKey, setClickKey]           = useState(0);
@@ -555,6 +557,7 @@ function HeroBrowserScene() {
     if (!heroVisible) {
       setPopupOpen(false);
       setTypingText('');
+      setComposerFocused(false);
       setShowStory(false);
       clearInterval(typingTimer.current);
       return;
@@ -590,6 +593,8 @@ function HeroBrowserScene() {
     // Deleting duration: 45 chars * 55ms = 2475ms
     const TYPING_MS  = TYPING_TEXT.length * 90;
     const DELETING_MS = TYPING_TEXT.length * 55;
+    const TYPING_START_AT = 10700;
+    const COMPOSER_FOCUS_AT = TYPING_START_AT - 400;
 
     function loop() {
       /* ── Full reset ─────────────────────────────────── */
@@ -599,6 +604,7 @@ function HeroBrowserScene() {
       setFbActiveChatId('claire');
       setActiveIgDm('cami.v');
       setTypingText('');
+      setComposerFocused(false);
       setShowStory(false);
       setCursorPos(P.rest);
       setMsControls({ seen: true, typing: true, story: true });
@@ -609,39 +615,45 @@ function HeroBrowserScene() {
       /* ── Beat 1: Open Ghostify popup ─────────────── */
       // Start on Jamie's chat (the fling), cursor moves to extension icon
       t(1200, () => setCursorPos(P.extIcon));
-      t(1900, () => { setPopupOpen(true); setClickKey(k => k + 1); });
+      t(2200, () => { setPopupOpen(true); setClickKey(k => k + 1); });
       // popup open ~2s — user sees all controls are ON
 
       /* ── Beat 2: Close popup, open Sofia's chat ──── */
       // Sofia = GF, 3 unread. Badge stays because Ghostify holds the receipt
       // Cursor is already at extIcon — click it again to dismiss the popup
-      t(3900, () => setClickKey(k => k + 1));          // click ext icon
-      t(4050, () => setPopupOpen(false));              // popup closes
-      t(4500, () => setCursorPos(P.chatArea));          // cursor drifts into chat area
-      t(5400, () => setCursorPos(P.sofiaChat));
-      t(6200, () => {
+      t(4200, () => setClickKey(k => k + 1));          // click ext icon
+      t(4350, () => setPopupOpen(false));              // popup closes
+      t(4800, () => setCursorPos(P.chatArea));          // cursor drifts into chat area
+      t(5700, () => setCursorPos(P.sofiaChat));
+      t(6500, () => {
         setActiveChatId('sofia');
         setClickKey(k => k + 1);
         dispatchMascot('chat-open'); // "seen stayed back."
       });
 
       /* ── Beat 3: Type then DELETE in Sofia's composer ─ */
-      t(9200, () => setCursorPos(P.composer));
-      t(10000, () => {
+      t(9500, () => setCursorPos(P.composer));
+      t(COMPOSER_FOCUS_AT, () => {
+        setComposerFocused(true);
+        setClickKey(k => k + 1);
+      });
+      t(TYPING_START_AT, () => {
+        setComposerFocused(true);
         startTyping(TYPING_TEXT, 90);
         dispatchMascot('typing'); // "typing stayed quiet."
       });
       // Typing finishes at ~10000 + TYPING_MS — pause before deleting
-      t(10000 + TYPING_MS + 1000, () => startDeleting(55));
+      t(TYPING_START_AT + TYPING_MS + 1000, () => startDeleting(55));
       // Deletion finishes — cursor rests, then after a beat moves to Instagram tab
-      t(10000 + TYPING_MS + DELETING_MS + 1400, () => {
+      t(TYPING_START_AT + TYPING_MS + DELETING_MS + 1400, () => {
         clearInterval(typingTimer.current);
         setTypingText('');
+        setComposerFocused(false);
         setCursorPos(P.chatArea); // rest in chat area first
       });
-      t(10000 + TYPING_MS + DELETING_MS + 2800, () => setCursorPos(P.igTab)); // then drift to tab
+      t(TYPING_START_AT + TYPING_MS + DELETING_MS + 2800, () => setCursorPos(P.igTab)); // then drift to tab
 
-      const afterDelete = 10000 + TYPING_MS + DELETING_MS + 3600;
+      const afterDelete = TYPING_START_AT + TYPING_MS + DELETING_MS + 3600;
 
       /* ── Beat 4: Instagram — click unread DM ──────── */
       t(afterDelete,        () => { setActivePlat('instagram'); setClickKey(k => k + 1); });
@@ -784,7 +796,7 @@ function HeroBrowserScene() {
         <AnimatePresence mode="wait">
           <motion.div key={activePlatform} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} style={{ height: '100%' }}>
             {activePlatform === 'messenger' && (
-              <MessengerView activeChatId={activeChatId} typingText={typingText} unreadBadges={unreadBadges} />
+              <MessengerView activeChatId={activeChatId} typingText={typingText} unreadBadges={unreadBadges} composerFocused={composerFocused} />
             )}
             {activePlatform === 'instagram' && (
               <InstagramView showStory={showStory} igUnreadBadge={igUnreadBadge} activeIgDm={activeIgDm} />

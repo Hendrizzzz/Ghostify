@@ -85,15 +85,15 @@ html, body {
 /* ─── Ghost float animation ─────────────────────────────────────── */
 @keyframes ghostFloat {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
-  30%       { transform: translateY(-6px) rotate(1.5deg); }
-  70%       { transform: translateY(-4px) rotate(-1deg); }
+  35%       { transform: translateY(-3px) rotate(0.45deg); }
+  72%       { transform: translateY(-2px) rotate(-0.3deg); }
 }
 
 @keyframes ghostOrbit {
   0%   { transform: translate(0, 0) rotate(0deg); }
-  25%  { transform: translate(10px, -6px) rotate(8deg); }
-  50%  { transform: translate(0, -12px) rotate(0deg); }
-  75%  { transform: translate(-10px, -6px) rotate(-8deg); }
+  25%  { transform: translate(6px, -4px) rotate(4deg); }
+  50%  { transform: translate(0, -7px) rotate(0deg); }
+  75%  { transform: translate(-6px, -4px) rotate(-4deg); }
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 

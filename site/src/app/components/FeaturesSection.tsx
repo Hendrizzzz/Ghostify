@@ -1,8 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GhostMark } from './GhostSVG';
 
 const H = '1px solid rgba(240,230,210,0.06)';
+const FEATURE_SCENE_HEIGHT = 170;
+
+function SceneStage({
+  children,
+  name,
+  align = 'flex-start',
+}: {
+  children: ReactNode;
+  name: string;
+  align?: 'flex-start' | 'center';
+}) {
+  return (
+    <div
+      data-feature-scene={name}
+      style={{
+        width: '100%',
+        height: FEATURE_SCENE_HEIGHT,
+        minHeight: FEATURE_SCENE_HEIGHT,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: align,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 /* ── Mini product evidence scenes ──────────────────────── */
 
@@ -25,14 +52,14 @@ function ReadScene() {
   }, []);
 
   return (
-    <div style={{ background: '#18202E', borderRadius: 10, overflow: 'hidden', maxWidth: 288, minHeight: 112, position: 'relative' }}>
+    <div style={{ background: '#18202E', borderRadius: 10, overflow: 'hidden', width: 'min(100%, 288px)', height: 164, position: 'relative', flexShrink: 0 }}>
       <AnimatePresence mode="wait">
         {phase === 'list' ? (
           <motion.div
             key="list"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}
+            style={{ position: 'absolute', inset: 0, height: '100%', boxSizing: 'border-box', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}
           >
             {[
               { name: 'Sofia 💕', preview: 'ok fine whatever 🙄', color: '#FF6D00', unread: 3, active: true },
@@ -54,7 +81,7 @@ function ReadScene() {
             key="thread"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}
+            style={{ position: 'absolute', inset: 0, height: '100%', boxSizing: 'border-box', padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}
           >
             {/* Matches Sofia's last 3 messages: she sent these while you were "online" */}
             <div style={{ alignSelf: 'flex-end', padding: '7px 11px', borderRadius: '14px 4px 14px 14px', background: '#0082FB', fontFamily: 'var(--g-sans)', fontSize: 12.5, color: 'white', lineHeight: 1.4 }}>
@@ -142,7 +169,7 @@ function StoryScene() {
   ];
 
   return (
-    <div style={{ maxWidth: 164, minHeight: 112, position: 'relative' }}>
+    <div style={{ width: 164, height: 112, position: 'relative', flexShrink: 0 }}>
       <AnimatePresence mode="wait">
         {phase === 'rings' ? (
           <motion.div key="rings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
@@ -228,15 +255,18 @@ function ExtensionScene() {
       {rows.map(row => (
         <div key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5.5px 12px' }}>
           <span style={{ fontFamily: 'var(--g-sans)', fontSize: 11, color: 'rgba(240,230,210,0.62)' }}>{row.label}</span>
-          <div style={{ width: 26, height: 15, borderRadius: 8, background: row.on ? '#C44830' : 'rgba(240,230,210,0.13)', position: 'relative', flexShrink: 0, transition: 'background 0.3s ease' }}>
+          <div style={{ width: 26, height: 16, borderRadius: 8, backgroundColor: row.on ? '#C44830' : 'rgba(240,230,210,0.13)', position: 'relative', flexShrink: 0, overflow: 'hidden', contain: 'paint', transition: 'background-color 0.48s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div
               style={{
-                position: 'absolute', top: 2.5,
-                left: row.on ? 13.5 : 2.5,   // always use `left` so CSS can animate it
+                position: 'absolute', top: 3,
+                left: 3,
                 width: 10, height: 10, borderRadius: 5,
-                background: 'white',
+                backgroundColor: 'white',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.28)',
-                transition: 'left 0.3s ease',
+                transform: row.on ? 'translate3d(10px, 0, 0)' : 'translate3d(0, 0, 0)',
+                transition: 'transform 0.48s cubic-bezier(0.16, 1, 0.3, 1)',
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
               }}
             />
           </div>
@@ -296,7 +326,9 @@ export function FeaturesSection() {
           transition={FT}
           style={{ padding: CELL_PAD, borderRight: H, display: 'flex', flexDirection: 'column', gap: 48, justifyContent: 'center' }}
         >
-          <ReadScene />
+          <SceneStage name="read">
+            <ReadScene />
+          </SceneStage>
           <FeatureCopy
             tag="read receipts"
             title="Hide read receipts"
@@ -316,7 +348,9 @@ export function FeaturesSection() {
             transition={{ ...FT, delay: 0.07 }}
             style={{ padding: CELL_PAD, borderBottom: H, display: 'flex', flexDirection: 'column', gap: 32, flex: 1, justifyContent: 'center' }}
           >
-            <TypingScene />
+            <SceneStage name="typing">
+              <TypingScene />
+            </SceneStage>
             <FeatureCopy
               tag="typing indicators"
               title="Pause typing indicators"
@@ -334,7 +368,9 @@ export function FeaturesSection() {
               transition={{ ...FT, delay: 0.14 }}
               style={{ padding: CELL_PAD, borderRight: H, display: 'flex', flexDirection: 'column', gap: 28, justifyContent: 'center' }}
             >
-              <StoryScene />
+              <SceneStage name="story">
+                <StoryScene />
+              </SceneStage>
               <FeatureCopy
                 tag="story views"
                 title="Reduce watch signals"
@@ -350,7 +386,9 @@ export function FeaturesSection() {
               transition={{ ...FT, delay: 0.21 }}
               style={{ padding: CELL_PAD, display: 'flex', flexDirection: 'column', gap: 28, justifyContent: 'center' }}
             >
-              <ExtensionScene />
+              <SceneStage name="extension">
+                <ExtensionScene />
+              </SceneStage>
               <FeatureCopy
                 tag="controls"
                 title="Toggle each signal"

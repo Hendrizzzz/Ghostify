@@ -15,8 +15,17 @@ const BOUNCE    = 0.26;
 const MIN_SPEED = 0.35;
 const GHOST_W   = 64;
 const GHOST_H   = 64;
-const GLIDE_K   = 0.055;
+const GLIDE_K   = 0.045;
 const BUBBLE_W  = 200;
+const IDLE_MESSAGE_MS = 5200;
+const IDLE_PROMPT_MS  = 14000;
+const IDLE_PHRASES = [
+  'No login. No cloud relay.',
+  'Read receipts stay local.',
+  'Typing indicators stay quiet.',
+  'Messenger, Facebook, Instagram.',
+  "move me. i'll settle.",
+];
 
 export function GhostMascot() {
   const [displayPos, setDisplayPos]   = useState({ x: -200, y: -200 });
@@ -34,8 +43,11 @@ export function GhostMascot() {
   const lastPointers  = useRef<{ x: number; y: number; t: number }[]>([]);
   const rafRef        = useRef<number>();
   const msgTimer      = useRef<ReturnType<typeof setTimeout>>();
+  const idleTimer     = useRef<ReturnType<typeof setInterval>>();
   const idlePhase     = useRef(Math.random() * Math.PI * 2);
   const idleT         = useRef(0);
+  const idlePhrase    = useRef(0);
+  const lastTouched   = useRef(Date.now());
   const ghostRef      = useRef<HTMLDivElement>(null);
 
   // Hold-center state
@@ -52,10 +64,17 @@ export function GhostMascot() {
     setBubbleBelow(py < 110);
   }, []);
 
-  const showMessage = useCallback((msg: string, duration = 3500) => {
+  const showMessage = useCallback((msg: string, duration = IDLE_MESSAGE_MS) => {
     clearTimeout(msgTimer.current);
     setMessage(msg);
     msgTimer.current = setTimeout(() => setMessage(null), duration);
+  }, []);
+
+  const heroIsVisible = useCallback(() => {
+    const hero = document.getElementById('hero');
+    if (!hero) return false;
+    const rect = hero.getBoundingClientRect();
+    return rect.top < window.innerHeight * 0.75 && rect.bottom > window.innerHeight * 0.2;
   }, []);
 
   const glideToCenter = useCallback(() => {
@@ -125,8 +144,8 @@ export function GhostMascot() {
         } else {
           // Idle drift — very slow
           idleT.current += 0.007;
-          const dx = Math.sin(idleT.current * 0.28 + idlePhase.current) * 0.18;
-          const dy = Math.cos(idleT.current * 0.19 + idlePhase.current + 1) * 0.12;
+          const dx = Math.sin(idleT.current * 0.22 + idlePhase.current) * 0.08;
+          const dy = Math.cos(idleT.current * 0.16 + idlePhase.current + 1) * 0.05;
           pos.current.x = Math.max(0, Math.min(window.innerWidth  - GHOST_W, pos.current.x + dx));
           pos.current.y = Math.max(0, Math.min(window.innerHeight - GHOST_H, pos.current.y + dy));
           vel.current = { x: 0, y: 0 };
@@ -151,9 +170,24 @@ export function GhostMascot() {
 
     return () => {
       clearTimeout(msgTimer.current);
+      clearInterval(idleTimer.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [tick, showMessage, updateBubblePos]);
+
+  useEffect(() => {
+    idleTimer.current = setInterval(() => {
+      if (isDragging.current || isHoldingCenter.current || heroIsVisible()) return;
+      if (Date.now() - lastTouched.current < IDLE_PROMPT_MS) return;
+
+      const phrase = IDLE_PHRASES[idlePhrase.current % IDLE_PHRASES.length];
+      idlePhrase.current += 1;
+      lastTouched.current = Date.now();
+      showMessage(phrase, IDLE_MESSAGE_MS);
+    }, 3000);
+
+    return () => clearInterval(idleTimer.current);
+  }, [heroIsVisible, showMessage]);
 
   // React to hero browser events
   useEffect(() => {
@@ -181,6 +215,7 @@ export function GhostMascot() {
   // Pointer drag
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
+    lastTouched.current = Date.now();
     isDragging.current = true;
     isHoldingCenter.current = false;
     dragOffset.current = { x: e.clientX - pos.current.x, y: e.clientY - pos.current.y };
@@ -205,15 +240,18 @@ export function GhostMascot() {
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging.current) return;
     isDragging.current = false;
+    lastTouched.current = Date.now();
     const pts = lastPointers.current;
+    let releasedSpeed = 0;
     if (pts.length >= 2) {
       const last = pts[pts.length - 1];
       const prev = pts[Math.max(0, pts.length - 3)];
       const dt = Math.max(last.t - prev.t, 16);
       vel.current = { x: ((last.x - prev.x) / dt) * 13, y: ((last.y - prev.y) / dt) * 13 };
+      releasedSpeed = Math.sqrt(vel.current.x * vel.current.x + vel.current.y * vel.current.y);
     }
     lastPointers.current = [];
-    showMessage("move me. i'll settle.", 2200);
+    showMessage(releasedSpeed > 0.9 ? 'nice throw.' : 'parked.', 4500);
   }, [showMessage]);
 
   if (!mounted) return null;
@@ -250,9 +288,21 @@ export function GhostMascot() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        style={{ position: 'fixed', left: displayPos.x, top: displayPos.y, width: GHOST_W, height: GHOST_H, zIndex: 10000, cursor: isDragging.current ? 'grabbing' : 'grab', touchAction: 'none', userSelect: 'none', willChange: 'transform' }}
+        style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          width: GHOST_W,
+          height: GHOST_H,
+          transform: `translate3d(${displayPos.x.toFixed(2)}px, ${displayPos.y.toFixed(2)}px, 0)`,
+          zIndex: 10000,
+          cursor: isDragging.current ? 'grabbing' : 'grab',
+          touchAction: 'none',
+          userSelect: 'none',
+          willChange: 'transform',
+        }}
       >
-        <div style={{ animation: isDancing ? 'ghostOrbit 0.65s ease-in-out 2.5' : isFlying ? 'none' : 'ghostFloat 4.5s ease-in-out infinite' }}>
+        <div style={{ animation: isDancing ? 'ghostOrbit 0.85s ease-in-out 2' : isFlying ? 'none' : 'ghostFloat 6.5s ease-in-out infinite' }}>
           <GhostSVG size={GHOST_W} style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.45)) drop-shadow(0 0 2px rgba(240,235,224,0.06))' }} />
         </div>
       </div>
