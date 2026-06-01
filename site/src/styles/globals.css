@@ -1,0 +1,144 @@
+/* ─── Ghostify Design Tokens ────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --g-bg:          #0B0A08;
+  --g-surface:     #141210;
+  --g-surface-2:   #1C1A16;
+  --g-surface-3:   #242019;
+  --g-border:      rgba(240, 230, 210, 0.07);
+  --g-border-dim:  rgba(240, 230, 210, 0.04);
+
+  /* Accent */
+  --g-accent:      #C44830;
+  --g-accent-dim:  #7A2E1A;
+  --g-accent-glow: rgba(196, 72, 48, 0.14);
+  --g-amber:       #C08040;
+
+  /* Text */
+  --g-white:       #F0EBE0;
+  --g-white-dim:   rgba(240, 235, 224, 0.7);
+  --g-body:        rgba(240, 235, 224, 0.5);
+  --g-dim:         rgba(240, 235, 224, 0.26);
+  --g-ghost-body:  #E8E2D6;
+
+  /* Fonts */
+  --g-display:     'Cormorant Garamond', Georgia, serif;
+  --g-sans:        'DM Sans', system-ui, sans-serif;
+  --g-mono:        'DM Mono', monospace;
+
+  /* Motion */
+  --g-fast:        140ms;
+  --g-base:        260ms;
+  --g-slow:        480ms;
+  --g-slower:      700ms;
+  --g-out:         cubic-bezier(0.16, 1, 0.3, 1);
+  --g-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-index layers */
+  --z-content:  1;
+  --z-raised:   10;
+  --z-nav:      200;
+  --z-popup:    300;
+  --z-modal:    1000;
+  --z-mascot:   9999;
+}
+
+/* ─── Global reset & body ───────────────────────────────────────── */
+html, body {
+  background-color: var(--g-bg);
+  color: var(--g-white);
+  font-family: var(--g-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar               { width: 6px; }
+::-webkit-scrollbar-track         { background: transparent; }
+::-webkit-scrollbar-thumb         { background: var(--g-surface-3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover   { background: var(--g-surface-2); }
+
+/* ─── Ghost font utility classes ────────────────────────────────── */
+.g-display { font-family: var(--g-display); }
+.g-mono    { font-family: var(--g-mono); }
+
+/* ─── Grain overlay (SVG noise via CSS) ─────────────────────────── */
+.grain-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+}
+
+/* ─── Luminous line helper ──────────────────────────────────────── */
+.luminous-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--g-border) 30%, var(--g-border) 70%, transparent);
+}
+
+/* ─── Ghost float animation ─────────────────────────────────────── */
+@keyframes ghostFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  30%       { transform: translateY(-6px) rotate(1.5deg); }
+  70%       { transform: translateY(-4px) rotate(-1deg); }
+}
+
+@keyframes ghostOrbit {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(10px, -6px) rotate(8deg); }
+  50%  { transform: translate(0, -12px) rotate(0deg); }
+  75%  { transform: translate(-10px, -6px) rotate(-8deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes ghostBlink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95%            { transform: scaleY(0.1); }
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-5px); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* ─── Scroll snap — desktop viewport chapters ───────────────────── */
+@media (min-width: 769px) {
+  html {
+    scroll-snap-type: y proximity;
+    scroll-padding-top: 60px;
+  }
+  .snap-start {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+  }
+}
+
+/* ─── Reduced motion ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
