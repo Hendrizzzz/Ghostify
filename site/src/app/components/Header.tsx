@@ -7,6 +7,74 @@ const navItems = [
   { label: 'Privacy', href: '#privacy', mobileLabel: 'Privacy' },
 ];
 
+let activeScrollFrame = 0;
+let restoreScrollBehavior: (() => void) | null = null;
+
+function cancelActiveScroll() {
+  cancelAnimationFrame(activeScrollFrame);
+  activeScrollFrame = 0;
+
+  if (restoreScrollBehavior) {
+    restoreScrollBehavior();
+    restoreScrollBehavior = null;
+  }
+}
+
+function smoothScrollTo(targetTop: number, nextUrl: string) {
+  cancelActiveScroll();
+
+  const maxScrollTop = document.documentElement.scrollHeight - window.innerHeight;
+  const endTop = Math.max(0, Math.min(targetTop, maxScrollTop));
+  const startTop = window.scrollY;
+  const distance = endTop - startTop;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (prefersReducedMotion || Math.abs(distance) < 1) {
+    window.scrollTo(0, endTop);
+    window.history.pushState(null, '', nextUrl);
+    return;
+  }
+
+  const html = document.documentElement;
+  const previousScrollBehavior = html.style.scrollBehavior;
+  html.style.scrollBehavior = 'auto';
+  restoreScrollBehavior = () => {
+    html.style.scrollBehavior = previousScrollBehavior;
+  };
+
+  const startedAt = performance.now();
+  const duration = Math.min(950, Math.max(680, Math.abs(distance) * 0.24));
+
+  const tick = (now: number) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = Math.sin((progress * Math.PI) / 2);
+
+    window.scrollTo(0, startTop + distance * eased);
+
+    if (progress < 1) {
+      activeScrollFrame = requestAnimationFrame(tick);
+      return;
+    }
+
+    window.scrollTo(0, endTop);
+    cancelActiveScroll();
+    window.history.pushState(null, '', nextUrl);
+  };
+
+  activeScrollFrame = requestAnimationFrame(tick);
+}
+
+function scrollToSection(href: string) {
+  const target = document.querySelector<HTMLElement>(href);
+  if (!target) {
+    return;
+  }
+
+  const scrollMarginTop = parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
+  const targetTop = target.getBoundingClientRect().top + window.scrollY - scrollMarginTop;
+  smoothScrollTo(targetTop, href);
+}
+
 export function Header() {
   return (
     <header
@@ -38,12 +106,17 @@ export function Header() {
         }}
       >
         {/* Logo + wordmark */}
-        <a
-          href="#hero"
+        <button
+          type="button"
+          onClick={() => smoothScrollTo(0, '/')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 9,
+            padding: 0,
+            border: 0,
+            background: 'transparent',
+            cursor: 'pointer',
             textDecoration: 'none',
             position: 'relative',
             zIndex: 1,
@@ -63,7 +136,7 @@ export function Header() {
           >
             Ghostify
           </span>
-        </a>
+        </button>
 
         {/* Nav links */}
         <nav
@@ -79,15 +152,20 @@ export function Header() {
           }}
         >
           {navItems.map((item) => (
-            <a
+            <button
               key={item.label}
-              href={item.href}
+              type="button"
               data-mobile-label={item.mobileLabel}
+              onClick={() => scrollToSection(item.href)}
               style={{
                 fontFamily: 'var(--g-sans)',
                 fontSize: 13.5,
                 fontWeight: 400,
                 color: 'rgba(240, 235, 224, 0.52)',
+                padding: 0,
+                border: 0,
+                background: 'transparent',
+                cursor: 'pointer',
                 textDecoration: 'none',
                 letterSpacing: '0.01em',
                 transition: 'color 0.18s ease',
@@ -100,7 +178,7 @@ export function Header() {
               }}
             >
               {item.label}
-            </a>
+            </button>
           ))}
           <a
             href="https://github.com/Hendrizzzz/Ghostify"
@@ -145,7 +223,8 @@ export function Header() {
           pointer-events: none;
           z-index: 0;
         }
-        .site-nav-frame > a,
+        .site-nav-frame > button,
+        .site-nav button,
         .site-nav a {
           min-height: 44px;
           display: inline-flex;
@@ -165,6 +244,7 @@ export function Header() {
             gap: 10px !important;
             padding-left: 12px !important;
           }
+          .site-nav button,
           .site-nav a {
             font-size: 12px !important;
           }
@@ -177,15 +257,16 @@ export function Header() {
             gap: 5px !important;
             padding-left: 8px !important;
           }
+          .site-nav button,
           .site-nav a {
             justify-content: center !important;
           }
-          .site-nav a[data-mobile-label] {
+          .site-nav button[data-mobile-label] {
             min-width: 44px !important;
             padding: 0 3px !important;
             font-size: 0 !important;
           }
-          .site-nav a[data-mobile-label]::before {
+          .site-nav button[data-mobile-label]::before {
             content: attr(data-mobile-label);
             font-size: 11px;
             line-height: 1;
@@ -206,18 +287,18 @@ export function Header() {
             gap: 2px !important;
             padding-left: 4px !important;
           }
-          .site-nav a[data-mobile-label] {
+          .site-nav button[data-mobile-label] {
             padding: 0 2px !important;
           }
-          .site-nav a[data-mobile-label]::before {
+          .site-nav button[data-mobile-label]::before {
             font-size: 10.5px;
           }
         }
         @media (max-width: 340px) {
-          .site-nav-frame > a {
+          .site-nav-frame > button {
             min-width: 44px !important;
           }
-          .site-nav-frame > a span {
+          .site-nav-frame > button span {
             display: none !important;
           }
         }
