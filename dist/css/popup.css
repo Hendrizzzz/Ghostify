@@ -57,10 +57,26 @@ a {
 .header {
     display: flex;
     align-items: center;
-    gap: 9px;
     height: 52px;
     padding: 0 16px;
     border-bottom: 1px solid var(--ghost-line);
+}
+
+.brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    border-radius: 6px;
+}
+
+.brand-link:hover h1,
+.brand-link:focus-visible h1 {
+    color: #ffffff;
+}
+
+.brand-link:focus-visible {
+    outline: 2px solid rgba(229, 9, 20, 0.65);
+    outline-offset: 4px;
 }
 
 .header-icon {
@@ -403,6 +419,8 @@ input:checked:active + .track::before {
 .footer {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     height: 34px;
     padding: 0 14px;
     color: #5a5856;
@@ -411,4 +429,22 @@ input:checked:active + .track::before {
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.03em;
+}
+
+.support-link {
+    color: #9a918e;
+    border-radius: 5px;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+.support-link:hover,
+.support-link:focus-visible {
+    color: var(--ghost-text);
+    outline: none;
+}
+
+.support-link:focus-visible {
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.65);
 }

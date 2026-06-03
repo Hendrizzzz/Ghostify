@@ -3281,6 +3281,52 @@ function testPopupMessengerSeenNoteExplainsLocalFacebookReadUi() {
     );
 }
 
+function testPopupSupportLinksUseGuidedIssueForms() {
+    const popupHtml = fs.readFileSync('dist/popup.html', 'utf8');
+    const websiteUrl = 'https://ghostify-extension.vercel.app/';
+    const issueChooserUrl = 'https://github.com/Hendrizzzz/Ghostify/issues/new/choose';
+    const issueTemplateFiles = [
+        '.github/ISSUE_TEMPLATE/config.yml',
+        '.github/ISSUE_TEMPLATE/bug_report.yml',
+        '.github/ISSUE_TEMPLATE/platform_update.yml',
+        '.github/ISSUE_TEMPLATE/feature_request.yml'
+    ];
+
+    assert(
+        popupHtml.includes(`href="${websiteUrl}"`) &&
+        popupHtml.includes('aria-label="Open the Ghostify website"'),
+        'Popup brand should open the Ghostify website when clicked'
+    );
+    assert(
+        popupHtml.includes(`href="${issueChooserUrl}"`) &&
+        popupHtml.includes('Report issue'),
+        'Popup should send users to guided GitHub issue forms instead of a blank issue draft'
+    );
+
+    for (const file of issueTemplateFiles) {
+        assert(fs.existsSync(file), `${file} should exist so users are guided before filing reports`);
+    }
+
+    const issueTemplateConfig = fs.readFileSync('.github/ISSUE_TEMPLATE/config.yml', 'utf8');
+    assert(
+        issueTemplateConfig.includes('blank_issues_enabled: false'),
+        'GitHub blank issues should be disabled so users do not draft from scratch'
+    );
+
+    const forms = issueTemplateFiles
+        .filter(file => file.endsWith('.yml') && !file.endsWith('config.yml'))
+        .map(file => fs.readFileSync(file, 'utf8'));
+    assert(
+        forms.every(form =>
+            form.includes('type: dropdown') &&
+            form.includes('type: textarea') &&
+            form.includes('id: public-thanks') &&
+            form.includes('Can we thank you publicly if this helps a fix?')
+        ),
+        'Guided issue forms should collect structured details and public-thanks consent'
+    );
+}
+
 async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     const messengerWindow = makeGhostPage({
         hostname: 'www.messenger.com',
@@ -3419,6 +3465,7 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookNestedMessageRequestClicksTemporarilyRestoreNativeFocus();
     testFacebookNormalConversationClicksDoNotInheritSiblingMessageRequestText();
     testPopupMessengerSeenNoteExplainsLocalFacebookReadUi();
+    testPopupSupportLinksUseGuidedIssueForms();
     await testMessageRequestClickGraceKeepsTransportAndBridgeNative();
     console.log('messenger send-stability regression tests passed');
 })().catch(error => {

@@ -1,0 +1,81 @@
+name: Platform update broke something
+description: Report when Facebook, Messenger, or Instagram changed and a Ghostify control needs an update.
+title: "[Platform update]: "
+labels: ["platform-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Platforms change often. A clear report helps us confirm what changed and keep Ghostify working.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Facebook
+        - Messenger
+        - Instagram
+        - Multiple platforms
+    validations:
+      required: true
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature affected
+      options:
+        - Hide Seen
+        - Hide Typing
+        - Hide Story Views
+        - Message Requests
+        - Page loading or chat loading
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: What changed?
+      description: Describe the new behavior or UI change you noticed.
+      placeholder: Example: Facebook now opens message requests from a new row in the Messenger popover.
+    validations:
+      required: true
+  - type: textarea
+    id: confirmed-behavior
+    attributes:
+      label: How did you confirm it?
+      description: Include refresh checks, another browser profile, or Messenger/Facebook cross-checks if relevant.
+      placeholder: Example: After refreshing facebook.com, the chat was still unread, but the current page made it appear read.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: Chrome 125, Edge 125, Opera GX, etc.
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Ghostify version
+      placeholder: Example: v2.0.1
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recording
+      description: Optional, but very helpful for platform UI changes.
+    validations:
+      required: false
+  - type: dropdown
+    id: public-thanks
+    attributes:
+      label: Can we thank you publicly if this helps a fix?
+      description: This is optional and only used for future community thanks.
+      options:
+        - No thanks
+        - GitHub username only
+        - Name and GitHub avatar
+    validations:
+      required: true
