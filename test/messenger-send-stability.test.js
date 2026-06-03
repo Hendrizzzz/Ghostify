@@ -3258,7 +3258,7 @@ function testFacebookNormalConversationClicksDoNotInheritSiblingMessageRequestTe
 function testPopupMessengerSeenNoteExplainsLocalFacebookReadUi() {
     const popupHtml = fs.readFileSync('dist/popup.html', 'utf8');
     const popupCss = fs.readFileSync('dist/css/popup.css', 'utf8');
-    const note = 'Facebook may show chats as read here. Ghostify still blocks Seen; refresh to confirm.';
+    const note = 'Ghostify is working. Facebook may only make chats appear read here; Seen stays blocked.';
 
     assert(
         popupHtml.includes(note),
