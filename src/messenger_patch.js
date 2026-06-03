@@ -1591,6 +1591,125 @@
         return typeof value === 'number' ? Number(safe) : safe;
     }
 
+    function shouldPreserveFacebookUnreadUiState() {
+        if (!isFacebookDotCom || isMessengerDotCom || isFacebookMessengerProxy) return false;
+        if (!window.__ghostify_shouldBlockMessengerSeen()) return false;
+        if (hasNativeMessageRequestBypass() || isCurrentMessageRequestSurface()) return false;
+
+        return Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now();
+    }
+
+    function shouldKeepExistingFacebookUnreadField(record, key, nextValue) {
+        if (!shouldPreserveFacebookUnreadUiState()) return false;
+        if (!record || typeof record !== 'object') return false;
+        if (!Object.prototype.hasOwnProperty.call(record, key)) return false;
+        if (!isRecordCurrentlyUnread(record)) return false;
+
+        const normalizedKey = normalizeBridgeKey(key);
+        if (isUnreadStateKey(normalizedKey)) return isUnreadClearedValue(nextValue);
+        if (isReadStateKey(normalizedKey)) return isReadStateValue(nextValue);
+        if (isReadWatermarkKey(normalizedKey)) return isLikelyReadWatermarkValue(nextValue);
+        return false;
+    }
+
+    function sanitizeFacebookUnreadRecordPatch(patch, existingRecord) {
+        if (!patch || typeof patch !== 'object' || !existingRecord || typeof existingRecord !== 'object') {
+            return patch;
+        }
+        if (!shouldPreserveFacebookUnreadUiState() || !isRecordCurrentlyUnread(existingRecord)) {
+            return patch;
+        }
+
+        let clone = null;
+        for (const key of Object.keys(patch)) {
+            if (shouldKeepExistingFacebookUnreadField(existingRecord, key, patch[key])) {
+                if (!clone) clone = Object.assign({}, patch);
+                clone[key] = existingRecord[key];
+            }
+        }
+        return clone || patch;
+    }
+
+    function isRecordCurrentlyUnread(record) {
+        if (!record || typeof record !== 'object') return false;
+
+        for (const key of Object.keys(record)) {
+            const normalizedKey = normalizeBridgeKey(key);
+            const value = record[key];
+            if (isUnreadStateKey(normalizedKey) && isUnreadPresentValue(value)) return true;
+            if (isReadStateKey(normalizedKey) && isUnreadReadStateValue(value)) return true;
+        }
+
+        return false;
+    }
+
+    function isUnreadStateKey(key) {
+        return key === 'isunread' ||
+            key === 'unread' ||
+            key === 'hasunread' ||
+            key === 'unreadcount' ||
+            key === 'unreadmessagecount' ||
+            key === 'unreadmessagescount' ||
+            key === 'unseencount' ||
+            key === 'unseenmessagecount' ||
+            key === 'unseenmessagescount';
+    }
+
+    function isReadStateKey(key) {
+        return key === 'isread' ||
+            key === 'read' ||
+            key === 'seen' ||
+            key === 'seenbyviewer';
+    }
+
+    function isUnreadPresentValue(value) {
+        if (value === true) return true;
+        if (typeof value === 'number') return Number.isFinite(value) && value > 0;
+        if (typeof value === 'string') {
+            const normalized = value.trim().toLowerCase();
+            if (normalized === 'true' || normalized === 'unread' || normalized === 'has_unread') return true;
+            if (/^\d+$/.test(normalized)) return Number(normalized) > 0;
+        }
+        return false;
+    }
+
+    function isUnreadClearedValue(value) {
+        if (value === false || value === 0 || value == null) return true;
+        if (typeof value === 'string') {
+            const normalized = value.trim().toLowerCase();
+            return normalized === 'false' ||
+                normalized === '0' ||
+                normalized === 'read' ||
+                normalized === 'seen' ||
+                normalized === '';
+        }
+        return false;
+    }
+
+    function isReadStateValue(value) {
+        if (value === true || value === 1) return true;
+        if (typeof value === 'string') {
+            const normalized = value.trim().toLowerCase();
+            return normalized === 'true' ||
+                normalized === '1' ||
+                normalized === 'read' ||
+                normalized === 'seen';
+        }
+        return false;
+    }
+
+    function isUnreadReadStateValue(value) {
+        if (value === false || value === 0 || value == null) return true;
+        if (typeof value === 'string') {
+            const normalized = value.trim().toLowerCase();
+            return normalized === 'false' ||
+                normalized === '0' ||
+                normalized === 'unread' ||
+                normalized === '';
+        }
+        return false;
+    }
+
     function isTruthyPrivacyValue(value) {
         if (value === true || value === 1) return true;
         if (typeof value === 'string') {
@@ -2031,6 +2150,89 @@
         return value;
     }
 
+    function wrapFacebookUnreadRecordFunction(fn, kind) {
+        if (typeof fn !== 'function') return fn;
+        if (fn.__ghostifyUnreadRecordWrapped) return fn;
+
+        const wrapped = function (...args) {
+            if (kind === 'setValue' && args.length >= 3) {
+                const [record, storageKey, nextValue] = args;
+                if (shouldKeepExistingFacebookUnreadField(record, storageKey, nextValue)) {
+                    window.__GHOSTIFY_PRESERVED_UNREAD_UI_WRITES__ = (window.__GHOSTIFY_PRESERVED_UNREAD_UI_WRITES__ || 0) + 1;
+                    const safeArgs = args.slice();
+                    safeArgs[2] = record[storageKey];
+                    return fn.apply(this, safeArgs);
+                }
+            }
+
+            if (kind === 'copyFields' && args.length >= 2) {
+                const [source, sink] = args;
+                const sanitizedSource = sanitizeFacebookUnreadRecordPatch(source, sink);
+                if (sanitizedSource !== source) {
+                    window.__GHOSTIFY_PRESERVED_UNREAD_UI_WRITES__ = (window.__GHOSTIFY_PRESERVED_UNREAD_UI_WRITES__ || 0) + 1;
+                    const safeArgs = args.slice();
+                    safeArgs[0] = sanitizedSource;
+                    return fn.apply(this, safeArgs);
+                }
+            }
+
+            if (kind === 'update' && args.length >= 2) {
+                const [previousRecord, nextRecord] = args;
+                const sanitizedNextRecord = sanitizeFacebookUnreadRecordPatch(nextRecord, previousRecord);
+                if (sanitizedNextRecord !== nextRecord) {
+                    window.__GHOSTIFY_PRESERVED_UNREAD_UI_WRITES__ = (window.__GHOSTIFY_PRESERVED_UNREAD_UI_WRITES__ || 0) + 1;
+                    const safeArgs = args.slice();
+                    safeArgs[1] = sanitizedNextRecord;
+                    return fn.apply(this, safeArgs);
+                }
+            }
+
+            return fn.apply(this, args);
+        };
+
+        try {
+            Object.defineProperty(wrapped, '__ghostifyUnreadRecordWrapped', {
+                value: true,
+                configurable: true
+            });
+        } catch (e) { }
+
+        return wrapped;
+    }
+
+    function wrapFacebookUnreadRecordExport(value) {
+        if (!value || typeof value !== 'object') return value;
+
+        const methodKinds = {
+            setValue: 'setValue',
+            copyFields: 'copyFields',
+            update: 'update'
+        };
+
+        for (const [key, kind] of Object.entries(methodKinds)) {
+            if (typeof value[key] !== 'function') continue;
+            try {
+                value[key] = wrapFacebookUnreadRecordFunction(value[key], kind);
+            } catch (e) { }
+        }
+
+        return value;
+    }
+
+    function patchFacebookUnreadRecordExports(factoryArgs) {
+        for (const candidate of factoryArgs) {
+            if (!isPatchableExportContainer(candidate)) continue;
+
+            if ('exports' in candidate) {
+                try {
+                    candidate.exports = wrapFacebookUnreadRecordExport(candidate.exports);
+                } catch (e) { }
+            }
+
+            wrapFacebookUnreadRecordExport(candidate);
+        }
+    }
+
     function hasReadReceiptExport(value) {
         if (typeof value === 'function') return isReadReceiptExportName(value.name);
         if (!value || typeof value !== 'object') return false;
@@ -2281,6 +2483,11 @@
         'UpdateLastReadWatermark',
         'UpdateThreadReadWatermark'
     ].forEach(name => registerExportCallback(name, sanitizeReadReceiptExports));
+
+    [
+        'RelayModernRecord',
+        'RelayRecord'
+    ].forEach(name => registerExportCallback(name, patchFacebookUnreadRecordExports));
 
     function applyExportCallbacks(factoryArgs, moduleName) {
         for (const [pattern, callbacks] of Object.entries(exportCallbacks)) {

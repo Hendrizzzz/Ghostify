@@ -1832,6 +1832,173 @@ function testFacebookLocalReadModulesRewriteNestedWatermarksToPreserveUnreadUi()
     assert.strictEqual(context.window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0, 0);
 }
 
+function testFacebookRelayRecordWritesPreserveUnreadUiDuringConversationOpen() {
+    const context = makeMessengerPatchPage({}, {
+        hostname: 'www.facebook.com',
+        pathname: '/',
+        href: 'https://www.facebook.com/',
+        facebookMessengerPopoverOpen: true
+    });
+    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
+
+    const module = registerMessengerModule(
+        context,
+        'RelayModernRecord',
+        function (_a, _b, _c, _d, moduleObject) {
+            moduleObject.exports = {
+                setValue(record, storageKey, value) {
+                    record[storageKey] = value;
+                    return 'set';
+                },
+                copyFields(source, sink) {
+                    Object.assign(sink, source);
+                    return 'copied';
+                },
+                update(prevRecord, nextRecord) {
+                    return { ...prevRecord, ...nextRecord };
+                }
+            };
+        }
+    );
+
+    const selectedUnreadRecord = {
+        __id: 'thread:redacted',
+        is_unread: true,
+        unread_count: 1,
+        is_read: false,
+        last_read_watermark: 1779530000000,
+        selected: false
+    };
+
+    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'is_unread', false), 'set');
+    assert.strictEqual(
+        selectedUnreadRecord.is_unread,
+        true,
+        'Relay record writes must not flip an existing unread Facebook thread to read during conversation open'
+    );
+
+    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'unread_count', 0), 'set');
+    assert.strictEqual(
+        selectedUnreadRecord.unread_count,
+        1,
+        'Relay record writes must preserve the existing unread count during conversation open'
+    );
+
+    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'is_read', true), 'set');
+    assert.strictEqual(
+        selectedUnreadRecord.is_read,
+        false,
+        'Relay record writes must not flip an existing unread Facebook thread to is_read=true during conversation open'
+    );
+
+    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'selected', true), 'set');
+    assert.strictEqual(
+        selectedUnreadRecord.selected,
+        true,
+        'Relay record writes unrelated to read state must still apply so the selected row remains real Facebook UI'
+    );
+
+    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'last_read_watermark', 1779539999999), 'set');
+    assert.strictEqual(
+        selectedUnreadRecord.last_read_watermark,
+        1779530000000,
+        'Relay record writes must not advance the local read watermark during conversation open'
+    );
+
+    const copiedUnreadRecord = {
+        __id: 'thread:redacted-copy',
+        is_unread: true,
+        unread_count: 2,
+        is_read: false,
+        last_read_watermark: 1779530000000,
+        name: 'DOST Scholars'
+    };
+    assert.strictEqual(
+        module.exports.copyFields({
+            is_unread: false,
+            unread_count: 0,
+            is_read: true,
+            last_read_watermark: 1779539999999,
+            name: 'DOST Scholars (SLU Juniors)'
+        }, copiedUnreadRecord),
+        'copied'
+    );
+    assert.strictEqual(copiedUnreadRecord.is_unread, true);
+    assert.strictEqual(copiedUnreadRecord.unread_count, 2);
+    assert.strictEqual(copiedUnreadRecord.is_read, false);
+    assert.strictEqual(copiedUnreadRecord.last_read_watermark, 1779530000000);
+    assert.strictEqual(
+        copiedUnreadRecord.name,
+        'DOST Scholars (SLU Juniors)',
+        'Relay copyFields must still apply unrelated thread-list updates'
+    );
+
+    const updatedUnreadRecord = module.exports.update({
+        __id: 'thread:redacted-update',
+        is_unread: true,
+        unread_count: 1,
+        is_read: false
+    }, {
+        is_unread: false,
+        unread_count: 0,
+        is_read: true,
+        selected: true
+    });
+    assert.strictEqual(updatedUnreadRecord.is_unread, true);
+    assert.strictEqual(updatedUnreadRecord.unread_count, 1);
+    assert.strictEqual(updatedUnreadRecord.is_read, false);
+    assert.strictEqual(updatedUnreadRecord.selected, true);
+
+    const alreadyReadRecord = {
+        __id: 'thread:already-read',
+        is_unread: false,
+        unread_count: 0,
+        is_read: true
+    };
+    assert.strictEqual(module.exports.setValue(alreadyReadRecord, 'is_unread', false), 'set');
+    assert.strictEqual(
+        alreadyReadRecord.is_unread,
+        false,
+        'Relay read-state preservation must not invent unread state for already-read rows'
+    );
+}
+
+function testFacebookRelayRecordWritesAreNativeOutsideConversationOpen() {
+    const context = makeMessengerPatchPage({}, {
+        hostname: 'www.facebook.com',
+        pathname: '/',
+        href: 'https://www.facebook.com/',
+        facebookMessengerPopoverOpen: true
+    });
+
+    const module = registerMessengerModule(
+        context,
+        'RelayModernRecord',
+        function (_a, _b, _c, _d, moduleObject) {
+            moduleObject.exports = {
+                setValue(record, storageKey, value) {
+                    record[storageKey] = value;
+                    return 'set';
+                }
+            };
+        }
+    );
+
+    const unreadRecord = {
+        __id: 'thread:redacted',
+        is_unread: true,
+        unread_count: 1,
+        is_read: false
+    };
+
+    assert.strictEqual(module.exports.setValue(unreadRecord, 'is_unread', false), 'set');
+    assert.strictEqual(
+        unreadRecord.is_unread,
+        false,
+        'Relay record writes outside a conversation-open preserve window must keep native Facebook behavior'
+    );
+}
+
 function testFacebookMessageRequestGraceLeavesLocalReadModulesUntouched() {
     const context = makeMessengerPatchPage({}, {
         hostname: 'www.facebook.com',
@@ -2777,6 +2944,10 @@ function testFacebookUnreadFeedMessageClicksKeepDocumentVisibleForThreadLoading(
         4,
         'Opening a Facebook feed Messenger row must keep loader focus events flowing even while hasFocus is spoofed'
     );
+    assert(
+        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
+        'Opening an unread Facebook feed Messenger row must open a short unread-UI preserve window'
+    );
     page.facebookMessengerPopoverOpen = false;
     window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ = Date.now() + 30000;
     assert.strictEqual(
@@ -2836,6 +3007,37 @@ function testFacebookUnreadFeedMessageChildClicksKeepDocumentVisibleForThreadLoa
         countDeliveredFocusEvents(window),
         4,
         'Unread child clicks must not suppress focus events needed by history hydration'
+    );
+    assert(
+        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
+        'Unread child clicks must open the unread-UI preserve window'
+    );
+}
+
+function testFacebookMessagesPageConversationClicksPreserveUnreadUi() {
+    const window = makeGhostPage({
+        hostname: 'www.facebook.com',
+        pathname: '/messages',
+        href: 'https://www.facebook.com/messages'
+    });
+    assert.strictEqual(window.document.hasFocus(), false);
+
+    window.document.dispatchEvent({
+        type: 'click',
+        target: createRequestClickTarget({
+            href: '/messages/e2ee/t/redacted-thread',
+            label: 'DOST Scholars (SLU Juniors) Ian sent a photo. 18h'
+        })
+    });
+
+    assert(
+        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
+        'Facebook /messages conversation links must open a preserve-unread window for optimistic thread-list updates'
+    );
+    assert.strictEqual(
+        window.document.hasFocus(),
+        false,
+        'Facebook /messages conversation links must remain unfocused for read privacy'
     );
 }
 
@@ -3254,13 +3456,17 @@ function testFacebookNormalConversationClicksDoNotInheritSiblingMessageRequestTe
     );
     assert.strictEqual(
         facebookFocusSignals,
-        0,
-        'Normal Facebook conversation clicks must not open request-loader focus grace from sibling request text'
+        3,
+        'Normal Facebook conversation clicks may emit loader signals through the conversation-open path'
     );
     assert.strictEqual(
         Number(facebookWindow.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0) > Date.now(),
         false,
         'Normal Facebook conversation clicks must not activate message-request native grace'
+    );
+    assert(
+        Number(facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
+        'Normal Facebook conversation clicks must activate preserve-unread UI grace instead of request grace'
     );
 }
 
@@ -3370,6 +3576,8 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookFeedMiniChatLocalReadModulesSanitizeReadReceiptsWithoutBlockingHistoryLoading();
     testFacebookFeedMiniChatStaleLocalReadModulesSanitizeReadReceiptsWithoutBlockingHistoryLoading();
     testFacebookLocalReadModulesRewriteNestedWatermarksToPreserveUnreadUi();
+    testFacebookRelayRecordWritesPreserveUnreadUiDuringConversationOpen();
+    testFacebookRelayRecordWritesAreNativeOutsideConversationOpen();
     testFacebookMessageRequestGraceLeavesLocalReadModulesUntouched();
     testFacebookMessageRequestGraceBypassesStaleLocalReadWrappersAtCallTime();
     testFacebookMawProxyLocalReadModulesAreSanitized();
@@ -3394,6 +3602,7 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookFeedMessengerSurfacesSpoofFocusPassivelyForReadPrivacyAndLoaders();
     testFacebookUnreadFeedMessageClicksKeepDocumentVisibleForThreadLoading();
     testFacebookUnreadFeedMessageChildClicksKeepDocumentVisibleForThreadLoading();
+    testFacebookMessagesPageConversationClicksPreserveUnreadUi();
     testInstagramMediaSurfacesDoNotSpoofFocus();
     testMessageRequestRoutesDoNotSuppressFocusEvents();
     testMawProxyRejectsUntrustedMessageRequestGrace();

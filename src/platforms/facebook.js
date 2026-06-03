@@ -3,6 +3,7 @@ import { SETTINGS, isKilled } from '../config.js';
 const REQUEST_NATIVE_GRACE_MS = 15000;
 const ROOT_NATIVE_GRACE_MS = 30000;
 const CHAT_OPEN_NATIVE_GRACE_MS = 4000;
+const CHAT_OPEN_UNREAD_UI_GRACE_MS = 15000;
 
 export function startFacebookProtection() {
     if (window.__GHOSTIFY_FACEBOOK_PROTECTION__) return;
@@ -20,7 +21,7 @@ export function startFacebookProtection() {
     };
     const markConversationOpenIntent = (event) => {
         if (isFacebookMessageRequestNavigationTarget(event?.target)) return;
-        if (isFacebookFeedConversationNavigationTarget(event?.target)) {
+        if (isFacebookConversationNavigationTarget(event?.target)) {
             activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS);
         }
     };
@@ -70,6 +71,10 @@ function activateChatOpenNativeGrace(until) {
     window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Math.max(
         Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0),
         until
+    );
+    window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Math.max(
+        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0),
+        Date.now() + CHAT_OPEN_UNREAD_UI_GRACE_MS
     );
     emitNativeFocusSignals();
 }
@@ -131,10 +136,7 @@ function isFacebookMessageRequestNavigationTarget(target) {
     return false;
 }
 
-function isFacebookFeedConversationNavigationTarget(target) {
-    if (!isFacebookFeedRootRoute()) return false;
-    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
-
+function isFacebookConversationNavigationTarget(target) {
     const element = getClosestRequestElement(target);
     if (!element) return false;
 
@@ -142,9 +144,17 @@ function isFacebookFeedConversationNavigationTarget(target) {
     const label = getElementContextText(element).toLowerCase();
     if (!label && !href) return false;
 
-    return href.includes('/messages/t/') ||
+    if (href.includes('/messages/t/') ||
         href.includes('/messages/e2ee/t/') ||
-        label.includes('unread message:') ||
+        label.includes('/messages/t/') ||
+        label.includes('/messages/e2ee/t/')) {
+        return true;
+    }
+
+    if (!isFacebookFeedRootRoute()) return false;
+    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
+
+    return label.includes('unread message:') ||
         label.includes('active now') ||
         /\b(?:now|\d+\s*[mhdw])\b/.test(label);
 }

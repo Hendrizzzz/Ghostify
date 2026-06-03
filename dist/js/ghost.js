@@ -2466,6 +2466,7 @@
   var REQUEST_NATIVE_GRACE_MS = 15e3;
   var ROOT_NATIVE_GRACE_MS = 3e4;
   var CHAT_OPEN_NATIVE_GRACE_MS = 4e3;
+  var CHAT_OPEN_UNREAD_UI_GRACE_MS = 15e3;
   function startFacebookProtection() {
     if (window.__GHOSTIFY_FACEBOOK_PROTECTION__) return;
     window.__GHOSTIFY_FACEBOOK_PROTECTION__ = true;
@@ -2480,7 +2481,7 @@
     };
     const markConversationOpenIntent = (event) => {
       if (isFacebookMessageRequestNavigationTarget(event == null ? void 0 : event.target)) return;
-      if (isFacebookFeedConversationNavigationTarget(event == null ? void 0 : event.target)) {
+      if (isFacebookConversationNavigationTarget(event == null ? void 0 : event.target)) {
         activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS);
       }
     };
@@ -2523,6 +2524,10 @@
     window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Math.max(
       Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0),
       until
+    );
+    window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Math.max(
+      Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0),
+      Date.now() + CHAT_OPEN_UNREAD_UI_GRACE_MS
     );
     emitNativeFocusSignals();
   }
@@ -2571,15 +2576,18 @@
     }
     return false;
   }
-  function isFacebookFeedConversationNavigationTarget(target) {
-    if (!isFacebookFeedRootRoute()) return false;
-    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
+  function isFacebookConversationNavigationTarget(target) {
     const element = getClosestRequestElement(target);
     if (!element) return false;
     const href = getElementAttribute(element, "href");
     const label = getElementContextText(element).toLowerCase();
     if (!label && !href) return false;
-    return href.includes("/messages/t/") || href.includes("/messages/e2ee/t/") || label.includes("unread message:") || label.includes("active now") || /\b(?:now|\d+\s*[mhdw])\b/.test(label);
+    if (href.includes("/messages/t/") || href.includes("/messages/e2ee/t/") || label.includes("/messages/t/") || label.includes("/messages/e2ee/t/")) {
+      return true;
+    }
+    if (!isFacebookFeedRootRoute()) return false;
+    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
+    return label.includes("unread message:") || label.includes("active now") || /\b(?:now|\d+\s*[mhdw])\b/.test(label);
   }
   function getClosestRequestElement(target) {
     if (!target || typeof target !== "object") return null;
