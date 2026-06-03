@@ -21,8 +21,9 @@ export function startFacebookProtection() {
     };
     const markConversationOpenIntent = (event) => {
         if (isFacebookMessageRequestNavigationTarget(event?.target)) return;
-        if (isFacebookConversationNavigationTarget(event?.target)) {
-            activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS);
+        const intent = getFacebookConversationNavigationState(event?.target);
+        if (intent.isConversation) {
+            activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS, intent);
         }
     };
 
@@ -67,15 +68,28 @@ function activateRootNativeGrace(until) {
     emitNativeFocusSignals();
 }
 
-function activateChatOpenNativeGrace(until) {
+function activateChatOpenNativeGrace(until, intent = {}) {
+    const existingPreserveUntil = Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0);
+    const existingThreadKey = String(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ || '');
+    const nextThreadKey = intent.threadKey || existingThreadKey;
+    const sameThread = intent.threadKey
+        ? (existingThreadKey ? intent.threadKey === existingThreadKey : !!intent.wasUnread)
+        : true;
+    const keepExistingUnread =
+        existingPreserveUntil > Date.now() &&
+        sameThread &&
+        window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ === true;
+
     window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Math.max(
         Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0),
         until
     );
     window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Math.max(
-        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0),
+        existingPreserveUntil,
         Date.now() + CHAT_OPEN_UNREAD_UI_GRACE_MS
     );
+    window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = keepExistingUnread || !!intent.wasUnread;
+    window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = nextThreadKey || '';
     emitNativeFocusSignals();
 }
 
@@ -137,23 +151,50 @@ function isFacebookMessageRequestNavigationTarget(target) {
 }
 
 function isFacebookConversationNavigationTarget(target) {
+    return getFacebookConversationNavigationState(target).isConversation;
+}
+
+function getFacebookConversationNavigationState(target) {
     const element = getClosestRequestElement(target);
-    if (!element) return false;
+    if (!element) return { isConversation: false };
 
     const href = getElementAttribute(element, 'href');
     const label = getElementContextText(element).toLowerCase();
-    if (!label && !href) return false;
+    if (!label && !href) return { isConversation: false };
 
     if (href.includes('/messages/t/') ||
         href.includes('/messages/e2ee/t/') ||
         label.includes('/messages/t/') ||
         label.includes('/messages/e2ee/t/')) {
-        return true;
+        return {
+            isConversation: true,
+            wasUnread: isFacebookUnreadConversationElement(element, label),
+            threadKey: extractFacebookThreadKey(`${href} ${label}`)
+        };
     }
 
-    if (!isFacebookFeedRootRoute()) return false;
-    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
+    if (isFacebookMessagingSurface() && looksLikeFacebookConversationRowLabel(label)) {
+        return {
+            isConversation: true,
+            wasUnread: isFacebookUnreadConversationElement(element, label),
+            threadKey: extractFacebookThreadKey(`${href} ${label}`)
+        };
+    }
 
+    if (!isFacebookFeedRootRoute()) return { isConversation: false };
+    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return { isConversation: false };
+
+    const isConversation = looksLikeFacebookConversationRowLabel(label);
+    if (!isConversation) return { isConversation: false };
+
+    return {
+        isConversation: true,
+        wasUnread: isFacebookUnreadConversationElement(element, label),
+        threadKey: extractFacebookThreadKey(`${href} ${label}`)
+    };
+}
+
+function looksLikeFacebookConversationRowLabel(label) {
     return label.includes('unread message:') ||
         label.includes('active now') ||
         /\b(?:now|\d+\s*[mhdw])\b/.test(label);
@@ -189,6 +230,111 @@ function getElementContextText(element) {
         current = current.parentElement;
     }
     return parts.filter(Boolean).join(' ');
+}
+
+function getElementAccessibilityText(element) {
+    const parts = [];
+    let current = element;
+    for (let depth = 0; current && depth < 5; depth += 1) {
+        parts.push(
+            getElementAttribute(current, 'aria-label'),
+            getElementAttribute(current, 'title'),
+            getElementAttribute(current, 'data-tooltip-content')
+        );
+        current = current.parentElement;
+    }
+    return parts.filter(Boolean).join(' ');
+}
+
+function isFacebookUnreadConversationElement(element, label) {
+    const accessibilityText = getElementAccessibilityText(element).toLowerCase();
+    if (/\bunread(?:\s+message)?\b/.test(accessibilityText) || label.includes('unread message:')) {
+        return true;
+    }
+    return hasFacebookUnreadIndicatorElement(element);
+}
+
+function hasFacebookUnreadIndicatorElement(element) {
+    for (const root of getElementAndParents(element, 4)) {
+        if (isFacebookUnreadIndicatorElement(root)) return true;
+        if (isFacebookConversationListBoundaryElement(root)) break;
+
+        try {
+            if (typeof root.querySelectorAll === 'function') {
+                const accessibleMatches = root.querySelectorAll('[aria-label*="Unread"],[title*="Unread"],[data-tooltip-content*="Unread"]');
+                if (accessibleMatches && accessibleMatches.length > 0) return true;
+            }
+        } catch (e) { }
+
+        try {
+            if (typeof root.querySelectorAll === 'function') {
+                const candidates = root.querySelectorAll('i,span,div');
+                for (const candidate of Array.from(candidates || [])) {
+                    if (isFacebookUnreadIndicatorElement(candidate)) return true;
+                }
+            }
+        } catch (e) { }
+    }
+    return false;
+}
+
+function isFacebookConversationListBoundaryElement(element) {
+    const role = getElementAttribute(element, 'role').toLowerCase();
+    const label = getElementAttribute(element, 'aria-label').toLowerCase();
+    return role === 'grid' ||
+        role === 'list' ||
+        role === 'dialog' ||
+        label === 'chats' ||
+        label === 'messenger';
+}
+
+function getElementAndParents(element, maxDepth) {
+    const nodes = [];
+    let current = element;
+    for (let depth = 0; current && depth < maxDepth; depth += 1) {
+        nodes.push(current);
+        current = current.parentElement;
+    }
+    return nodes;
+}
+
+function isFacebookUnreadIndicatorElement(element) {
+    const accessibilityText = [
+        getElementAttribute(element, 'aria-label'),
+        getElementAttribute(element, 'title'),
+        getElementAttribute(element, 'data-tooltip-content')
+    ].filter(Boolean).join(' ').toLowerCase();
+    if (/\bunread(?:\s+message)?\b/.test(accessibilityText)) return true;
+
+    try {
+        if (typeof window.getComputedStyle !== 'function' || typeof element.getBoundingClientRect !== 'function') {
+            return false;
+        }
+        const rect = element.getBoundingClientRect();
+        if (!rect || rect.width < 4 || rect.height < 4 || rect.width > 18 || rect.height > 18) return false;
+
+        const style = window.getComputedStyle(element);
+        const color = String(style?.backgroundColor || '').toLowerCase();
+        const radius = String(style?.borderRadius || '');
+        const isRound = radius.includes('%') || parseFloat(radius) >= Math.min(rect.width, rect.height) / 2 - 1;
+        if (!isRound) return false;
+
+        return color.includes('rgb(0, 132, 255)') ||
+            color.includes('rgb(24, 119, 242)') ||
+            color.includes('rgb(8, 102, 255)');
+    } catch (e) {
+        return false;
+    }
+}
+
+function extractFacebookThreadKey(text) {
+    const match = String(text || '').match(/\/messages\/(?:e2ee\/)?t\/([^/?#\s]+)/i);
+    if (!match) return '';
+    try {
+        return decodeURIComponent(match[1]);
+    } catch (e) {
+        return match[1];
+    }
 }
 
 function isFacebookMessagingSurface() {

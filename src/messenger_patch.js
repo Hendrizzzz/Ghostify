@@ -1244,6 +1244,16 @@
 
             tracePostMessageObservation(kind, message, blockType, text);
 
+            if (!blockType && shouldPreserveClickedFacebookUnreadUiState()) {
+                const sanitizedUnreadUi = sanitizeFacebookUnreadUiBridgeMessage(message);
+                if (sanitizedUnreadUi.changed) {
+                    const transferSafe = filterPostMessageTransfer(transfer, sanitizedUnreadUi.value);
+                    window.__GHOSTIFY_PRESERVED_UNREAD_UI_BRIDGE_MESSAGES__ = (window.__GHOSTIFY_PRESERVED_UNREAD_UI_BRIDGE_MESSAGES__ || 0) + 1;
+                    tracePostMessageOutcome(kind, 'MSG_SEEN', 'preserve_unread_ui', message, text);
+                    return forwardSanitizedPostMessage(originalPostMessage, this, sanitizedUnreadUi.value, transferSafe);
+                }
+            }
+
             if (blockType) {
                 if (blockType === 'MSG_SEEN' && (isMessengerDotCom || isFacebookDotCom || isFacebookMessengerProxy)) {
                     const sanitizedRealtimeSeen = sanitizeFacebookRealtimeReadReceiptBridgeMessage(message, text);
@@ -1599,10 +1609,16 @@
         return Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now();
     }
 
+    function shouldPreserveClickedFacebookUnreadUiState() {
+        return shouldPreserveFacebookUnreadUiState() &&
+            window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ === true;
+    }
+
     function shouldKeepExistingFacebookUnreadField(record, key, nextValue) {
-        if (!shouldPreserveFacebookUnreadUiState()) return false;
+        if (!shouldPreserveClickedFacebookUnreadUiState()) return false;
         if (!record || typeof record !== 'object') return false;
         if (!Object.prototype.hasOwnProperty.call(record, key)) return false;
+        if (!shouldPreserveFacebookUnreadUiRecord(record)) return false;
         if (!isRecordCurrentlyUnread(record)) return false;
 
         const normalizedKey = normalizeBridgeKey(key);
@@ -1616,7 +1632,9 @@
         if (!patch || typeof patch !== 'object' || !existingRecord || typeof existingRecord !== 'object') {
             return patch;
         }
-        if (!shouldPreserveFacebookUnreadUiState() || !isRecordCurrentlyUnread(existingRecord)) {
+        if (!shouldPreserveClickedFacebookUnreadUiState() ||
+            !shouldPreserveFacebookUnreadUiRecord(existingRecord) ||
+            !isRecordCurrentlyUnread(existingRecord)) {
             return patch;
         }
 
@@ -1628,6 +1646,247 @@
             }
         }
         return clone || patch;
+    }
+
+    function sanitizeFacebookUnreadUiBridgeMessage(value, depth = 0, inheritedThreadMatch = false) {
+        if (!shouldPreserveClickedFacebookUnreadUiState() || depth > 8) {
+            return { value, changed: false, blockedAll: false };
+        }
+
+        if (isBinaryPayload(value)) {
+            return sanitizeFacebookUnreadUiBytes(value);
+        }
+
+        if (typeof value === 'string') {
+            const parsed = sanitizeStringifiedBridgeMessage(value, sanitizeFacebookUnreadUiBridgeMessage);
+            if (parsed.changed) return parsed;
+
+            const sanitizedText = sanitizeFacebookUnreadUiText(value);
+            if (sanitizedText !== value) {
+                return { value: sanitizedText, changed: true, blockedAll: false };
+            }
+            return { value, changed: false, blockedAll: false };
+        }
+
+        if (Array.isArray(value)) {
+            let changed = false;
+            const next = [];
+
+            for (const item of value) {
+                const sanitized = sanitizeFacebookUnreadUiBridgeMessage(item, depth + 1, inheritedThreadMatch);
+                changed = changed || sanitized.changed;
+                next.push(sanitized.value);
+            }
+
+            return { value: changed ? next : value, changed, blockedAll: false };
+        }
+
+        if (!value || typeof value !== 'object') {
+            return { value, changed: false, blockedAll: false };
+        }
+
+        const threadMatched = inheritedThreadMatch ||
+            hasDirectPreservedFacebookUnreadThread(value) ||
+            shouldPreserveUnscopedFacebookUnreadUiObject(value);
+        let changed = false;
+        const clone = {};
+
+        for (const key of Object.keys(value)) {
+            const child = value[key];
+            const normalizedKey = normalizeBridgeKey(key);
+
+            if (threadMatched && shouldPreserveFacebookUnreadUiField(normalizedKey, child)) {
+                clone[key] = safeFacebookUnreadUiFieldValue(normalizedKey, child);
+                changed = changed || clone[key] !== child;
+                continue;
+            }
+
+            if (child && typeof child === 'object') {
+                const sanitizedChild = sanitizeFacebookUnreadUiBridgeMessage(child, depth + 1, threadMatched);
+                clone[key] = sanitizedChild.value;
+                changed = changed || sanitizedChild.changed;
+                continue;
+            }
+
+            if (typeof child === 'string') {
+                const sanitizedChildText = sanitizeFacebookUnreadUiText(child);
+                clone[key] = sanitizedChildText;
+                changed = changed || sanitizedChildText !== child;
+                continue;
+            }
+
+            clone[key] = child;
+        }
+
+        return { value: changed ? clone : value, changed, blockedAll: false };
+    }
+
+    function shouldPreserveFacebookUnreadUiField(normalizedKey, value) {
+        if (isUnreadStateKey(normalizedKey)) return isUnreadClearedValue(value);
+        if (isReadStateKey(normalizedKey)) return isReadStateValue(value);
+        if (isReadWatermarkKey(normalizedKey)) return isLikelyReadWatermarkValue(value);
+        return false;
+    }
+
+    function safeFacebookUnreadUiFieldValue(normalizedKey, value) {
+        if (isUnreadStateKey(normalizedKey)) {
+            if (isUnreadCountKey(normalizedKey)) {
+                return typeof value === 'string' ? '1' : 1;
+            }
+            if (typeof value === 'string') {
+                const normalizedValue = value.trim().toLowerCase();
+                if (normalizedValue === 'read' || normalizedValue === 'seen') return 'unread';
+                if (/^\d+$/.test(normalizedValue)) return '1';
+                return 'true';
+            }
+            return true;
+        }
+
+        if (isReadStateKey(normalizedKey)) {
+            if (typeof value === 'string') {
+                return value.trim() === value.trim().toUpperCase() ? 'UNREAD' : 'unread';
+            }
+            if (typeof value === 'number') return 0;
+            return false;
+        }
+
+        if (isReadWatermarkKey(normalizedKey) && isLikelyReadWatermarkValue(value)) {
+            return safeReadWatermarkValue(value);
+        }
+
+        return value;
+    }
+
+    function isUnreadCountKey(key) {
+        return key.includes('count') ||
+            key.includes('badge');
+    }
+
+    function isPreservedFacebookUnreadThreadText(text) {
+        const threadKey = getPreservedFacebookUnreadThreadKey();
+        if (!threadKey) return false;
+        return String(text || '').toLowerCase().includes(threadKey);
+    }
+
+    function shouldPreserveUnscopedFacebookUnreadUiObject(value) {
+        if (getPreservedFacebookUnreadThreadKey()) return false;
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+        if (!hasSelectedFacebookThreadUiState(value)) return false;
+
+        return Object.keys(value).some(key =>
+            shouldPreserveFacebookUnreadUiField(normalizeBridgeKey(key), value[key])
+        );
+    }
+
+    function shouldPreserveFacebookUnreadUiRecord(record) {
+        if (!shouldPreserveClickedFacebookUnreadUiState()) return false;
+        const threadKey = getPreservedFacebookUnreadThreadKey();
+        if (threadKey) {
+            return hasDirectPreservedFacebookUnreadThread(record) ||
+                isPreservedFacebookUnreadThreadText(stringifyForMatch(record).toLowerCase());
+        }
+        return hasSelectedFacebookThreadUiState(record);
+    }
+
+    function hasDirectPreservedFacebookUnreadThread(value) {
+        const threadKey = getPreservedFacebookUnreadThreadKey();
+        if (!threadKey || !value || typeof value !== 'object' || Array.isArray(value)) return false;
+
+        for (const key of Object.keys(value)) {
+            const child = value[key];
+            const normalizedKey = normalizeBridgeKey(key);
+            if (child == null || Array.isArray(child)) continue;
+
+            if (typeof child === 'string' || typeof child === 'number') {
+                if (String(child).toLowerCase().includes(threadKey)) return true;
+                continue;
+            }
+
+            if (child && typeof child === 'object' && isFacebookThreadKeyContainer(normalizedKey)) {
+                if (isPreservedFacebookUnreadThreadText(stringifyForMatch(child).toLowerCase())) return true;
+            }
+        }
+
+        return false;
+    }
+
+    function isFacebookThreadKeyContainer(key) {
+        return key === 'threadkey' ||
+            key === 'thread' ||
+            key === 'threadid' ||
+            key === 'threadfbid' ||
+            key === 'messagethread' ||
+            key === 'recipient' ||
+            key === 'recipientid' ||
+            key === 'parentthreadkey';
+    }
+
+    function hasSelectedFacebookThreadUiState(value) {
+        return Object.keys(value).some(key => {
+            const normalizedKey = normalizeBridgeKey(key);
+            if (normalizedKey !== 'selected' &&
+                normalizedKey !== 'isselected' &&
+                normalizedKey !== 'threadselected' &&
+                normalizedKey !== 'isopen' &&
+                normalizedKey !== 'open') {
+                return false;
+            }
+            return isTruthyPrivacyValue(value[key]);
+        });
+    }
+
+    function getPreservedFacebookUnreadThreadKey() {
+        try {
+            return normalizeFacebookThreadKey(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__);
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function normalizeFacebookThreadKey(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        try {
+            return decodeURIComponent(raw).toLowerCase();
+        } catch (e) {
+            return raw.toLowerCase();
+        }
+    }
+
+    function sanitizeFacebookUnreadUiText(value) {
+        const text = String(value || '');
+        if (!isPreservedFacebookUnreadThreadText(text.toLowerCase())) return value;
+
+        return sanitizeFacebookUnreadUiWatermarkText(text);
+    }
+
+    function sanitizeFacebookUnreadUiBytes(value) {
+        const bytes = value instanceof ArrayBuffer
+            ? new Uint8Array(value)
+            : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+        const text = bytesToSingleByteString(bytes);
+        if (!isPreservedFacebookUnreadThreadText(text.toLowerCase())) {
+            return { value, changed: false, blockedAll: false };
+        }
+
+        const sanitizedText = sanitizeFacebookUnreadUiWatermarkText(text);
+        if (sanitizedText === text) {
+            return { value, changed: false, blockedAll: false };
+        }
+
+        const sanitizedBytes = singleByteStringToBytes(sanitizedText);
+        return {
+            value: value instanceof ArrayBuffer ? sanitizedBytes.buffer : sanitizedBytes,
+            changed: true,
+            blockedAll: false
+        };
+    }
+
+    function sanitizeFacebookUnreadUiWatermarkText(text) {
+        return String(text || '').replace(
+            /((?:last_(?:read_watermark(?:_ts)?|seen_time_ms)|read_watermark|watermark_timestamp|watermarktimestamp)(?:\\*"?\s*[:=]\s*\\*"?))(\d{10,})/gi,
+            (_match, prefix, digits) => `${prefix}${safeReadWatermarkDigits(digits.length)}`
+        );
     }
 
     function isRecordCurrentlyUnread(record) {
@@ -1647,19 +1906,40 @@
         return key === 'isunread' ||
             key === 'unread' ||
             key === 'hasunread' ||
+            key === 'hasunreadmessage' ||
+            key === 'hasunreadmessages' ||
+            key === 'hasunseen' ||
+            key === 'hasunseenmessage' ||
+            key === 'hasunseenmessages' ||
+            key === 'isunseen' ||
             key === 'unreadcount' ||
             key === 'unreadmessagecount' ||
             key === 'unreadmessagescount' ||
+            key === 'unreadmessages' ||
             key === 'unseencount' ||
             key === 'unseenmessagecount' ||
-            key === 'unseenmessagescount';
+            key === 'unseenmessagescount' ||
+            key === 'unseenmessages' ||
+            key === 'showunreadindicator' ||
+            key === 'shouldshowunreadindicator' ||
+            key === 'hasunreadindicator' ||
+            key === 'unreadindicator';
     }
 
     function isReadStateKey(key) {
         return key === 'isread' ||
             key === 'read' ||
             key === 'seen' ||
-            key === 'seenbyviewer';
+            key === 'seenbyviewer' ||
+            key === 'isseen' ||
+            key === 'isseenbyviewer' ||
+            key === 'isreadbyviewer' ||
+            key === 'hasseen' ||
+            key === 'hasread' ||
+            key === 'readstate' ||
+            key === 'threadreadstate' ||
+            key === 'readstatus' ||
+            key === 'viewerreadstate';
     }
 
     function isUnreadPresentValue(value) {
@@ -1689,11 +1969,13 @@
     function isReadStateValue(value) {
         if (value === true || value === 1) return true;
         if (typeof value === 'string') {
-            const normalized = value.trim().toLowerCase();
+            const normalized = normalizeBridgeKey(value);
             return normalized === 'true' ||
                 normalized === '1' ||
                 normalized === 'read' ||
-                normalized === 'seen';
+                normalized === 'seen' ||
+                normalized === 'readbyviewer' ||
+                normalized === 'seenbyviewer';
         }
         return false;
     }
@@ -1701,10 +1983,13 @@
     function isUnreadReadStateValue(value) {
         if (value === false || value === 0 || value == null) return true;
         if (typeof value === 'string') {
-            const normalized = value.trim().toLowerCase();
+            const normalized = normalizeBridgeKey(value);
             return normalized === 'false' ||
                 normalized === '0' ||
                 normalized === 'unread' ||
+                normalized === 'unseen' ||
+                normalized === 'notread' ||
+                normalized === 'notseen' ||
                 normalized === '';
         }
         return false;
