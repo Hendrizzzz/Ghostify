@@ -3257,11 +3257,27 @@ function testFacebookNormalConversationClicksDoNotInheritSiblingMessageRequestTe
 
 function testPopupMessengerSeenNoteExplainsLocalFacebookReadUi() {
     const popupHtml = fs.readFileSync('dist/popup.html', 'utf8');
-    const note = 'Facebook may make chats look read on this page. Ghostify still blocks Seen. Refresh Facebook or check Messenger to confirm.';
+    const popupCss = fs.readFileSync('dist/css/popup.css', 'utf8');
+    const note = 'Facebook may show chats as read here. Ghostify still blocks Seen; refresh to confirm.';
 
     assert(
         popupHtml.includes(note),
         'Messenger/Facebook Hide Seen should explain Facebook local read UI without implying Seen was sent'
+    );
+    assert(
+        popupHtml.includes(`data-tooltip="${note}"`),
+        'Messenger/Facebook Hide Seen should use a custom tooltip so it appears immediately'
+    );
+    assert(
+        !popupHtml.includes(' title='),
+        'Messenger/Facebook Hide Seen should not use the delayed native title tooltip'
+    );
+    assert(
+        popupCss.includes('.info-icon::after') &&
+        popupCss.includes('content: attr(data-tooltip);') &&
+        popupCss.includes('white-space: normal;') &&
+        popupCss.includes('transition: none;'),
+        'Messenger/Facebook Hide Seen tooltip should wrap and appear without hover delay'
     );
 }
 
