@@ -28,7 +28,7 @@ body {
 
 body {
     color: var(--ghost-text);
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
     font-size: 13px;
     -webkit-font-smoothing: antialiased;
 }
