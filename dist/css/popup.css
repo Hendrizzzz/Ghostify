@@ -155,6 +155,31 @@ a {
     letter-spacing: 0.005em;
 }
 
+.info-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    border: 1px solid #58514f;
+    border-radius: 50%;
+    color: #bcb3b0;
+    background: #202020;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+    user-select: none;
+}
+
+.info-icon:hover,
+.info-icon:focus-visible {
+    color: #ffffff;
+    border-color: var(--ghost-soft);
+    background: #2a2524;
+    outline: none;
+}
+
 /* ── Feature icons ────────────────────────────── */
 
 .feature-icon {

@@ -1832,436 +1832,6 @@ function testFacebookLocalReadModulesRewriteNestedWatermarksToPreserveUnreadUi()
     assert.strictEqual(context.window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0, 0);
 }
 
-function testFacebookRelayRecordWritesPreserveUnreadUiDuringConversationOpen() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = 'redacted';
-
-    const module = registerMessengerModule(
-        context,
-        'RelayModernRecord',
-        function (_a, _b, _c, _d, moduleObject) {
-            moduleObject.exports = {
-                setValue(record, storageKey, value) {
-                    record[storageKey] = value;
-                    return 'set';
-                },
-                copyFields(source, sink) {
-                    Object.assign(sink, source);
-                    return 'copied';
-                },
-                update(prevRecord, nextRecord) {
-                    return { ...prevRecord, ...nextRecord };
-                }
-            };
-        }
-    );
-
-    const selectedUnreadRecord = {
-        __id: 'thread:redacted',
-        thread_key: { thread_fbid: 'redacted' },
-        is_unread: true,
-        unread_count: 1,
-        is_read: false,
-        last_read_watermark: 1779530000000,
-        selected: false
-    };
-
-    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'is_unread', false), 'set');
-    assert.strictEqual(
-        selectedUnreadRecord.is_unread,
-        true,
-        'Relay record writes must not flip an existing unread Facebook thread to read during conversation open'
-    );
-
-    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'unread_count', 0), 'set');
-    assert.strictEqual(
-        selectedUnreadRecord.unread_count,
-        1,
-        'Relay record writes must preserve the existing unread count during conversation open'
-    );
-
-    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'is_read', true), 'set');
-    assert.strictEqual(
-        selectedUnreadRecord.is_read,
-        false,
-        'Relay record writes must not flip an existing unread Facebook thread to is_read=true during conversation open'
-    );
-
-    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'selected', true), 'set');
-    assert.strictEqual(
-        selectedUnreadRecord.selected,
-        true,
-        'Relay record writes unrelated to read state must still apply so the selected row remains real Facebook UI'
-    );
-
-    assert.strictEqual(module.exports.setValue(selectedUnreadRecord, 'last_read_watermark', 1779539999999), 'set');
-    assert.strictEqual(
-        selectedUnreadRecord.last_read_watermark,
-        1779530000000,
-        'Relay record writes must not advance the local read watermark during conversation open'
-    );
-
-    const copiedUnreadRecord = {
-        __id: 'thread:redacted-copy',
-        thread_key: { thread_fbid: 'redacted' },
-        is_unread: true,
-        unread_count: 2,
-        is_read: false,
-        last_read_watermark: 1779530000000,
-        name: 'DOST Scholars'
-    };
-    assert.strictEqual(
-        module.exports.copyFields({
-            is_unread: false,
-            unread_count: 0,
-            is_read: true,
-            last_read_watermark: 1779539999999,
-            name: 'DOST Scholars (SLU Juniors)'
-        }, copiedUnreadRecord),
-        'copied'
-    );
-    assert.strictEqual(copiedUnreadRecord.is_unread, true);
-    assert.strictEqual(copiedUnreadRecord.unread_count, 2);
-    assert.strictEqual(copiedUnreadRecord.is_read, false);
-    assert.strictEqual(copiedUnreadRecord.last_read_watermark, 1779530000000);
-    assert.strictEqual(
-        copiedUnreadRecord.name,
-        'DOST Scholars (SLU Juniors)',
-        'Relay copyFields must still apply unrelated thread-list updates'
-    );
-
-    const updatedUnreadRecord = module.exports.update({
-        __id: 'thread:redacted-update',
-        thread_key: { thread_fbid: 'redacted' },
-        is_unread: true,
-        unread_count: 1,
-        is_read: false
-    }, {
-        is_unread: false,
-        unread_count: 0,
-        is_read: true,
-        selected: true
-    });
-    assert.strictEqual(updatedUnreadRecord.is_unread, true);
-    assert.strictEqual(updatedUnreadRecord.unread_count, 1);
-    assert.strictEqual(updatedUnreadRecord.is_read, false);
-    assert.strictEqual(updatedUnreadRecord.selected, true);
-
-    const alreadyReadRecord = {
-        __id: 'thread:already-read',
-        thread_key: { thread_fbid: 'already-read' },
-        is_unread: false,
-        unread_count: 0,
-        is_read: true
-    };
-    assert.strictEqual(module.exports.setValue(alreadyReadRecord, 'is_unread', false), 'set');
-    assert.strictEqual(
-        alreadyReadRecord.is_unread,
-        false,
-        'Relay read-state preservation must not invent unread state for already-read rows'
-    );
-}
-
-function testFacebookRelayRecordWritesStayNativeWhenClickedThreadDoesNotMatch() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = 'clicked-thread';
-
-    const module = registerMessengerModule(
-        context,
-        'RelayModernRecord',
-        function (_a, _b, _c, _d, moduleObject) {
-            moduleObject.exports = {
-                setValue(record, storageKey, value) {
-                    record[storageKey] = value;
-                    return 'set';
-                }
-            };
-        }
-    );
-
-    const otherUnreadRecord = {
-        __id: 'thread:other-thread',
-        thread_key: { thread_fbid: 'other-thread' },
-        is_unread: true,
-        unread_count: 1,
-        is_read: false
-    };
-
-    assert.strictEqual(module.exports.setValue(otherUnreadRecord, 'is_unread', false), 'set');
-    assert.strictEqual(
-        otherUnreadRecord.is_unread,
-        false,
-        'Relay preservation must not keep unrelated unread thread rows unread during a clicked-thread preserve window'
-    );
-}
-
-function testFacebookRelayRecordWritesStayNativeWhenClickedRowWasNotUnread() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = false;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = 'clicked-thread';
-
-    const module = registerMessengerModule(
-        context,
-        'RelayModernRecord',
-        function (_a, _b, _c, _d, moduleObject) {
-            moduleObject.exports = {
-                setValue(record, storageKey, value) {
-                    record[storageKey] = value;
-                    return 'set';
-                }
-            };
-        }
-    );
-
-    const clickedRecord = {
-        __id: 'thread:clicked-thread',
-        thread_key: { thread_fbid: 'clicked-thread' },
-        is_unread: true,
-        unread_count: 1,
-        is_read: false
-    };
-
-    assert.strictEqual(module.exports.setValue(clickedRecord, 'is_unread', false), 'set');
-    assert.strictEqual(
-        clickedRecord.is_unread,
-        false,
-        'Relay preservation must not run when the clicked row was not captured as unread'
-    );
-}
-
-function testFacebookRelayRecordWritesAreNativeOutsideConversationOpen() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-
-    const module = registerMessengerModule(
-        context,
-        'RelayModernRecord',
-        function (_a, _b, _c, _d, moduleObject) {
-            moduleObject.exports = {
-                setValue(record, storageKey, value) {
-                    record[storageKey] = value;
-                    return 'set';
-                }
-            };
-        }
-    );
-
-    const unreadRecord = {
-        __id: 'thread:redacted',
-        is_unread: true,
-        unread_count: 1,
-        is_read: false
-    };
-
-    assert.strictEqual(module.exports.setValue(unreadRecord, 'is_unread', false), 'set');
-    assert.strictEqual(
-        unreadRecord.is_unread,
-        false,
-        'Relay record writes outside a conversation-open preserve window must keep native Facebook behavior'
-    );
-}
-
-function testFacebookUnreadUiBridgePatchesPreserveClickedThreadStateDuringConversationOpen() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = 'redacted-thread';
-
-    const optimisticThreadListPatch = {
-        type: 'thread_list_update',
-        thread_key: { thread_fbid: 'redacted-thread' },
-        selected: true,
-        is_unread: false,
-        unread_count: 0,
-        has_unread_messages: false,
-        show_unread_indicator: false,
-        is_read: true,
-        read_state: 'READ',
-        last_read_watermark: 1779530000000,
-        nested: {
-            unseen_count: 0,
-            seen_by_viewer: true
-        }
-    };
-
-    const outcome = workerOutcome(context, optimisticThreadListPatch);
-    assert.strictEqual(outcome.result, 'worker-sent');
-    assert.strictEqual(outcome.blocked, 0);
-    assert.notStrictEqual(
-        outcome.post.message,
-        optimisticThreadListPatch,
-        'optimistic Facebook thread-list UI patches must be sanitized before reaching the worker'
-    );
-
-    const forwarded = outcome.post.message;
-    assert.strictEqual(
-        forwarded.selected,
-        true,
-        'Facebook row selection must stay native while preserving unread UI'
-    );
-    assert.strictEqual(forwarded.is_unread, true);
-    assert.strictEqual(forwarded.unread_count, 1);
-    assert.strictEqual(forwarded.has_unread_messages, true);
-    assert.strictEqual(forwarded.show_unread_indicator, true);
-    assert.strictEqual(forwarded.is_read, false);
-    assert.strictEqual(forwarded.read_state, 'UNREAD');
-    assert.strictEqual(forwarded.last_read_watermark, SAFE_READ_WATERMARK);
-    assert.strictEqual(forwarded.nested.unseen_count, 1);
-    assert.strictEqual(forwarded.nested.seen_by_viewer, false);
-}
-
-function testFacebookUnreadUiBridgePatchesDoNotPreserveUnrelatedThreadsInSameBatch() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = 'clicked-thread';
-
-    const batch = [
-        {
-            thread_key: { thread_fbid: 'clicked-thread' },
-            selected: true,
-            is_unread: false,
-            unread_count: 0,
-            is_read: true
-        },
-        {
-            thread_key: { thread_fbid: 'other-thread' },
-            selected: false,
-            is_unread: false,
-            unread_count: 0,
-            is_read: true
-        }
-    ];
-
-    const outcome = workerOutcome(context, batch);
-    assert.strictEqual(outcome.result, 'worker-sent');
-    assert.notStrictEqual(outcome.post.message, batch);
-    assert.strictEqual(outcome.post.message[0].is_unread, true);
-    assert.strictEqual(outcome.post.message[0].unread_count, 1);
-    assert.strictEqual(outcome.post.message[0].is_read, false);
-    assert.strictEqual(
-        outcome.post.message[1].is_unread,
-        false,
-        'bridge unread preservation must not rewrite unrelated thread records in the same batch'
-    );
-    assert.strictEqual(outcome.post.message[1].unread_count, 0);
-    assert.strictEqual(outcome.post.message[1].is_read, true);
-}
-
-function testFacebookUnreadUiBridgePatchesDoNotPreserveUnrelatedThreadsInEnvelope() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = 'clicked-thread';
-
-    const envelope = {
-        type: 'thread_list_batch',
-        updates: [
-            {
-                thread_key: { thread_fbid: 'clicked-thread' },
-                selected: true,
-                is_unread: false,
-                unread_count: 0,
-                is_read: true
-            },
-            {
-                thread_key: { thread_fbid: 'other-thread' },
-                selected: false,
-                is_unread: false,
-                unread_count: 0,
-                is_read: true
-            }
-        ]
-    };
-
-    const outcome = workerOutcome(context, envelope);
-    assert.strictEqual(outcome.result, 'worker-sent');
-    assert.notStrictEqual(outcome.post.message, envelope);
-    assert.strictEqual(outcome.post.message.updates[0].is_unread, true);
-    assert.strictEqual(outcome.post.message.updates[0].unread_count, 1);
-    assert.strictEqual(outcome.post.message.updates[0].is_read, false);
-    assert.strictEqual(
-        outcome.post.message.updates[1].is_unread,
-        false,
-        'bridge unread preservation must not leak from the clicked thread into sibling envelope updates'
-    );
-    assert.strictEqual(outcome.post.message.updates[1].unread_count, 0);
-    assert.strictEqual(outcome.post.message.updates[1].is_read, true);
-}
-
-function testFacebookUnreadUiBridgePatchesPreserveSelectedThreadWhenClickHasNoThreadKey() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = '';
-
-    const selectedThreadPatch = {
-        type: 'thread_list_update',
-        selected: true,
-        is_unread: false,
-        unread_count: 0,
-        show_unread_indicator: false,
-        is_read: true
-    };
-
-    const outcome = workerOutcome(context, selectedThreadPatch);
-    assert.strictEqual(outcome.result, 'worker-sent');
-    assert.notStrictEqual(
-        outcome.post.message,
-        selectedThreadPatch,
-        'selected thread UI patches must still preserve unread state when the click target did not expose a thread id'
-    );
-    assert.strictEqual(outcome.post.message.selected, true);
-    assert.strictEqual(outcome.post.message.is_unread, true);
-    assert.strictEqual(outcome.post.message.unread_count, 1);
-    assert.strictEqual(outcome.post.message.show_unread_indicator, true);
-    assert.strictEqual(outcome.post.message.is_read, false);
-}
-
 function testFacebookMessageRequestGraceLeavesLocalReadModulesUntouched() {
     const context = makeMessengerPatchPage({}, {
         hostname: 'www.facebook.com',
@@ -2665,32 +2235,6 @@ function testFacebookBridgeThreadOpenFramesStayAllowed() {
         'Facebook history bridge frames with queue_name/task_id/read metadata must stay allowed unless they are label 6 or label 21 read writes'
     );
     assert.strictEqual(metadataFetch.blocked, 0);
-}
-
-function testFacebookThreadOpenReadMetadataIsSanitizedDuringUnreadConversationOpen() {
-    const context = makeMessengerPatchPage({}, {
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/'
-    });
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = Date.now() + 15000;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__ = true;
-    context.window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__ = '1594581527264656';
-
-    const metadataFetch = portOutcome(context, facebookFeedThreadOpenWithReadMetadataFrame);
-    assert.strictEqual(
-        metadataFetch.result,
-        'port-sent',
-        'Facebook history bridge frames must still load during unread-UI preservation'
-    );
-    assert.strictEqual(metadataFetch.blocked, 0);
-    assert.notStrictEqual(
-        metadataFetch.post.message,
-        facebookFeedThreadOpenWithReadMetadataFrame,
-        'Facebook thread-open read metadata must be sanitized before shared-worker state updates'
-    );
-    assert.match(decodeBridgeBytes(metadataFetch.post.message), /last_read_watermark\\+":1000000000000/);
-    assert.doesNotMatch(decodeBridgeBytes(metadataFetch.post.message), /last_read_watermark\\+":1780070888819/);
 }
 
 function testFacebookWorkersKeepNativeScriptUrls() {
@@ -3191,13 +2735,12 @@ function testFacebookRestoredMiniChatLoadingKeepsNativeFocusUntilHydrated() {
 }
 
 function testFacebookUnreadFeedMessageClicksKeepDocumentVisibleForThreadLoading() {
-    const page = {
+    const window = makeGhostPage({
         hostname: 'www.facebook.com',
         pathname: '/',
         href: 'https://www.facebook.com/',
         facebookMessengerPopoverOpen: true
-    };
-    const window = makeGhostPage(page);
+    });
     window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ = Date.now() - 1;
     assert.strictEqual(
         window.document.visibilityState,
@@ -3225,27 +2768,15 @@ function testFacebookUnreadFeedMessageClicksKeepDocumentVisibleForThreadLoading(
     assert.strictEqual(window.document.hidden, false);
     assert.strictEqual(
         window.document.hasFocus(),
-        false,
-        'Opening an unread Facebook feed Messenger row must keep hasFocus false so Facebook does not optimistically clear the unread UI'
+        true,
+        'Opening a Facebook feed Messenger row needs a short native-focus grace so an already-restored mini-chat can hydrate'
     );
     assert.strictEqual(
         countDeliveredFocusEvents(window),
         4,
         'Opening a Facebook feed Messenger row must keep loader focus events flowing even while hasFocus is spoofed'
     );
-    assert(
-        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
-        'Opening an unread Facebook feed Messenger row must open a short unread-UI preserve window'
-    );
-    page.facebookMessengerPopoverOpen = false;
-    window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ = Date.now() + 30000;
-    assert.strictEqual(
-        window.document.hasFocus(),
-        false,
-        'Conversation-click privacy must keep hasFocus false even if the popover closes before mini-chat DOM appears'
-    );
     window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Date.now() - 1;
-    window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ = Date.now() - 1;
     assert.strictEqual(
         window.document.hasFocus(),
         false,
@@ -3289,59 +2820,13 @@ function testFacebookUnreadFeedMessageChildClicksKeepDocumentVisibleForThreadLoa
     assert.strictEqual(window.document.hidden, false);
     assert.strictEqual(
         window.document.hasFocus(),
-        false,
-        'Unread child clicks must keep hasFocus false so Facebook does not optimistically clear the unread UI'
+        true,
+        'Unread child clicks must open the same short native-focus grace for restored mini-chat hydration'
     );
     assert.strictEqual(
         countDeliveredFocusEvents(window),
         4,
         'Unread child clicks must not suppress focus events needed by history hydration'
-    );
-    assert(
-        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
-        'Unread child clicks must open the unread-UI preserve window'
-    );
-}
-
-function testFacebookMessagesPageConversationClicksPreserveUnreadUi() {
-    const window = makeGhostPage({
-        hostname: 'www.facebook.com',
-        pathname: '/messages',
-        href: 'https://www.facebook.com/messages'
-    });
-    assert.strictEqual(window.document.hasFocus(), false);
-
-    window.document.dispatchEvent({
-        type: 'click',
-        target: createRequestClickTarget({
-            href: '/messages/e2ee/t/redacted-thread',
-            label: 'DOST Scholars (SLU Juniors) Ian sent a photo. 18h'
-        })
-    });
-
-    assert(
-        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
-        'Facebook /messages conversation links must open a preserve-unread window for optimistic thread-list updates'
-    );
-    assert.strictEqual(
-        window.document.hasFocus(),
-        false,
-        'Facebook /messages conversation links must remain unfocused for read privacy'
-    );
-
-    const row = createRequestClickTarget({
-        href: '',
-        label: 'DOST Scholars (SLU Juniors) Ian sent a photo. 18h'
-    });
-    window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ = 0;
-    window.document.dispatchEvent({
-        type: 'click',
-        target: row
-    });
-
-    assert(
-        Number(window.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
-        'Facebook /messages row clicks without hrefs must also open the unread UI preserve window'
     );
 }
 
@@ -3760,160 +3245,23 @@ function testFacebookNormalConversationClicksDoNotInheritSiblingMessageRequestTe
     );
     assert.strictEqual(
         facebookFocusSignals,
-        3,
-        'Normal Facebook conversation clicks may emit loader signals through the conversation-open path'
+        0,
+        'Normal Facebook conversation clicks must not open request-loader focus grace from sibling request text'
     );
     assert.strictEqual(
         Number(facebookWindow.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0) > Date.now(),
         false,
         'Normal Facebook conversation clicks must not activate message-request native grace'
     );
+}
+
+function testPopupMessengerSeenNoteExplainsLocalFacebookReadUi() {
+    const popupHtml = fs.readFileSync('dist/popup.html', 'utf8');
+    const note = 'Facebook may make chats look read on this page. Ghostify still blocks Seen. Refresh Facebook or check Messenger to confirm.';
+
     assert(
-        Number(facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_UNTIL__ || 0) > Date.now(),
-        'Normal Facebook conversation clicks must activate preserve-unread UI grace instead of request grace'
-    );
-}
-
-function testFacebookUnreadConversationClicksCaptureNativeUnreadState() {
-    const facebookWindow = makeGhostPage({
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-
-    facebookWindow.document.dispatchEvent({
-        type: 'pointerdown',
-        target: createRequestClickTarget({
-            href: '/messages/t/redacted-thread',
-            label: 'Unread message: DOST Scholars Ian sent a photo. 18h'
-        })
-    });
-
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__,
-        true,
-        'Opening an unread Facebook conversation must remember that the native row was unread before selection'
-    );
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__,
-        'redacted-thread',
-        'Opening an unread Facebook conversation must remember the clicked thread so later UI-only read patches can be scoped'
-    );
-}
-
-function testFacebookReadConversationClickDoesNotBorrowSiblingUnreadDot() {
-    const facebookWindow = makeGhostPage({
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-    const siblingUnreadDot = {
-        getAttribute(name) {
-            if (name === 'aria-label') return 'Unread message';
-            return '';
-        }
-    };
-    const container = {
-        parentElement: null,
-        innerText: 'Read Friend Hello 18h Unread Friend Ping 1m',
-        textContent: 'Read Friend Hello 18h Unread Friend Ping 1m',
-        getAttribute(name) {
-            if (name === 'role') return 'grid';
-            if (name === 'aria-label') return 'Chats';
-            return '';
-        },
-        querySelectorAll() {
-            return [siblingUnreadDot];
-        }
-    };
-    const readRow = createRequestClickTarget({
-        href: '/messages/t/read-thread',
-        label: 'Read Friend Hello 18h'
-    });
-    readRow.parentElement = container;
-    readRow.querySelectorAll = () => [];
-
-    facebookWindow.document.dispatchEvent({
-        type: 'pointerdown',
-        target: readRow
-    });
-
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__,
-        false,
-        'Read conversation clicks must not borrow an unread dot from a sibling row'
-    );
-}
-
-function testFacebookUnreadConversationClickDoesNotOverwritePointerdownUnreadState() {
-    const facebookWindow = makeGhostPage({
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-
-    facebookWindow.document.dispatchEvent({
-        type: 'pointerdown',
-        target: createRequestClickTarget({
-            href: '/messages/t/redacted-thread',
-            label: 'Unread message: DOST Scholars Ian sent a photo. 18h'
-        })
-    });
-    facebookWindow.document.dispatchEvent({
-        type: 'click',
-        target: createRequestClickTarget({
-            href: '/messages/t/redacted-thread',
-            label: 'DOST Scholars Ian sent a photo. 18h'
-        })
-    });
-
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__,
-        true,
-        'The later click event must not overwrite unread state captured at pointerdown'
-    );
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__,
-        'redacted-thread',
-        'The later click event must keep the pointerdown thread key for scoped UI preservation'
-    );
-}
-
-function testFacebookUnreadConversationUnscopedStateDoesNotMoveToDifferentThread() {
-    const facebookWindow = makeGhostPage({
-        hostname: 'www.facebook.com',
-        pathname: '/',
-        href: 'https://www.facebook.com/',
-        facebookMessengerPopoverOpen: true
-    });
-
-    facebookWindow.document.dispatchEvent({
-        type: 'pointerdown',
-        target: createRequestClickTarget({
-            href: '',
-            label: 'Unread message: DOST Scholars Ian sent a photo. 18h'
-        })
-    });
-    facebookWindow.document.dispatchEvent({
-        type: 'click',
-        target: createRequestClickTarget({
-            href: '/messages/t/other-thread',
-            label: 'Other Thread opened 1m'
-        })
-    });
-
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_WAS_UNREAD__,
-        false,
-        'Unscoped unread preservation must not move onto a later different thread key'
-    );
-    assert.strictEqual(
-        facebookWindow.__GHOSTIFY_FACEBOOK_PRESERVE_UNREAD_UI_THREAD_KEY__,
-        'other-thread',
-        'The later different thread can open a native grace window without inheriting unread state'
+        popupHtml.includes(note),
+        'Messenger/Facebook Hide Seen should explain Facebook local read UI without implying Seen was sent'
     );
 }
 
@@ -4023,14 +3371,6 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookFeedMiniChatLocalReadModulesSanitizeReadReceiptsWithoutBlockingHistoryLoading();
     testFacebookFeedMiniChatStaleLocalReadModulesSanitizeReadReceiptsWithoutBlockingHistoryLoading();
     testFacebookLocalReadModulesRewriteNestedWatermarksToPreserveUnreadUi();
-    testFacebookRelayRecordWritesPreserveUnreadUiDuringConversationOpen();
-    testFacebookRelayRecordWritesStayNativeWhenClickedThreadDoesNotMatch();
-    testFacebookRelayRecordWritesStayNativeWhenClickedRowWasNotUnread();
-    testFacebookRelayRecordWritesAreNativeOutsideConversationOpen();
-    testFacebookUnreadUiBridgePatchesPreserveClickedThreadStateDuringConversationOpen();
-    testFacebookUnreadUiBridgePatchesDoNotPreserveUnrelatedThreadsInSameBatch();
-    testFacebookUnreadUiBridgePatchesDoNotPreserveUnrelatedThreadsInEnvelope();
-    testFacebookUnreadUiBridgePatchesPreserveSelectedThreadWhenClickHasNoThreadKey();
     testFacebookMessageRequestGraceLeavesLocalReadModulesUntouched();
     testFacebookMessageRequestGraceBypassesStaleLocalReadWrappersAtCallTime();
     testFacebookMawProxyLocalReadModulesAreSanitized();
@@ -4043,7 +3383,6 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookMixedBridgeReadReceiptBatchesAreSanitizedNotDropped();
     testFacebookTargetlessBridgeReadReceiptBatchesAreSanitizedBeforeSharedWorkerStateUpdates();
     testFacebookBridgeThreadOpenFramesStayAllowed();
-    testFacebookThreadOpenReadMetadataIsSanitizedDuringUnreadConversationOpen();
     testFacebookWorkersKeepNativeScriptUrls();
     testNonMawFbsbxPagesAreNotTreatedAsMessenger();
     testManifestInjectsIntoFacebookMawProxyFrames();
@@ -4056,7 +3395,6 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookFeedMessengerSurfacesSpoofFocusPassivelyForReadPrivacyAndLoaders();
     testFacebookUnreadFeedMessageClicksKeepDocumentVisibleForThreadLoading();
     testFacebookUnreadFeedMessageChildClicksKeepDocumentVisibleForThreadLoading();
-    testFacebookMessagesPageConversationClicksPreserveUnreadUi();
     testInstagramMediaSurfacesDoNotSpoofFocus();
     testMessageRequestRoutesDoNotSuppressFocusEvents();
     testMawProxyRejectsUntrustedMessageRequestGrace();
@@ -4064,10 +3402,7 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testMessageRequestClicksTemporarilyRestoreNativeFocus();
     testFacebookNestedMessageRequestClicksTemporarilyRestoreNativeFocus();
     testFacebookNormalConversationClicksDoNotInheritSiblingMessageRequestText();
-    testFacebookUnreadConversationClicksCaptureNativeUnreadState();
-    testFacebookReadConversationClickDoesNotBorrowSiblingUnreadDot();
-    testFacebookUnreadConversationClickDoesNotOverwritePointerdownUnreadState();
-    testFacebookUnreadConversationUnscopedStateDoesNotMoveToDifferentThread();
+    testPopupMessengerSeenNoteExplainsLocalFacebookReadUi();
     await testMessageRequestClickGraceKeepsTransportAndBridgeNative();
     console.log('messenger send-stability regression tests passed');
 })().catch(error => {
