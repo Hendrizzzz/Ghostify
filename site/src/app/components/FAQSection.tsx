@@ -59,7 +59,7 @@ export function FAQSection() {
           </h2>
           <p style={{ fontFamily: 'var(--g-sans)', fontSize: 13.5, lineHeight: 1.6, color: 'var(--g-body)', margin: 0 }}>
             If something's missing,{' '}
-            <a href="https://github.com/Hendrizzzz/Ghostify/issues" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--g-body)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            <a href="https://github.com/Hendrizzzz/Ghostify/issues/new?template=help_feedback.yml" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--g-body)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
               open an issue
             </a>
             .
