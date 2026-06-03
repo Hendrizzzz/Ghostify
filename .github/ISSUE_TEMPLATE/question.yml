@@ -1,21 +1,23 @@
-name: Share feedback
-description: Share feedback that does not fit the bug or idea forms.
-title: "[Feedback]: "
-labels: ["feedback"]
+name: Ask a question
+description: Ask how Ghostify works or what a control means.
+title: "[Question]: "
+labels: ["question"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to help shape Ghostify. Short, specific feedback is easiest to act on.
+        Thanks for asking. Clear questions help make Ghostify easier to understand.
   - type: dropdown
     id: topic
     attributes:
-      label: What is this about?
+      label: What is your question about?
       options:
-        - Something confusing in the popup
-        - Website or docs feedback
-        - Privacy or trust concern
-        - Other feedback
+        - How Ghostify works
+        - A popup setting
+        - Facebook or Messenger behavior
+        - Instagram behavior
+        - Privacy or data handling
+        - Other
     validations:
       required: true
   - type: dropdown
@@ -32,10 +34,10 @@ body:
     validations:
       required: true
   - type: textarea
-    id: details
+    id: question
     attributes:
-      label: What would you like to share?
-      placeholder: Example: The Hide Seen note helped, but I was not sure whether refreshing was required.
+      label: Question
+      placeholder: Example: If Facebook makes a chat appear read locally, does Ghostify still block Seen?
     validations:
       required: true
   - type: textarea

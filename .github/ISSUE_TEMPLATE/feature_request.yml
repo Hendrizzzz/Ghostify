@@ -1,6 +1,6 @@
-name: Feature request
+name: Share an idea
 description: Suggest a focused improvement for Ghostify.
-title: "[Feature]: "
+title: "[Idea]: "
 labels: ["enhancement"]
 body:
   - type: markdown

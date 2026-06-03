@@ -3290,9 +3290,15 @@ function testPopupSupportLinksUseGuidedIssueForms() {
     const issueTemplateFiles = [
         '.github/ISSUE_TEMPLATE/config.yml',
         '.github/ISSUE_TEMPLATE/bug_report.yml',
-        '.github/ISSUE_TEMPLATE/platform_update.yml',
         '.github/ISSUE_TEMPLATE/feature_request.yml',
-        '.github/ISSUE_TEMPLATE/feedback.yml'
+        '.github/ISSUE_TEMPLATE/feedback.yml',
+        '.github/ISSUE_TEMPLATE/question.yml'
+    ];
+    const issueTemplateNames = [
+        'name: Report a bug',
+        'name: Share an idea',
+        'name: Share feedback',
+        'name: Ask a question'
     ];
 
     assert(
@@ -3328,6 +3334,16 @@ function testPopupSupportLinksUseGuidedIssueForms() {
     const forms = issueTemplateFiles
         .filter(file => file.endsWith('.yml') && !file.endsWith('config.yml'))
         .map(file => fs.readFileSync(file, 'utf8'));
+    for (const name of issueTemplateNames) {
+        assert(
+            forms.some(form => form.includes(name)),
+            `Guided issue chooser should include the action label "${name}"`
+        );
+    }
+    assert(
+        !fs.existsSync('.github/ISSUE_TEMPLATE/platform_update.yml'),
+        'Guided issue chooser should avoid extra overlapping issue types beyond bug, idea, feedback, and question'
+    );
     assert(
         forms.every(form =>
             form.includes('type: dropdown') &&
