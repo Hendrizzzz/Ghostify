@@ -1,11 +1,23 @@
+# Ghostify Website
 
-  # Ghostify
+This folder contains the public Ghostify landing page.
 
-  This is a code bundle for Ghostify. The original project is available at https://www.figma.com/design/3W2RaOCgvOFMN9BQgvIoxG/Ghostify.
+## Development
 
-  ## Running the code
+Install dependencies:
 
-  Run `npm i` to install the dependencies.
+```sh
+npm install
+```
 
-  Run `npm run dev` to start the development server.
-  
+Start the local development server:
+
+```sh
+npm run dev
+```
+
+Create a production build:
+
+```sh
+npm run build
+```
