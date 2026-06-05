@@ -70,7 +70,7 @@ export function LightweightSection() {
           whiteSpace: 'nowrap',
         }}
       >
-        22 KiB
+        50 KiB
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(60px, 9vw, 100px) clamp(28px, 4vw, 56px)', position: 'relative', zIndex: 1 }}>
@@ -136,7 +136,7 @@ export function LightweightSection() {
                 marginBottom: 10,
               }}
             >
-              <CountUp target={22.34} />
+              <CountUp target={50.28} />
               <span style={{ fontSize: '0.38em', fontWeight: 400, marginLeft: 6, color: 'var(--g-body)' }}>KiB</span>
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -189,7 +189,7 @@ export function LightweightSection() {
             >
               An average Instagram feed load: ~4 MB.
               <br />
-              Ghostify: 22.34 KiB — once, total.
+              Ghostify: 50.28 KiB — once, total.
             </div>
           </div>
         </div>
