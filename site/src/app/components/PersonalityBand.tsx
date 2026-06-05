@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 const LINES = [
   { label: 'Signal control', text: 'Reads everything. Reports nothing.' },
   { label: 'Architecture',   text: 'Local-only. No cloud. No relay.'    },
-  { label: 'Footprint',      text: '22.34 KiB total. Zero servers.'     },
+  { label: 'Footprint',      text: '50.28 KiB total. Zero servers.'     },
   { label: 'Trust model',    text: 'Open source. Read it yourself.'     },
 ];
 
