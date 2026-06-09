@@ -3993,7 +3993,9 @@ function testPopupSupportLinksUseGuidedIssueForms() {
     const popupHtml = fs.readFileSync('dist/popup.html', 'utf8');
     const popupCss = fs.readFileSync('dist/css/popup.css', 'utf8');
     const websiteUrl = 'https://ghostify-extension.vercel.app/';
+    const surveyUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSddFGgzML2BCOJKTgVBaopmmzl0p1gBMkLEFMS5ofQY7hg89w/viewform';
     const directHelpFormUrl = 'https://github.com/Hendrizzzz/Ghostify/issues/new?template=help_feedback.yml';
+    const surveyTooltip = 'Share whether View Once media support fits Ghostify.';
     const thanksTooltip = 'Helpful bug reports or ideas will be credited in release notes and on the website, with permission.';
     const directHelpPlaceholder = 'Example: On facebook.com, I clicked New message requests and it opened a blank chat page instead of the request list. I expected Ghostify to keep the real UI working while Seen stays blocked.';
     const issueTemplateFiles = [
@@ -4023,6 +4025,19 @@ function testPopupSupportLinksUseGuidedIssueForms() {
         !popupHtml.includes('issues/new/choose') &&
         !popupHtml.includes('Report issue'),
         'Popup should open one guided Help & feedback draft directly instead of the issue chooser'
+    );
+    assert(
+        popupHtml.includes(`href="${surveyUrl}"`) &&
+        popupHtml.includes('Feature survey') &&
+        popupHtml.includes(`data-tooltip="${surveyTooltip}"`),
+        'Popup should include the View Once feature survey as a quiet footer link'
+    );
+    assert(
+        popupHtml.includes('class="footer-link survey-link"') &&
+        popupCss.includes('.survey-link::after') &&
+        popupCss.includes('left: -88px;') &&
+        popupCss.includes('width: 220px;'),
+        'Popup survey tooltip should be shifted inside the narrow extension popup instead of clipping offscreen'
     );
     assert(
         popupCss.includes('.support-link::after') &&
