@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "node build.js",
-    "test": "npm run build && node test/messenger-send-stability.test.js"
+    "test": "npm run build && node test/messenger-send-stability.test.js",
+    "validate:extension": "node scripts/validate-extension-package.js",
+    "verify:dist": "git diff --exit-code -- dist/background.js dist/js/content.js dist/js/ghost.js dist/js/messenger_patch.js",
+    "audit:high": "npm audit --audit-level=high",
+    "ci": "npm test && npm run validate:extension && npm run verify:dist && npm run audit:high"
   },
   "repository": {
     "type": "git",

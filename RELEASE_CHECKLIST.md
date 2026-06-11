@@ -117,11 +117,12 @@ Install from the lockfile and run the full extension test command:
 
 ```bash
 npm ci
-npm test
+npm run ci
 ```
 
-`npm test` runs `npm run build` first. After it finishes, confirm generated
-extension files are committed:
+`npm run ci` runs the extension build/test harness, package validation,
+generated-dist check, and high-severity dependency audit. After it finishes,
+confirm generated extension files are committed:
 
 ```bash
 git diff --exit-code -- dist/background.js dist/js/content.js dist/js/ghost.js dist/js/messenger_patch.js
