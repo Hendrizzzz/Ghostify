@@ -23,6 +23,6 @@
   },
   "homepage": "https://github.com/Hendrizzzz/Ghostify#readme",
   "devDependencies": {
-    "esbuild": "^0.27.3"
+    "esbuild": "^0.28.0"
   }
 }
