@@ -1,0 +1,49 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Manila
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - bot
+      - area:ci
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:15"
+      timezone: Asia/Manila
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - bot
+      - area:extension
+    groups:
+      extension-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:30"
+      timezone: Asia/Manila
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - bot
+      - area:site
+    groups:
+      site-dependencies:
+        patterns:
+          - "*"

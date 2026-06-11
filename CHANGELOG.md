@@ -16,6 +16,9 @@ grouped by version, with the most recent changes first.
 - Added GitHub Actions CI for the root extension package. The workflow installs
   dependencies with `npm ci`, runs `npm test`, validates extension package
   metadata, and verifies generated `dist/` bundles are committed.
+- Added workflow linting, site build checks, high-severity npm audit gates, and
+  Dependabot version-update automation for GitHub Actions, extension
+  dependencies, and website dependencies.
 - Added `RELEASE_CHECKLIST.md` to make version synchronization, automated tests,
   manual Meta-platform smoke tests, Chrome Web Store packaging, privacy review,
   and post-release steps explicit.
