@@ -133,7 +133,7 @@ export function LightweightSection() {
                 color: 'var(--g-white)',
                 lineHeight: 0.9,
                 letterSpacing: 0,
-                marginBottom: 10,
+                marginBottom: 'clamp(16px, 1.4vw, 22px)',
               }}
             >
               <CountUp target={50.28} />
