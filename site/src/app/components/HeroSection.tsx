@@ -963,8 +963,8 @@ export function HeroSection() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {['Open source', 'Runs locally', 'No account credentials', 'Browser extension'].map((item, i) => (
               <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.02em' }}>{item}</span>
-                {i < 3 && <span style={{ color: 'rgba(240,230,210,0.15)', fontSize: 15 }}>·</span>}
+                <span style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'var(--g-dim)', letterSpacing: '0.02em' }}>{item}</span>
+                {i < 3 && <span style={{ color: 'rgba(240,230,210,0.15)', fontSize: 10 }}>·</span>}
               </span>
             ))}
           </div>

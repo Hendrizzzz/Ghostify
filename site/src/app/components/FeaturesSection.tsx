@@ -278,9 +278,12 @@ function ExtensionScene() {
   );
 }
 
-function FeatureCopy({ title, body }: { title: string; body: string }) {
+function FeatureCopy({ tag, title, body }: { tag: string; title: string; body: string }) {
   return (
     <div>
+      <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 10 }}>
+        {tag}
+      </div>
       <h3 style={{ fontFamily: 'var(--g-sans)', fontSize: 21, fontWeight: 500, color: 'var(--g-white)', margin: '0 0 10px', lineHeight: 1.2, letterSpacing: 0 }}>
         {title}
       </h3>
@@ -325,6 +328,7 @@ export function FeaturesSection() {
             <ReadScene />
           </SceneStage>
           <FeatureCopy
+            tag="read receipts"
             title="Hide read receipts"
             body="Open messages without instantly sending a signal. No Seen labels, no timestamp pressure."
           />
@@ -346,6 +350,7 @@ export function FeaturesSection() {
               <TypingScene />
             </SceneStage>
             <FeatureCopy
+              tag="typing indicators"
               title="Pause typing indicators"
               body="Draft, delete, rethink, and reply when you are ready."
             />
@@ -365,6 +370,7 @@ export function FeaturesSection() {
                 <StoryScene />
               </SceneStage>
               <FeatureCopy
+                tag="story views"
                 title="Reduce watch signals"
                 body="Browse stories with less unwanted visibility where supported."
               />
@@ -382,6 +388,7 @@ export function FeaturesSection() {
                 <ExtensionScene />
               </SceneStage>
               <FeatureCopy
+                tag="controls"
                 title="Toggle each signal"
                 body="Enable seen, typing, and story view protection independently. Mix and match exactly what stays hidden."
               />

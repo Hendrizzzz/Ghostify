@@ -63,7 +63,7 @@ export function PrivacySection() {
               Boring in{' '}
               <em style={{ fontStyle: 'italic', fontWeight: 400 }}>the right places.</em>
             </h2>
-            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, lineHeight: 1.6, color: 'var(--g-dim)', maxWidth: 300, margin: 0, letterSpacing: '0.02em' }}>
+            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 12, lineHeight: 1.6, color: 'var(--g-dim)', maxWidth: 300, margin: 0, letterSpacing: '0.02em' }}>
               No login. No profile. No Ghostify tracking relay.
               <br />
               Your switches live in your browser.
@@ -114,7 +114,7 @@ export function PrivacySection() {
 
           {/* Trust statement */}
           <div style={{ padding: 'clamp(24px, 3vw, 36px) 0', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, letterSpacing: '0.04em', color: 'var(--g-dim)', lineHeight: 1.8, maxWidth: 560 }}>
+            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 11.5, letterSpacing: '0.04em', color: 'var(--g-dim)', lineHeight: 1.8, maxWidth: 560 }}>
               Ghostify modifies which supported social signals leave the browser tab.
               It does not store messages, transmit conversations to Ghostify, or ask for credentials.
               The extension activates on supported Messenger, Facebook, Instagram, and Facebook/Messenger proxy-frame surfaces.

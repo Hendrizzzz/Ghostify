@@ -286,7 +286,7 @@ export function PlatformSection() {
             ))}
 
             {/* Footer note */}
-            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.24)', margin: '18px 0 0', letterSpacing: '0.02em', lineHeight: 1.7 }}>
+            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'rgba(240,230,210,0.24)', margin: '18px 0 0', letterSpacing: '0.02em', lineHeight: 1.7 }}>
               Controls are applied locally per browser tab.<br />
               Story view coverage varies by platform version.
             </p>
@@ -309,7 +309,7 @@ export function PlatformSection() {
         </div>
 
         {/* Disclaimer */}
-        <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.18)', marginTop: 'clamp(28px, 4vw, 48px)', letterSpacing: '0.03em', lineHeight: 1.8, maxWidth: 680 }}>
+        <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'rgba(240,230,210,0.18)', marginTop: 'clamp(28px, 4vw, 48px)', letterSpacing: '0.03em', lineHeight: 1.8, maxWidth: 680 }}>
           Ghostify is not affiliated with Meta, Facebook, Messenger, or Instagram. Platform names and marks are used as factual compatibility descriptors only.
         </p>
       </div>

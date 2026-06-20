@@ -1,7 +1,7 @@
 const LINES = [
   { label: 'Signal control', text: 'Seen signals stay quiet.' },
   { label: 'Architecture', text: 'Local-only. No Ghostify relay.' },
-  { label: 'Relay path', text: 'No tracking or message relay.' },
+  { label: 'Footprint', text: 'No tracking or message relay.' },
   { label: 'Trust model', text: 'Open source. Read it yourself.' },
   { label: 'Platform scope', text: 'Instagram, Messenger, Facebook.' },
   { label: 'Account model', text: 'No Ghostify account required.' },
@@ -14,6 +14,10 @@ const LINES = [
 export function PersonalityBand() {
   const renderLine = (line: typeof LINES[number]) => (
     <div className="band-card" key={line.label}>
+      <div className="band-chip">
+        <div className="band-dot" />
+        <span>{line.label}</span>
+      </div>
       <div className="band-copy">{line.text}</div>
     </div>
   );
@@ -86,7 +90,31 @@ export function PersonalityBand() {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          gap: 0;
+          gap: 10px;
+        }
+
+        .band-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          align-self: flex-start;
+          white-space: nowrap;
+        }
+
+        .band-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 2px;
+          background: rgba(196,72,48,0.5);
+          flex-shrink: 0;
+        }
+
+        .band-chip span {
+          font-family: var(--g-mono);
+          font-size: 8.5px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(240,230,210,0.22);
         }
 
         .band-copy {

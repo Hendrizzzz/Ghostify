@@ -6,7 +6,7 @@ const footerLinkStyle = {
   alignItems: 'center',
   gap: 6,
   fontFamily: 'var(--g-mono)',
-  fontSize: 15,
+  fontSize: 11,
   color: 'var(--g-dim)',
   textDecoration: 'none',
   letterSpacing: '0.04em',
@@ -55,7 +55,7 @@ export function Footer() {
         <span
           style={{
             fontFamily: 'var(--g-mono)',
-            fontSize: 15,
+            fontSize: 11,
             color: 'var(--g-dim)',
             letterSpacing: '0.06em',
             textAlign: 'center',
@@ -101,7 +101,7 @@ export function Footer() {
         style={{
           marginTop: 20,
           fontFamily: 'var(--g-mono)',
-          fontSize: 15,
+          fontSize: 10,
           color: 'rgba(240,230,210,0.15)',
           letterSpacing: '0.04em',
           textAlign: 'center',

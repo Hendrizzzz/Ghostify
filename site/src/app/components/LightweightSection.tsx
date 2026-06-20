@@ -152,18 +152,6 @@ export function LightweightSection() {
 
           {/* Body copy — sits inline with stats on desktop */}
           <div style={{ padding: 'clamp(20px, 3vw, 32px) 0', paddingLeft: 'clamp(28px, 5vw, 64px)', flex: 1, minWidth: 220 }} className="receipt-body">
-            <p
-              style={{
-                fontFamily: 'var(--g-sans)',
-                fontSize: 15,
-                lineHeight: 1.65,
-                color: 'var(--g-body)',
-                margin: '0 0 16px',
-                maxWidth: 340,
-              }}
-            >
-              Built to feel like a browser control, not another app to manage. No Ghostify cloud sync. No update nag.
-            </p>
             <div
               style={{
                 fontFamily: 'var(--g-mono)',
