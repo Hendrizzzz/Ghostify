@@ -6,13 +6,10 @@ export function FinalCTA() {
   return (
     <section
       className="snap-start"
-      style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}
+      style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', background: 'var(--g-bg)' }}
     >
       {/* Top line */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.08) 20%, rgba(240,230,210,0.08) 80%, transparent)' }} />
-
-      {/* Faint glow */}
-      <div aria-hidden style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', height: 380, background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(196,72,48,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Giant watermark */}
       <div aria-hidden style={{ position: 'absolute', bottom: 'clamp(30px, 8vw, 96px)', right: 'clamp(24px, 5vw, 72px)', fontFamily: 'var(--g-display)', fontSize: 'clamp(96px, 18vw, 240px)', fontWeight: 700, fontStyle: 'italic', color: 'rgba(240,230,210,0.012)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>

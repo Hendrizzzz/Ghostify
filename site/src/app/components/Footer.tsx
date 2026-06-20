@@ -25,6 +25,7 @@ export function Footer() {
         borderTop: '1px solid rgba(240,230,210,0.05)',
         maxWidth: 1280,
         margin: '0 auto',
+        background: 'var(--g-bg)',
       }}
     >
       <div
