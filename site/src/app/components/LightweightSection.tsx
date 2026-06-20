@@ -136,10 +136,11 @@ export function LightweightSection() {
                 marginBottom: 10,
               }}
             >
-              Local
+              <CountUp target={50.28} />
+              <span style={{ fontSize: '0.38em', fontWeight: 400, marginLeft: 6, color: 'var(--g-body)' }}>KiB</span>
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              privacy controls
+              installed size
             </div>
           </div>
 
