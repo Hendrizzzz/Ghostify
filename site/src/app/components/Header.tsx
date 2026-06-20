@@ -170,7 +170,7 @@ export function Header() {
               onClick={() => scrollToSection(item.href)}
               style={{
                 fontFamily: 'var(--g-sans)',
-                fontSize: 13.5,
+                fontSize: 15,
                 fontWeight: 400,
                 color: 'rgba(240, 235, 224, 0.52)',
                 padding: 0,
@@ -201,7 +201,7 @@ export function Header() {
               alignItems: 'center',
               gap: 6,
               fontFamily: 'var(--g-sans)',
-              fontSize: 13.5,
+              fontSize: 15,
               fontWeight: 400,
               color: 'rgba(240, 235, 224, 0.52)',
               textDecoration: 'none',

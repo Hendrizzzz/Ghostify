@@ -278,12 +278,9 @@ function ExtensionScene() {
   );
 }
 
-function FeatureCopy({ tag, title, body }: { tag: string; title: string; body: string }) {
+function FeatureCopy({ title, body }: { title: string; body: string }) {
   return (
     <div>
-      <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 10 }}>
-        {tag}
-      </div>
       <h3 style={{ fontFamily: 'var(--g-sans)', fontSize: 21, fontWeight: 500, color: 'var(--g-white)', margin: '0 0 10px', lineHeight: 1.2, letterSpacing: 0 }}>
         {title}
       </h3>
@@ -304,9 +301,6 @@ export function FeaturesSection() {
     <section id="features" className="snap-start" style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       {/* Section heading */}
       <div style={{ padding: 'clamp(48px, 6vw, 72px) clamp(28px, 4vw, 56px) clamp(20px, 3vw, 32px)' }}>
-        <div style={{ fontFamily: 'var(--g-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 10 }}>
-          What it controls
-        </div>
         <h2 style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(1.4rem, 2.2vw, 1.9rem)', fontWeight: 500, color: 'var(--g-white)', margin: 0, lineHeight: 1.2, letterSpacing: 0 }}>
           Quiet controls for noisy apps.
         </h2>
@@ -331,7 +325,6 @@ export function FeaturesSection() {
             <ReadScene />
           </SceneStage>
           <FeatureCopy
-            tag="read receipts"
             title="Hide read receipts"
             body="Open messages without instantly sending a signal. No Seen labels, no timestamp pressure."
           />
@@ -353,7 +346,6 @@ export function FeaturesSection() {
               <TypingScene />
             </SceneStage>
             <FeatureCopy
-              tag="typing indicators"
               title="Pause typing indicators"
               body="Draft, delete, rethink, and reply when you are ready."
             />
@@ -373,7 +365,6 @@ export function FeaturesSection() {
                 <StoryScene />
               </SceneStage>
               <FeatureCopy
-                tag="story views"
                 title="Reduce watch signals"
                 body="Browse stories with less unwanted visibility where supported."
               />
@@ -391,7 +382,6 @@ export function FeaturesSection() {
                 <ExtensionScene />
               </SceneStage>
               <FeatureCopy
-                tag="controls"
                 title="Toggle each signal"
                 body="Enable seen, typing, and story view protection independently. Mix and match exactly what stays hidden."
               />
@@ -428,7 +418,7 @@ export function FeaturesSection() {
             margin-bottom: 8px !important;
           }
           .feat-cell p {
-            font-size: 14px !important;
+            font-size: 15px !important;
             line-height: 1.48 !important;
           }
         }

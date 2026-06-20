@@ -51,13 +51,10 @@ export function FAQSection() {
       <div className="faq-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'clamp(40px, 6vw, 80px)', alignItems: 'start' }}>
 
         <div>
-          <div style={{ fontFamily: 'var(--g-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 16 }}>
-            Questions
-          </div>
           <h2 style={{ fontFamily: 'var(--g-sans)', fontSize: 22, fontWeight: 500, color: 'var(--g-white)', margin: '0 0 16px', lineHeight: 1.2, letterSpacing: 0 }}>
             Before you install.
           </h2>
-          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 13.5, lineHeight: 1.6, color: 'var(--g-body)', margin: 0 }}>
+          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.6, color: 'var(--g-body)', margin: 0 }}>
             If something's missing,{' '}
             <a href="https://github.com/Hendrizzzz/Ghostify/issues/new?template=help_feedback.yml" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--g-body)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
               open an issue
@@ -94,7 +91,7 @@ export function FAQSection() {
                     transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                     style={{ overflow: 'hidden' }}
                   >
-                    <p style={{ fontFamily: 'var(--g-sans)', fontSize: 14, lineHeight: 1.7, color: 'var(--g-body)', margin: '0 0 20px', paddingRight: 32, maxWidth: 580 }}>
+                    <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.7, color: 'var(--g-body)', margin: '0 0 20px', paddingRight: 32, maxWidth: 580 }}>
                       {faq.a}
                     </p>
                   </motion.div>
@@ -112,7 +109,7 @@ export function FAQSection() {
         }
         @media (max-width: 480px) {
           .faq-layout button { padding: 16px 0 !important; }
-          .faq-layout button span { font-size: 14px !important; }
+          .faq-layout button span { font-size: 15px !important; }
         }
       `}</style>
     </section>

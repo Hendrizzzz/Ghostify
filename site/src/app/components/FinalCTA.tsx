@@ -26,9 +26,6 @@ export function FinalCTA() {
             viewport={{ once: true }}
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 22 }}>
-              Install
-            </div>
             <h2 style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.4rem, 4.2vw, 4rem)', fontWeight: 400, fontStyle: 'italic', color: 'var(--g-white)', margin: '0 0 22px', lineHeight: 1.06, letterSpacing: 0 }}>
               Stop letting apps announce every tiny move.
             </h2>
@@ -51,10 +48,10 @@ export function FinalCTA() {
                 <GhostMark size={15} />
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--g-sans)', fontSize: 12, fontWeight: 500, color: 'var(--g-white)', letterSpacing: 0 }}>Ghostify</div>
-                <div style={{ fontFamily: 'var(--g-mono)', fontSize: 9.5, color: 'var(--g-dim)' }}>open source · local-only</div>
+                <div style={{ fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 500, color: 'var(--g-white)', letterSpacing: 0 }}>Ghostify</div>
+                <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)' }}>open source · local-only</div>
               </div>
-              <div style={{ marginLeft: 'auto', fontFamily: 'var(--g-mono)', fontSize: 10, color: 'rgba(196,72,48,0.7)', letterSpacing: '0.04em' }}>
+              <div style={{ marginLeft: 'auto', fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(196,72,48,0.7)', letterSpacing: '0.04em' }}>
                 Free
               </div>
             </div>
@@ -77,7 +74,7 @@ export function FinalCTA() {
               href="https://github.com/Hendrizzzz/Ghostify"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 9, background: 'transparent', color: 'var(--g-white-dim)', fontFamily: 'var(--g-sans)', fontSize: 14, fontWeight: 400, textDecoration: 'none', letterSpacing: 0, border: '1px solid rgba(240,230,210,0.14)', transition: 'border-color 0.18s ease, color 0.18s ease' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 9, background: 'transparent', color: 'var(--g-white-dim)', fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 400, textDecoration: 'none', letterSpacing: 0, border: '1px solid rgba(240,230,210,0.14)', transition: 'border-color 0.18s ease, color 0.18s ease' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.3)'; (e.currentTarget as HTMLElement).style.color = 'var(--g-white)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.14)'; (e.currentTarget as HTMLElement).style.color = 'var(--g-white-dim)'; }}
             >
@@ -91,7 +88,7 @@ export function FinalCTA() {
                 href="https://microsoftedge.microsoft.com/addons/detail/ghostify-hide-seen-typ/mgbppdkolkeelimnemlbpmfdddhoeeal"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ fontFamily: 'var(--g-mono)', fontSize: 11, color: 'var(--g-dim)', textDecoration: 'none', letterSpacing: '0.04em', borderBottom: '1px solid rgba(240,230,210,0.12)', paddingBottom: 2, transition: 'color 0.18s ease, border-color 0.18s ease' }}
+                style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', textDecoration: 'none', letterSpacing: '0.04em', borderBottom: '1px solid rgba(240,230,210,0.12)', paddingBottom: 2, transition: 'color 0.18s ease, border-color 0.18s ease' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--g-body)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.25)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--g-dim)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.12)'; }}
               >
@@ -99,7 +96,7 @@ export function FinalCTA() {
               </a>
             </div>
 
-            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'rgba(240,230,210,0.18)', margin: '6px 0 0', letterSpacing: '0.03em', lineHeight: 1.7 }}>
+            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.18)', margin: '6px 0 0', letterSpacing: '0.03em', lineHeight: 1.7 }}>
               Free · Open source · No account required
               <br />
               Messenger · Facebook · Instagram

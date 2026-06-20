@@ -227,9 +227,6 @@ export function PlatformSection() {
 
         {/* Heading */}
         <div style={{ marginBottom: 'clamp(36px, 5vw, 56px)' }}>
-          <div style={{ fontFamily: 'var(--g-mono)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 12 }}>
-            Compatibility
-          </div>
           <h2 style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(1.65rem, 2.6vw, 2.25rem)', fontWeight: 500, color: 'var(--g-white)', margin: 0, lineHeight: 1.16, letterSpacing: 0 }}>
             One layer. Three surfaces.
           </h2>
@@ -248,12 +245,12 @@ export function PlatformSection() {
                 { label: 'Typing', short: 'Type' },
                 { label: 'Story views', short: 'Story' },
               ].map((col) => (
-                <div key={col.label} style={{ padding: '10px 8px', fontFamily: 'var(--g-mono)', fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(240,230,210,0.3)', textAlign: 'center' }}>
+                <div key={col.label} style={{ padding: '10px 8px', fontFamily: 'var(--g-mono)', fontSize: 15, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(240,230,210,0.3)', textAlign: 'center' }}>
                   <span className="platform-head-full">{col.label}</span>
                   <span className="platform-head-short">{col.short}</span>
                 </div>
               ))}
-              <div style={{ padding: '10px 8px', fontFamily: 'var(--g-mono)', fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(240,230,210,0.3)' }}>Notes</div>
+              <div style={{ padding: '10px 8px', fontFamily: 'var(--g-mono)', fontSize: 15, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(240,230,210,0.3)' }}>Notes</div>
             </div>
 
             {/* Header underline */}
@@ -281,7 +278,7 @@ export function PlatformSection() {
                     </div>
                   ))}
                   {/* Notes */}
-                  <div className="platform-notes-cell" style={{ padding: 'clamp(14px, 1.8vw, 20px) 8px', fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'rgba(240,230,210,0.32)', letterSpacing: '0.02em', lineHeight: 1.5 }}>
+                  <div className="platform-notes-cell" style={{ padding: 'clamp(14px, 1.8vw, 20px) 8px', fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.32)', letterSpacing: '0.02em', lineHeight: 1.5 }}>
                     {row.notes}
                   </div>
                 </div>
@@ -289,7 +286,7 @@ export function PlatformSection() {
             ))}
 
             {/* Footer note */}
-            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'rgba(240,230,210,0.24)', margin: '18px 0 0', letterSpacing: '0.02em', lineHeight: 1.7 }}>
+            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.24)', margin: '18px 0 0', letterSpacing: '0.02em', lineHeight: 1.7 }}>
               Controls are applied locally per browser tab.<br />
               Story view coverage varies by platform version.
             </p>
@@ -312,7 +309,7 @@ export function PlatformSection() {
         </div>
 
         {/* Disclaimer */}
-        <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'rgba(240,230,210,0.18)', marginTop: 'clamp(28px, 4vw, 48px)', letterSpacing: '0.03em', lineHeight: 1.8, maxWidth: 680 }}>
+        <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.18)', marginTop: 'clamp(28px, 4vw, 48px)', letterSpacing: '0.03em', lineHeight: 1.8, maxWidth: 680 }}>
           Ghostify is not affiliated with Meta, Facebook, Messenger, or Instagram. Platform names and marks are used as factual compatibility descriptors only.
         </p>
       </div>
@@ -338,10 +335,18 @@ export function PlatformSection() {
           .platform-matrix-head > div {
             padding-left: 4px !important;
             padding-right: 4px !important;
-            font-size: 8px !important;
+            font-size: 12px !important;
+            letter-spacing: 0.02em !important;
+            line-height: 1.15 !important;
+          }
+          .platform-head-full {
+            display: none !important;
+          }
+          .platform-head-short {
+            display: inline !important;
           }
           .platform-name {
-            font-size: 14px !important;
+            font-size: 15px !important;
           }
           .platform-notes-cell {
             overflow-wrap: anywhere !important;
@@ -359,10 +364,10 @@ export function PlatformSection() {
             grid-template-columns: minmax(94px, 1fr) repeat(3, 26px) minmax(54px, 0.75fr) !important;
           }
           .platform-name {
-            font-size: 13px !important;
+            font-size: 15px !important;
           }
           .platform-matrix-head > div {
-            font-size: 7px !important;
+            font-size: 12px !important;
             letter-spacing: 0.01em !important;
             line-height: 1.1 !important;
           }
@@ -375,7 +380,7 @@ export function PlatformSection() {
           .platform-notes-cell {
             padding-left: 4px !important;
             padding-right: 0 !important;
-            font-size: 8px !important;
+            font-size: 12px !important;
             line-height: 1.35 !important;
           }
         }

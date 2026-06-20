@@ -921,13 +921,6 @@ export function HeroSection() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-            <div style={{ width: 5, height: 5, borderRadius: 3, background: 'var(--g-accent)', opacity: 0.75 }} />
-            <span style={{ fontFamily: 'var(--g-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--g-dim)' }}>
-              Open source browser extension
-            </span>
-          </div>
-
           <h1 style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 4.4vw, 4.4rem)', fontWeight: 400, fontStyle: 'italic', lineHeight: 1.06, letterSpacing: 0, color: 'var(--g-white)', margin: '0 0 8px' }}>
             Read it.
           </h1>
@@ -935,10 +928,10 @@ export function HeroSection() {
             Don't announce it.
           </h1>
 
-          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(0.88rem, 1.05vw, 0.98rem)', lineHeight: 1.65, color: 'var(--g-body)', margin: '0 0 10px', maxWidth: 400 }}>
+          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.65, color: 'var(--g-body)', margin: '0 0 10px', maxWidth: 400 }}>
             Ghostify locally hides read receipts, typing indicators, and supported story-view signals on Messenger, Facebook, and Instagram.
           </p>
-          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(0.82rem, 0.95vw, 0.9rem)', lineHeight: 1.65, color: 'rgba(240,235,224,0.3)', margin: '0 0 32px', maxWidth: 400 }}>
+          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.65, color: 'rgba(240,235,224,0.3)', margin: '0 0 32px', maxWidth: 400 }}>
             No account login. No cloud relay. Just your browser quietly refusing to snitch.
           </p>
 
@@ -947,7 +940,7 @@ export function HeroSection() {
               href="https://chromewebstore.google.com/detail/ghostify-hide-seen-typing/flpnibonbhdmnpgflnbemgghghhblmpm?utm_source=item-share-cb"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 7, background: 'var(--g-white)', color: '#0B0A08', fontFamily: 'var(--g-sans)', fontSize: 14, fontWeight: 500, textDecoration: 'none', letterSpacing: 0, boxShadow: '0 2px 12px rgba(0,0,0,0.28)', transition: 'opacity 0.18s ease, transform 0.15s ease' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 7, background: 'var(--g-white)', color: '#0B0A08', fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 500, textDecoration: 'none', letterSpacing: 0, boxShadow: '0 2px 12px rgba(0,0,0,0.28)', transition: 'opacity 0.18s ease, transform 0.15s ease' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
             >
@@ -958,7 +951,7 @@ export function HeroSection() {
               href="https://github.com/Hendrizzzz/Ghostify"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 7, background: 'transparent', color: 'var(--g-white-dim)', fontFamily: 'var(--g-sans)', fontSize: 14, fontWeight: 400, textDecoration: 'none', letterSpacing: 0, border: '1px solid rgba(240,230,210,0.13)', transition: 'border-color 0.18s ease, color 0.18s ease' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 7, background: 'transparent', color: 'var(--g-white-dim)', fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 400, textDecoration: 'none', letterSpacing: 0, border: '1px solid rgba(240,230,210,0.13)', transition: 'border-color 0.18s ease, color 0.18s ease' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.28)'; (e.currentTarget as HTMLElement).style.color = 'var(--g-white)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.13)'; (e.currentTarget as HTMLElement).style.color = 'var(--g-white-dim)'; }}
             >
@@ -970,8 +963,8 @@ export function HeroSection() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {['Open source', 'Runs locally', 'No account credentials', 'Browser extension'].map((item, i) => (
               <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'var(--g-dim)', letterSpacing: '0.02em' }}>{item}</span>
-                {i < 3 && <span style={{ color: 'rgba(240,230,210,0.15)', fontSize: 10 }}>·</span>}
+                <span style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.02em' }}>{item}</span>
+                {i < 3 && <span style={{ color: 'rgba(240,230,210,0.15)', fontSize: 15 }}>·</span>}
               </span>
             ))}
           </div>

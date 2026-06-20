@@ -1420,18 +1420,6 @@ export function DemoSection() {
     >
       {/* Section heading */}
       <div className="demo-section-heading" style={{ marginBottom: 36 }}>
-        <div
-          style={{
-            fontFamily: 'var(--g-mono)',
-            fontSize: 11,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--g-dim)',
-            marginBottom: 10,
-          }}
-        >
-          Interactive demo
-        </div>
         <h2
           style={{
             fontFamily: 'var(--g-sans)',
@@ -1584,7 +1572,7 @@ export function DemoSection() {
       <p
         style={{
           fontFamily: 'var(--g-mono)',
-          fontSize: 11,
+          fontSize: 15,
           color: 'var(--g-dim)',
           textAlign: 'center',
           marginTop: 16,

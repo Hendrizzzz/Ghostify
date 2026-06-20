@@ -63,7 +63,7 @@ export function PrivacySection() {
               Boring in{' '}
               <em style={{ fontStyle: 'italic', fontWeight: 400 }}>the right places.</em>
             </h2>
-            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 12, lineHeight: 1.6, color: 'var(--g-dim)', maxWidth: 300, margin: 0, letterSpacing: '0.02em' }}>
+            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, lineHeight: 1.6, color: 'var(--g-dim)', maxWidth: 300, margin: 0, letterSpacing: '0.02em' }}>
               No login. No profile. No Ghostify tracking relay.
               <br />
               Your switches live in your browser.
@@ -94,13 +94,13 @@ export function PrivacySection() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Icon size={15} color="var(--g-accent)" strokeWidth={1.5} />
                     <div style={{ width: 14, height: 1, background: 'rgba(196,72,48,0.35)', flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'var(--g-mono)', fontSize: 9, color: 'rgba(196,72,48,0.4)', letterSpacing: '0.08em' }}>{pillar.index}</span>
+                    <span style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(196,72,48,0.4)', letterSpacing: '0.08em' }}>{pillar.index}</span>
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(0.88rem, 1.1vw, 1rem)', fontWeight: 500, color: 'var(--g-white)', marginBottom: 8, lineHeight: 1.3, letterSpacing: 0 }}>
+                    <div style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(15px, 1.1vw, 1rem)', fontWeight: 500, color: 'var(--g-white)', marginBottom: 8, lineHeight: 1.3, letterSpacing: 0 }}>
                       {pillar.title}
                     </div>
-                    <p style={{ fontFamily: 'var(--g-sans)', fontSize: 13, lineHeight: 1.6, color: 'var(--g-body)', margin: 0 }}>
+                    <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.6, color: 'var(--g-body)', margin: 0 }}>
                       {pillar.body}
                     </p>
                   </div>
@@ -114,7 +114,7 @@ export function PrivacySection() {
 
           {/* Trust statement */}
           <div style={{ padding: 'clamp(24px, 3vw, 36px) 0', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 11.5, letterSpacing: '0.04em', color: 'var(--g-dim)', lineHeight: 1.8, maxWidth: 560 }}>
+            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, letterSpacing: '0.04em', color: 'var(--g-dim)', lineHeight: 1.8, maxWidth: 560 }}>
               Ghostify modifies which supported social signals leave the browser tab.
               It does not store messages, transmit conversations to Ghostify, or ask for credentials.
               The extension activates on supported Messenger, Facebook, Instagram, and Facebook/Messenger proxy-frame surfaces.
@@ -123,7 +123,7 @@ export function PrivacySection() {
               href="https://github.com/Hendrizzzz/Ghostify"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ marginLeft: 'auto', fontFamily: 'var(--g-mono)', fontSize: 12, color: 'var(--g-dim)', textDecoration: 'none', letterSpacing: '0.04em', borderBottom: '1px solid rgba(240,230,210,0.15)', paddingBottom: 2, transition: 'color 0.18s ease, border-color 0.18s ease', whiteSpace: 'nowrap' }}
+              style={{ marginLeft: 'auto', fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', textDecoration: 'none', letterSpacing: '0.04em', borderBottom: '1px solid rgba(240,230,210,0.15)', paddingBottom: 2, transition: 'color 0.18s ease, border-color 0.18s ease', whiteSpace: 'nowrap' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--g-body)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.3)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--g-dim)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.15)'; }}
             >

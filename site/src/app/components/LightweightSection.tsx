@@ -75,20 +75,6 @@ export function LightweightSection() {
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(60px, 9vw, 100px) clamp(28px, 4vw, 56px)', position: 'relative', zIndex: 1 }}>
 
-        {/* Eyebrow */}
-        <div
-          style={{
-            fontFamily: 'var(--g-mono)',
-            fontSize: 11,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--g-dim)',
-            marginBottom: 28,
-          }}
-        >
-          Footprint
-        </div>
-
         {/* Headline — display serif, the one editorial moment */}
         <motion.h2
           initial={{ opacity: 0, y: 14 }}
@@ -139,7 +125,7 @@ export function LightweightSection() {
               <CountUp target={50.28} />
               <span style={{ fontSize: '0.38em', fontWeight: 400, marginLeft: 6, color: 'var(--g-body)' }}>KiB</span>
             </div>
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               installed size
             </div>
           </div>
@@ -149,7 +135,7 @@ export function LightweightSection() {
             <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 300, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
               <CountUp target={0} />
             </div>
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               tracking relays
             </div>
           </div>
@@ -159,7 +145,7 @@ export function LightweightSection() {
             <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 300, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
               <CountUp target={0} />
             </div>
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               accounts required
             </div>
           </div>
@@ -169,7 +155,7 @@ export function LightweightSection() {
             <p
               style={{
                 fontFamily: 'var(--g-sans)',
-                fontSize: 14,
+                fontSize: 15,
                 lineHeight: 1.65,
                 color: 'var(--g-body)',
                 margin: '0 0 16px',
@@ -181,7 +167,7 @@ export function LightweightSection() {
             <div
               style={{
                 fontFamily: 'var(--g-mono)',
-                fontSize: 10.5,
+                fontSize: 15,
                 color: 'rgba(240,230,210,0.2)',
                 letterSpacing: '0.03em',
                 lineHeight: 1.8,

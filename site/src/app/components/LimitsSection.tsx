@@ -34,13 +34,10 @@ export function LimitsSection() {
         >
           {/* Left: heading */}
           <div>
-            <div style={{ fontFamily: 'var(--g-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-dim)', marginBottom: 16 }}>
-              Honest limits
-            </div>
             <h2 style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(1.3rem, 1.8vw, 1.6rem)', fontWeight: 500, color: 'var(--g-white)', margin: '0 0 14px', lineHeight: 1.2, letterSpacing: 0 }}>
               No magic cloak.
             </h2>
-            <p style={{ fontFamily: 'var(--g-sans)', fontSize: 13.5, lineHeight: 1.65, color: 'var(--g-body)', margin: 0, maxWidth: 280 }}>
+            <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.65, color: 'var(--g-body)', margin: 0, maxWidth: 280 }}>
               Ghostify does one thing well. Here's what falls outside that boundary.
             </p>
           </div>
@@ -63,10 +60,10 @@ export function LimitsSection() {
                   alignItems: 'start',
                 }}
               >
-                <div style={{ fontFamily: 'var(--g-sans)', fontSize: 14, fontWeight: 500, color: 'rgba(240,235,224,0.65)', lineHeight: 1.3, letterSpacing: 0, paddingTop: 2 }}>
+                <div style={{ fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 500, color: 'rgba(240,235,224,0.65)', lineHeight: 1.3, letterSpacing: 0, paddingTop: 2 }}>
                   {limit.title}
                 </div>
-                <p style={{ fontFamily: 'var(--g-sans)', fontSize: 13.5, lineHeight: 1.65, color: 'var(--g-body)', margin: 0 }}>
+                <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.65, color: 'var(--g-body)', margin: 0 }}>
                   {limit.body}
                 </p>
               </motion.div>
