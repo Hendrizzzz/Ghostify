@@ -2,7 +2,6 @@ import { GhostMascot } from './components/GhostMascot';
 import { useEffect } from 'react';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
-import { DemoSection } from './components/DemoSection';
 import { FeaturesSection } from './components/FeaturesSection';
 import { PlatformSection } from './components/PlatformSection';
 import { PersonalityBand } from './components/PersonalityBand';
@@ -103,7 +102,6 @@ export default function App() {
       ) : (
         <main>
           <HeroSection />
-          <DemoSection />
           <FeaturesSection />
           <PlatformSection />
           <PersonalityBand />
