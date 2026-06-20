@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { GhostMark } from './GhostSVG';
 
-const LOGO_PLATFORMS = ['Instagram', 'Messenger', 'Facebook'] as const;
+type PlatformName = 'Instagram' | 'Messenger' | 'Facebook';
 
 const CHECK = () => (
   <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
@@ -32,10 +32,10 @@ function EvidenceChip({ text, accent = false }: { text: string; accent?: boolean
   );
 }
 
-function PlatformLogoMark({ platform }: { platform: 'Instagram' | 'Messenger' | 'Facebook' }) {
+function PlatformLogoMark({ platform }: { platform: PlatformName }) {
   if (platform === 'Instagram') {
     return (
-      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <svg className="platform-logo-mark" width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
         <rect x="3" y="3" width="26" height="26" rx="8" fill="url(#instagramLogoGradient)" />
         <rect x="9.4" y="9.4" width="13.2" height="13.2" rx="4" stroke="white" strokeWidth="2.2" />
         <circle cx="16" cy="16" r="3.8" stroke="white" strokeWidth="2.2" />
@@ -54,7 +54,7 @@ function PlatformLogoMark({ platform }: { platform: 'Instagram' | 'Messenger' | 
 
   if (platform === 'Messenger') {
     return (
-      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <svg className="platform-logo-mark" width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
         <path
           d="M16 4C9.1 4 4 8.75 4 15.15c0 3.45 1.48 6.45 3.95 8.45v4.1c0 .72.77 1.18 1.39.82l3.55-2.05c1 .25 2.05.38 3.11.38 6.9 0 12-4.75 12-11.7S22.9 4 16 4Z"
           fill="url(#messengerLogoGradient)"
@@ -72,29 +72,13 @@ function PlatformLogoMark({ platform }: { platform: 'Instagram' | 'Messenger' | 
   }
 
   return (
-    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <svg className="platform-logo-mark" width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <rect x="4" y="4" width="24" height="24" rx="7" fill="#1877F2" />
       <path
         d="M18.25 27.2v-9.55h3.2l.48-3.72h-3.68v-2.38c0-1.08.3-1.82 1.85-1.82h1.98V6.4c-.34-.05-1.52-.15-2.88-.15-2.85 0-4.8 1.74-4.8 4.94v2.74h-3.23v3.72h3.23v9.55h3.85Z"
         fill="white"
       />
     </svg>
-  );
-}
-
-function PlatformLogoStrip() {
-  return (
-    <div className="platform-logo-row" aria-label="Supported social platforms">
-      <span className="platform-logo-kicker">Supported surfaces</span>
-      <div className="platform-logo-list">
-        {LOGO_PLATFORMS.map((platform) => (
-          <div className="platform-logo-chip" key={platform}>
-            <PlatformLogoMark platform={platform} />
-            <span>{platform}</span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -188,7 +172,17 @@ function InstagramFragment() {
   );
 }
 
-const ROWS = [
+interface PlatformRow {
+  name: PlatformName;
+  color: string;
+  read: boolean;
+  typing: boolean;
+  story: boolean;
+  notes: string;
+  Fragment: () => JSX.Element;
+}
+
+const ROWS: PlatformRow[] = [
   {
     name: 'Messenger',
     color: '#0082FB',
@@ -277,7 +271,7 @@ export function PlatformSection() {
                 <div className="platform-matrix-row" style={{ display: 'grid', gridTemplateColumns: '136px repeat(3, 1fr) 1.4fr', gap: 0, borderBottom: '1px solid rgba(240,230,210,0.06)', alignItems: 'center' }}>
                   {/* Platform name */}
                   <div style={{ padding: 'clamp(14px, 1.8vw, 20px) 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: 3, background: row.color, flexShrink: 0 }} />
+                    <PlatformLogoMark platform={row.name} />
                     <span className="platform-name" style={{ fontFamily: 'var(--g-sans)', fontSize: 15.5, fontWeight: 500, color: 'var(--g-white)', letterSpacing: 0 }}>{row.name}</span>
                   </div>
                   {/* Check cells */}
@@ -294,36 +288,6 @@ export function PlatformSection() {
               </motion.div>
             ))}
 
-            <a
-              className="public-status-link"
-              href="/status"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) auto',
-                alignItems: 'center',
-                gap: 14,
-                marginTop: 18,
-                padding: '12px 14px',
-                border: '1px solid rgba(240,230,210,0.08)',
-                borderRadius: 8,
-                background: 'rgba(240,230,210,0.025)',
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
-            >
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'rgba(240,230,210,0.34)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  Latest public verification
-                </span>
-                <span style={{ display: 'block', fontFamily: 'var(--g-sans)', fontSize: 13.5, color: 'rgba(240,230,210,0.72)', lineHeight: 1.45 }}>
-                  v2.0.4 checks are under review and downgrade visibly when evidence expires.
-                </span>
-              </span>
-              <span style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'var(--g-body)', letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                Status
-              </span>
-            </a>
-
             {/* Footer note */}
             <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10.5, color: 'rgba(240,230,210,0.24)', margin: '18px 0 0', letterSpacing: '0.02em', lineHeight: 1.7 }}>
               Controls are applied locally per browser tab.<br />
@@ -333,7 +297,6 @@ export function PlatformSection() {
 
           {/* Right: artifact evidence fragments */}
           <div className="platform-fragments" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vw, 20px)' }}>
-            <PlatformLogoStrip />
             {ROWS.map((row, i) => (
               <motion.div
                 key={row.name}
@@ -355,55 +318,14 @@ export function PlatformSection() {
       </div>
 
       <style>{`
-        .platform-logo-row {
-          border: 1px solid rgba(240,230,210,0.08);
-          border-radius: 12px;
-          background: rgba(240,230,210,0.025);
-          padding: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          max-width: 340px;
-        }
-        .platform-logo-kicker {
-          font-family: var(--g-mono);
-          font-size: 9.5px;
-          color: rgba(240,230,210,0.34);
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          white-space: nowrap;
-        }
-        .platform-logo-list {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .platform-logo-chip {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          border: 1px solid rgba(240,230,210,0.08);
-          background: rgba(13,12,10,0.72);
-          display: grid;
-          place-items: center;
-          box-shadow: 0 14px 34px rgba(0,0,0,0.18);
-        }
-        .platform-logo-chip span {
-          position: absolute;
-          width: 1px;
-          height: 1px;
-          padding: 0;
-          margin: -1px;
-          overflow: hidden;
-          clip: rect(0, 0, 0, 0);
-          white-space: nowrap;
-          border: 0;
+        .platform-logo-mark {
+          flex: 0 0 auto;
+          border-radius: 8px;
+          filter: saturate(0.95) brightness(0.95);
         }
         @media (max-width: 900px) {
           .platform-layout { grid-template-columns: 1fr !important; }
           .platform-fragments { display: grid !important; grid-template-columns: 1fr 1fr !important; }
-          .platform-logo-row { grid-column: 1 / -1; max-width: none; }
         }
         @media (max-width: 480px) {
           .platform-inner {
@@ -423,14 +345,6 @@ export function PlatformSection() {
           }
           .platform-notes-cell {
             overflow-wrap: anywhere !important;
-          }
-          .public-status-link {
-            grid-template-columns: 1fr !important;
-            gap: 8px !important;
-          }
-          .platform-logo-row {
-            align-items: flex-start;
-            flex-direction: column;
           }
         }
         @media (max-width: 560px) {
