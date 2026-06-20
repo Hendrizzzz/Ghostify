@@ -199,9 +199,6 @@ export function LightweightSection() {
       <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.07) 20%, rgba(240,230,210,0.07) 80%, transparent)' }} />
 
       <style>{`
-        @media (max-width: 900px) {
-          .stat-accounts { display: none !important; }
-        }
         @media (max-width: 700px) {
           .receipt-row { flex-direction: column !important; border-top: 1px solid rgba(240,230,210,0.07); }
           .receipt-row > div { border-right: none !important; border-bottom: 1px solid rgba(240,230,210,0.07); padding-left: 0 !important; padding-right: 0 !important; width: 100%; }
