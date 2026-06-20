@@ -1,6 +1,8 @@
 import { motion } from 'motion/react';
 import { GhostMark } from './GhostSVG';
 
+const LOGO_PLATFORMS = ['Instagram', 'Messenger', 'Facebook'] as const;
+
 const CHECK = () => (
   <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
     <circle cx="7" cy="7" r="6.5" stroke="rgba(91,173,106,0.35)" />
@@ -26,6 +28,72 @@ function EvidenceChip({ text, accent = false }: { text: string; accent?: boolean
       <span style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: accent ? 'rgba(196,72,48,0.7)' : 'rgba(240,230,210,0.32)', letterSpacing: '0.02em' }}>
         {text}
       </span>
+    </div>
+  );
+}
+
+function PlatformLogoMark({ platform }: { platform: 'Instagram' | 'Messenger' | 'Facebook' }) {
+  if (platform === 'Instagram') {
+    return (
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="3" y="3" width="26" height="26" rx="8" fill="url(#instagramLogoGradient)" />
+        <rect x="9.4" y="9.4" width="13.2" height="13.2" rx="4" stroke="white" strokeWidth="2.2" />
+        <circle cx="16" cy="16" r="3.8" stroke="white" strokeWidth="2.2" />
+        <circle cx="21.2" cy="10.9" r="1.45" fill="white" />
+        <defs>
+          <linearGradient id="instagramLogoGradient" x1="6" y1="27" x2="27" y2="5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FEDA75" />
+            <stop offset="0.32" stopColor="#FA7E1E" />
+            <stop offset="0.62" stopColor="#D62976" />
+            <stop offset="1" stopColor="#4F5BD5" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  if (platform === 'Messenger') {
+    return (
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path
+          d="M16 4C9.1 4 4 8.75 4 15.15c0 3.45 1.48 6.45 3.95 8.45v4.1c0 .72.77 1.18 1.39.82l3.55-2.05c1 .25 2.05.38 3.11.38 6.9 0 12-4.75 12-11.7S22.9 4 16 4Z"
+          fill="url(#messengerLogoGradient)"
+        />
+        <path d="M9.2 18.8 14 13.7l3.42 3.52 5.38-5.52-4.8 7.88-3.52-3.52-5.28 2.74Z" fill="white" />
+        <defs>
+          <linearGradient id="messengerLogoGradient" x1="5" y1="27" x2="27" y2="5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#0078FF" />
+            <stop offset="0.55" stopColor="#00C6FF" />
+            <stop offset="1" stopColor="#A033FF" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <rect x="4" y="4" width="24" height="24" rx="7" fill="#1877F2" />
+      <path
+        d="M18.25 27.2v-9.55h3.2l.48-3.72h-3.68v-2.38c0-1.08.3-1.82 1.85-1.82h1.98V6.4c-.34-.05-1.52-.15-2.88-.15-2.85 0-4.8 1.74-4.8 4.94v2.74h-3.23v3.72h3.23v9.55h3.85Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+function PlatformLogoStrip() {
+  return (
+    <div className="platform-logo-row" aria-label="Supported social platforms">
+      <span className="platform-logo-kicker">Supported surfaces</span>
+      <div className="platform-logo-list">
+        {LOGO_PLATFORMS.map((platform) => (
+          <div className="platform-logo-chip" key={platform}>
+            <PlatformLogoMark platform={platform} />
+            <span>{platform}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -265,6 +333,7 @@ export function PlatformSection() {
 
           {/* Right: artifact evidence fragments */}
           <div className="platform-fragments" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vw, 20px)' }}>
+            <PlatformLogoStrip />
             {ROWS.map((row, i) => (
               <motion.div
                 key={row.name}
@@ -281,14 +350,60 @@ export function PlatformSection() {
 
         {/* Disclaimer */}
         <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'rgba(240,230,210,0.18)', marginTop: 'clamp(28px, 4vw, 48px)', letterSpacing: '0.03em', lineHeight: 1.8, maxWidth: 680 }}>
-          Ghostify is not affiliated with Meta, Facebook, Messenger, or Instagram. Platform names are used as factual compatibility descriptors only.
+          Ghostify is not affiliated with Meta, Facebook, Messenger, or Instagram. Platform names and marks are used as factual compatibility descriptors only.
         </p>
       </div>
 
       <style>{`
+        .platform-logo-row {
+          border: 1px solid rgba(240,230,210,0.08);
+          border-radius: 12px;
+          background: rgba(240,230,210,0.025);
+          padding: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          max-width: 340px;
+        }
+        .platform-logo-kicker {
+          font-family: var(--g-mono);
+          font-size: 9.5px;
+          color: rgba(240,230,210,0.34);
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .platform-logo-list {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .platform-logo-chip {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          border: 1px solid rgba(240,230,210,0.08);
+          background: rgba(13,12,10,0.72);
+          display: grid;
+          place-items: center;
+          box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+        }
+        .platform-logo-chip span {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
         @media (max-width: 900px) {
           .platform-layout { grid-template-columns: 1fr !important; }
           .platform-fragments { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+          .platform-logo-row { grid-column: 1 / -1; max-width: none; }
         }
         @media (max-width: 480px) {
           .platform-inner {
@@ -312,6 +427,10 @@ export function PlatformSection() {
           .public-status-link {
             grid-template-columns: 1fr !important;
             gap: 8px !important;
+          }
+          .platform-logo-row {
+            align-items: flex-start;
+            flex-direction: column;
           }
         }
         @media (max-width: 560px) {
