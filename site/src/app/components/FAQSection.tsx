@@ -50,7 +50,12 @@ export function FAQSection() {
     >
       <div className="faq-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'clamp(40px, 6vw, 80px)', alignItems: 'start' }}>
 
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.65, margin: '0px 0px -18% 0px' }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
           <h2 style={{ fontFamily: 'var(--g-sans)', fontSize: 22, fontWeight: 500, color: 'var(--g-white)', margin: '0 0 16px', lineHeight: 1.2, letterSpacing: 0 }}>
             Before you install.
           </h2>
@@ -61,7 +66,7 @@ export function FAQSection() {
             </a>
             .
           </p>
-        </div>
+        </motion.div>
 
         <div>
           {FAQS.map((faq, i) => (

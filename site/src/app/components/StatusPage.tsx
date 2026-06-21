@@ -1,158 +1,277 @@
-import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, Clock3, History, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  HelpCircle,
+  History,
+  Info,
+} from 'lucide-react';
 import {
   STATUS_DATA,
   STATUS_LABELS,
-  VerificationEntry,
   formatStatusDate,
   getEffectiveStatus,
   getWorstStatus,
+  type PublicVerificationStatus,
+  type VerificationEntry,
 } from '../statusData';
 
 type StatusPageProps = {
   view: 'current' | 'history';
 };
 
-const STATUS_STYLE = {
-  maintainer_verified: { color: '#6bd081', border: 'rgba(107,208,129,0.34)', bg: 'rgba(107,208,129,0.09)' },
-  community_verified_reviewed: { color: '#88d39b', border: 'rgba(136,211,155,0.32)', bg: 'rgba(136,211,155,0.08)' },
-  under_review: { color: '#f0c47a', border: 'rgba(240,196,122,0.34)', bg: 'rgba(240,196,122,0.08)' },
-  not_recently_verified: { color: '#b8b0ae', border: 'rgba(240,230,210,0.18)', bg: 'rgba(240,230,210,0.04)' },
-  known_issue: { color: '#ff8d7f', border: 'rgba(255,141,127,0.34)', bg: 'rgba(255,141,127,0.08)' },
-  stale: { color: '#d4a57a', border: 'rgba(212,165,122,0.34)', bg: 'rgba(212,165,122,0.08)' },
-  public_status_unavailable: { color: '#b8b0ae', border: 'rgba(240,230,210,0.18)', bg: 'rgba(240,230,210,0.04)' },
-} as const;
+type PlatformName = VerificationEntry['platform'];
+type FeatureName = VerificationEntry['feature'];
+
+const PLATFORMS: Array<{ name: PlatformName; componentLabel: string }> = [
+  { name: 'Instagram', componentLabel: '3 controls' },
+  { name: 'Messenger', componentLabel: '3 controls' },
+  { name: 'Facebook', componentLabel: '3 controls' },
+];
+
+const FEATURES: FeatureName[] = ['Hide Seen', 'Hide Typing', 'Hide Story Views'];
+
+const STATUS_META: Record<
+  PublicVerificationStatus,
+  {
+    short: string;
+    tone: 'ok' | 'warn' | 'bad' | 'muted';
+  }
+> = {
+  maintainer_verified: { short: 'Working', tone: 'ok' },
+  community_verified_reviewed: { short: 'Working', tone: 'ok' },
+  under_review: { short: 'Under review', tone: 'warn' },
+  not_recently_verified: { short: 'Needs recheck', tone: 'warn' },
+  stale: { short: 'Needs recheck', tone: 'warn' },
+  known_issue: { short: 'Known issue', tone: 'bad' },
+  public_status_unavailable: { short: 'Unavailable', tone: 'muted' },
+};
 
 function groupByPlatform(entries: readonly VerificationEntry[]) {
-  return entries.reduce<Record<string, VerificationEntry[]>>((groups, entry) => {
-    groups[entry.platform] = groups[entry.platform] || [];
-    groups[entry.platform].push(entry);
-    return groups;
-  }, {});
+  return entries.reduce<Record<PlatformName, VerificationEntry[]>>(
+    (groups, entry) => {
+      groups[entry.platform].push(entry);
+      return groups;
+    },
+    { Instagram: [], Messenger: [], Facebook: [] },
+  );
 }
 
-function StatusBadge({ status }: { status: keyof typeof STATUS_LABELS }) {
-  const style = STATUS_STYLE[status];
+function getPlatformWorstStatus(entries: readonly VerificationEntry[]) {
+  return getWorstStatus(entries);
+}
+
+function getFeatureEntry(entries: readonly VerificationEntry[], feature: FeatureName) {
+  return entries.find((entry) => entry.feature === feature) || null;
+}
+
+function formatStatusDetail(entry: VerificationEntry | null) {
+  if (!entry) return 'No public record';
+  if (entry.verifiedAt) return `Verified ${formatStatusDate(entry.verifiedAt)}`;
+  return STATUS_META[getEffectiveStatus(entry)].short;
+}
+
+function PlatformLogo({ platform }: { platform: PlatformName }) {
+  if (platform === 'Instagram') {
+    return (
+      <svg className="status-platform-logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="3" y="3" width="26" height="26" rx="8" fill="url(#statusInstagramGradient)" />
+        <rect x="9.4" y="9.4" width="13.2" height="13.2" rx="4" stroke="white" strokeWidth="2.2" />
+        <circle cx="16" cy="16" r="3.8" stroke="white" strokeWidth="2.2" />
+        <circle cx="21.2" cy="10.9" r="1.45" fill="white" />
+        <defs>
+          <linearGradient id="statusInstagramGradient" x1="6" y1="27" x2="27" y2="5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FEDA75" />
+            <stop offset="0.32" stopColor="#FA7E1E" />
+            <stop offset="0.62" stopColor="#D62976" />
+            <stop offset="1" stopColor="#4F5BD5" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  if (platform === 'Messenger') {
+    return (
+      <svg className="status-platform-logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path
+          d="M16 4C9.1 4 4 8.75 4 15.15c0 3.45 1.48 6.45 3.95 8.45v4.1c0 .72.77 1.18 1.39.82l3.55-2.05c1 .25 2.05.38 3.11.38 6.9 0 12-4.75 12-11.7S22.9 4 16 4Z"
+          fill="url(#statusMessengerGradient)"
+        />
+        <path d="M9.2 18.8 14 13.7l3.42 3.52 5.38-5.52-4.8 7.88-3.52-3.52-5.28 2.74Z" fill="white" />
+        <defs>
+          <linearGradient id="statusMessengerGradient" x1="5" y1="27" x2="27" y2="5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#0078FF" />
+            <stop offset="0.55" stopColor="#00C6FF" />
+            <stop offset="1" stopColor="#A033FF" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 24,
-        padding: '4px 8px',
-        border: `1px solid ${style.border}`,
-        borderRadius: 999,
-        color: style.color,
-        background: style.bg,
-        fontFamily: 'var(--g-mono)',
-        fontSize: 10.5,
-        fontWeight: 700,
-        lineHeight: 1.2,
-        letterSpacing: '0.02em',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {STATUS_LABELS[status]}
+    <svg className="status-platform-logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <rect x="4" y="4" width="24" height="24" rx="7" fill="#1877F2" />
+      <path
+        d="M18.25 27.2v-9.55h3.2l.48-3.72h-3.68v-2.38c0-1.08.3-1.82 1.85-1.82h1.98V6.4c-.34-.05-1.52-.15-2.88-.15-2.85 0-4.8 1.74-4.8 4.94v2.74h-3.23v3.72h3.23v9.55h3.85Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+function StatusIcon({ status, size = 16 }: { status: PublicVerificationStatus; size?: number }) {
+  const tone = STATUS_META[status].tone;
+  if (tone === 'ok') return <CheckCircle2 size={size} strokeWidth={2} />;
+  if (tone === 'bad') return <AlertTriangle size={size} strokeWidth={2} />;
+  if (tone === 'warn') return <Clock3 size={size} strokeWidth={2} />;
+  return <HelpCircle size={size} strokeWidth={1.8} />;
+}
+
+function StatusPill({ status }: { status: PublicVerificationStatus }) {
+  const meta = STATUS_META[status];
+  return (
+    <span className={`status-pill status-${meta.tone}`}>
+      <StatusIcon status={status} size={14} />
+      {meta.short}
     </span>
   );
 }
 
-function StatusIcon({ status }: { status: keyof typeof STATUS_LABELS }) {
-  if (status === 'maintainer_verified' || status === 'community_verified_reviewed') {
-    return <CheckCircle2 size={16} strokeWidth={1.7} />;
-  }
-  if (status === 'known_issue') {
-    return <AlertTriangle size={16} strokeWidth={1.7} />;
-  }
-  if (status === 'stale' || status === 'not_recently_verified') {
-    return <Clock3 size={16} strokeWidth={1.7} />;
-  }
-  return <ShieldCheck size={16} strokeWidth={1.7} />;
-}
-
-function CurrentStatus() {
-  const now = new Date();
-  const worstStatus = getWorstStatus(STATUS_DATA.entries, now);
-  const grouped = groupByPlatform(STATUS_DATA.entries);
+function CurrentNotice() {
+  const overallStatus = getWorstStatus(STATUS_DATA.entries);
+  const meta = STATUS_META[overallStatus];
 
   return (
-    <>
-      <div className="status-topline">
-        <div>
-          <div className="status-eyebrow">Verification Status</div>
-          <h1>Ghostify Verification Status</h1>
-          <p>
-            Public verification separates local extension loading checks from reviewed sender-side or story-owner proof.
-            A local popup check means Ghostify is loaded here; it is not a guarantee that every live platform signal was
-            just verified.
-          </p>
+    <section className={`status-notice status-notice-${meta.tone}`} aria-label="Current status summary">
+      <div className="status-notice-head">
+        <StatusIcon status={overallStatus} size={18} />
+        <strong>{STATUS_DATA.summary.label}</strong>
+      </div>
+      <div className="status-notice-body">
+        <span className="status-version-pill">v{STATUS_DATA.productVersion}</span>
+        <h2>{STATUS_DATA.summary.label === 'Under review' ? 'Verification in progress' : STATUS_DATA.summary.label}</h2>
+        <p>{STATUS_DATA.summary.message}</p>
+        <div className="status-notice-meta">
+          <span>{STATUS_LABELS[overallStatus]}</span>
+          <span>Generated {formatStatusDate(STATUS_DATA.generatedAt)}</span>
+          <span>{STATUS_DATA.policy.verificationCadence}</span>
         </div>
-        <div className="status-summary-panel">
-          <div className="status-summary-head">
-            <StatusIcon status={worstStatus} />
-            <StatusBadge status={worstStatus} />
+      </div>
+    </section>
+  );
+}
+
+function StatusRail({ entries }: { entries: readonly VerificationEntry[] }) {
+  const segments = FEATURES.flatMap((feature) => {
+    const entry = getFeatureEntry(entries, feature);
+    const status = entry ? getEffectiveStatus(entry) : 'public_status_unavailable';
+    return Array.from({ length: 10 }, () => STATUS_META[status].tone);
+  });
+
+  return (
+    <div className="status-rail" aria-hidden="true">
+      {segments.map((tone, index) => (
+        <span className={`status-rail-segment status-rail-${tone}`} key={index} />
+      ))}
+    </div>
+  );
+}
+
+function PlatformRow({ platform, entries }: { platform: (typeof PLATFORMS)[number]; entries: VerificationEntry[] }) {
+  const platformStatus = getPlatformWorstStatus(entries);
+
+  return (
+    <article className="status-platform-row">
+      <div className="status-platform-main">
+        <PlatformLogo platform={platform.name} />
+        <div>
+          <div className="status-platform-title">
+            <strong>{platform.name}</strong>
+            <StatusPill status={platformStatus} />
           </div>
-          <p>{STATUS_DATA.summary.message}</p>
-          <div className="status-meta-row">
-            <CalendarDays size={14} strokeWidth={1.6} />
-            <span>Generated {formatStatusDate(STATUS_DATA.generatedAt)}</span>
+          <div className="status-platform-sub">
+            <span>{platform.componentLabel}</span>
+            <Info size={13} strokeWidth={1.7} />
           </div>
         </div>
       </div>
 
-      <section className="status-section" aria-labelledby="matrix-heading">
-        <div className="status-section-head">
-          <h2 id="matrix-heading">Current public checks</h2>
-          <a href="/status/history">
-            <History size={14} strokeWidth={1.6} />
-            History
-          </a>
-        </div>
+      <StatusRail entries={entries} />
 
-        <div className="status-platforms">
-          {Object.entries(grouped).map(([platform, entries]) => (
-            <div className="status-platform" key={platform}>
-              <h3>{platform}</h3>
-              {entries.map((entry) => {
-                const effectiveStatus = getEffectiveStatus(entry, now);
-                return (
-                  <div className="status-entry" key={entry.id}>
-                    <div>
-                      <div className="status-feature">{entry.feature}</div>
-                      <p>{entry.notes}</p>
-                    </div>
-                    <div className="status-entry-meta">
-                      <StatusBadge status={effectiveStatus} />
-                      <span>Verified: {formatStatusDate(entry.verifiedAt)}</span>
-                      <span>Expires: {formatStatusDate(entry.expiresAt)}</span>
-                    </div>
-                  </div>
-                );
-              })}
+      <div className="status-feature-list">
+        {FEATURES.map((feature) => {
+          const entry = getFeatureEntry(entries, feature);
+          const status = entry ? getEffectiveStatus(entry) : 'public_status_unavailable';
+          return (
+            <div className="status-feature-row" key={feature}>
+              <span>{feature}</span>
+              <span className={`status-feature-state status-${STATUS_META[status].tone}`}>{formatStatusDetail(entry)}</span>
             </div>
-          ))}
-        </div>
-      </section>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
 
-      <section className="status-section" aria-labelledby="guardrails-heading">
-        <div className="status-section-head">
-          <h2 id="guardrails-heading">Verification guardrails</h2>
-        </div>
-        <div className="guardrail-grid">
-          <p>Community reports are reviewed before they can make a public status green.</p>
-          <p>Contributor credit is opt-in only and handled separately from whether a report is useful.</p>
-          <p>Screenshots and recordings must be redacted. Do not include private messages or credentials.</p>
-          <p>Automation may flag, summarize, or downgrade status. It cannot mark a live feature verified.</p>
-        </div>
-        <div className="status-actions-row">
-          <a href="https://github.com/Hendrizzzz/Ghostify/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">
-            Report broken
-          </a>
-          <a href="https://github.com/Hendrizzzz/Ghostify/issues/new?template=help_feedback.yml" target="_blank" rel="noopener noreferrer">
-            Help verify
-          </a>
-        </div>
-      </section>
+function SystemStatus() {
+  const grouped = groupByPlatform(STATUS_DATA.entries);
+
+  return (
+    <section className="status-panel" aria-labelledby="system-status-heading">
+      <div className="status-panel-head">
+        <h2 id="system-status-heading">System status</h2>
+        <span>Public checks</span>
+      </div>
+      <div className="status-platform-list">
+        {PLATFORMS.map((platform) => (
+          <PlatformRow key={platform.name} platform={platform} entries={grouped[platform.name]} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StatusActions() {
+  return (
+    <div className="status-actions">
+      <a href="/status/history">
+        <History size={16} strokeWidth={1.8} />
+        View history
+      </a>
+      <a href="https://github.com/Hendrizzzz/Ghostify/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">
+        <ExternalLink size={16} strokeWidth={1.8} />
+        Report an issue
+      </a>
+    </div>
+  );
+}
+
+function StatusFootnote() {
+  return (
+    <p className="status-footnote">
+      Status is public and evidence is reviewed before a feature turns green. Private messages, credentials, screenshots,
+      and raw submissions are never published.
+    </p>
+  );
+}
+
+function CurrentStatus() {
+  return (
+    <>
+      <div className="status-topbar">
+        <h1>Ghostify Status</h1>
+        <a href="/status/history">View history</a>
+      </div>
+      <CurrentNotice />
+      <SystemStatus />
+      <StatusActions />
+      <StatusFootnote />
     </>
   );
 }
@@ -160,35 +279,33 @@ function CurrentStatus() {
 function HistoryStatus() {
   return (
     <>
-      <div className="status-topline">
-        <div>
-          <a className="status-back-link" href="/status">
-            <ArrowLeft size={14} strokeWidth={1.7} />
-            Current status
-          </a>
-          <div className="status-eyebrow">Verification History</div>
-          <h1>Status history</h1>
-          <p>
-            Reviewed changes, known limitations, and release verification updates are recorded here. Raw submissions and
-            private evidence are not published.
-          </p>
-        </div>
+      <div className="status-topbar">
+        <h1>Status history</h1>
+        <a href="/status">
+          <ArrowLeft size={15} strokeWidth={1.8} />
+          Current status
+        </a>
       </div>
-
-      <section className="status-section" aria-labelledby="history-heading">
-        <div className="status-history-list" id="history-heading">
+      <section className="status-panel" aria-labelledby="history-heading">
+        <div className="status-panel-head">
+          <h2 id="history-heading">Recent updates</h2>
+          <span>Public record</span>
+        </div>
+        <div className="status-history-list">
           {STATUS_DATA.history.map((item) => (
-            <article className="status-history-item" key={`${item.date}-${item.title}`}>
-              <div className="status-history-date">{formatStatusDate(item.date)}</div>
+            <article className="status-history-row" key={`${item.date}-${item.title}`}>
+              <StatusIcon status={item.publicStatus} size={16} />
+              <time>{formatStatusDate(item.date)}</time>
               <div>
-                <h2>{item.title}</h2>
+                <strong>{item.title}</strong>
                 <p>{item.summary}</p>
               </div>
-              <StatusBadge status={item.publicStatus} />
+              <StatusPill status={item.publicStatus} />
             </article>
           ))}
         </div>
       </section>
+      <StatusFootnote />
     </>
   );
 }
@@ -196,232 +313,361 @@ function HistoryStatus() {
 export function StatusPage({ view }: StatusPageProps) {
   return (
     <section className="status-page" aria-label="Ghostify public verification status">
-      <a className="status-back-link" href="/">
-        <ArrowLeft size={14} strokeWidth={1.7} />
-        Ghostify home
-      </a>
-
-      {view === 'history' ? <HistoryStatus /> : <CurrentStatus />}
+      <div className="status-shell">{view === 'history' ? <HistoryStatus /> : <CurrentStatus />}</div>
 
       <style>{`
         .status-page {
           min-height: 100svh;
           width: 100%;
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 116px clamp(22px, 4vw, 48px) 80px;
+          padding: 92px 20px 72px;
           box-sizing: border-box;
+          color: var(--g-white);
         }
-        .status-back-link,
-        .status-section-head a,
-        .status-actions-row a {
+        .status-shell {
+          width: min(100%, 720px);
+          margin: 0 auto;
+        }
+        .status-topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          margin-bottom: 24px;
+        }
+        .status-topbar h1 {
+          margin: 0;
+          font-family: var(--g-sans);
+          font-size: 1.7rem;
+          font-weight: 700;
+          line-height: 1.15;
+          letter-spacing: -0.02em;
+          color: var(--g-white);
+        }
+        .status-topbar a,
+        .status-actions a {
+          min-height: 38px;
           display: inline-flex;
           align-items: center;
-          gap: 7px;
-          color: rgba(240,230,210,0.56);
-          font-family: var(--g-mono);
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.04em;
+          justify-content: center;
+          gap: 8px;
+          padding: 0 14px;
+          border: 1px solid rgba(240,235,224,0.14);
+          border-radius: 6px;
+          background: rgba(240,235,224,0.035);
+          color: rgba(240,235,224,0.86);
+          font-family: var(--g-sans);
+          font-size: 0.9rem;
+          font-weight: 650;
           text-decoration: none;
         }
-        .status-back-link:hover,
-        .status-section-head a:hover,
-        .status-actions-row a:hover {
+        .status-topbar a:hover,
+        .status-actions a:hover {
+          border-color: rgba(216,161,111,0.42);
           color: var(--g-white);
-          text-decoration: underline;
-          text-underline-offset: 4px;
+          background: rgba(216,161,111,0.07);
         }
-        .status-topline {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-          gap: clamp(28px, 5vw, 64px);
-          align-items: end;
-          margin-top: 28px;
-        }
-        .status-eyebrow {
-          margin-bottom: 14px;
-          color: var(--g-dim);
-          font-family: var(--g-mono);
-          font-size: 12px;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-        .status-page h1 {
-          margin: 0;
-          color: var(--g-white);
-          font-family: var(--g-sans);
-          font-size: clamp(2.1rem, 5vw, 4.35rem);
-          font-weight: 500;
-          line-height: 0.98;
-          letter-spacing: 0;
-        }
-        .status-page h2,
-        .status-page h3 {
-          margin: 0;
-          color: var(--g-white);
-          font-family: var(--g-sans);
-          font-weight: 500;
-          letter-spacing: 0;
-        }
-        .status-page h2 {
-          font-size: 20px;
-        }
-        .status-page h3 {
-          font-size: 16px;
-        }
-        .status-page p {
-          margin: 16px 0 0;
-          max-width: 680px;
-          color: var(--g-body);
-          font-family: var(--g-sans);
-          font-size: 14px;
-          line-height: 1.7;
-        }
-        .status-summary-panel {
-          border: 1px solid rgba(240,230,210,0.08);
+        .status-notice,
+        .status-panel {
+          overflow: hidden;
+          border: 1px solid rgba(240,235,224,0.14);
           border-radius: 8px;
-          padding: 16px;
-          background: rgba(240,230,210,0.025);
+          background: rgba(13,12,10,0.82);
+          box-shadow: 0 16px 44px rgba(0,0,0,0.24);
         }
-        .status-summary-head {
+        .status-notice {
+          margin-bottom: 26px;
+        }
+        .status-notice-warn {
+          border-color: rgba(216,161,111,0.42);
+        }
+        .status-notice-bad {
+          border-color: rgba(223,118,95,0.46);
+        }
+        .status-notice-ok {
+          border-color: rgba(117,216,141,0.36);
+        }
+        .status-notice-head {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          color: rgba(240,230,210,0.72);
+          gap: 10px;
+          min-height: 54px;
+          padding: 0 18px;
+          border-bottom: 1px solid rgba(240,235,224,0.08);
+          background: rgba(216,161,111,0.11);
+          color: #F0C38E;
+          font-family: var(--g-sans);
+          font-size: 0.98rem;
         }
-        .status-meta-row {
+        .status-notice-body {
+          padding: 18px;
+        }
+        .status-version-pill {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          margin-top: 16px;
-          color: rgba(240,230,210,0.34);
-          font-family: var(--g-mono);
-          font-size: 10.5px;
-          letter-spacing: 0.03em;
+          min-height: 24px;
+          padding: 0 9px;
+          border-radius: 5px;
+          background: rgba(216,161,111,0.15);
+          color: #D8A16F;
+          font-family: var(--g-sans);
+          font-size: 0.78rem;
+          font-weight: 700;
         }
-        .status-section {
-          margin-top: clamp(42px, 7vw, 72px);
+        .status-notice h2 {
+          margin: 18px 0 0;
+          color: var(--g-white);
+          font-family: var(--g-sans);
+          font-size: 1rem;
+          font-weight: 700;
+          line-height: 1.35;
+          letter-spacing: 0;
         }
-        .status-section-head {
+        .status-notice p,
+        .status-history-row p,
+        .status-footnote {
+          margin: 8px 0 0;
+          color: rgba(240,235,224,0.72);
+          font-family: var(--g-sans);
+          font-size: 0.91rem;
+          line-height: 1.55;
+          letter-spacing: 0;
+        }
+        .status-notice-meta {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 7px 10px;
+          margin-top: 12px;
+          color: rgba(240,235,224,0.52);
+          font-family: var(--g-sans);
+          font-size: 0.84rem;
+          line-height: 1.45;
+        }
+        .status-notice-meta span:not(:last-child)::after {
+          content: "";
+          display: inline-block;
+          width: 3px;
+          height: 3px;
+          margin-left: 10px;
+          vertical-align: middle;
+          border-radius: 999px;
+          background: rgba(240,235,224,0.28);
+        }
+        .status-panel {
+          margin-top: 0;
+        }
+        .status-panel-head {
+          min-height: 54px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 18px;
-          padding-bottom: 14px;
-          border-bottom: 1px solid rgba(240,230,210,0.09);
-        }
-        .status-platforms {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 18px;
-          margin-top: 18px;
-        }
-        .status-platform {
-          border: 1px solid rgba(240,230,210,0.08);
-          border-radius: 8px;
-          background: rgba(240,230,210,0.018);
-          overflow: hidden;
-        }
-        .status-platform h3 {
-          padding: 14px 14px 12px;
-          border-bottom: 1px solid rgba(240,230,210,0.07);
-        }
-        .status-entry {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr);
           gap: 12px;
-          padding: 14px;
-          border-bottom: 1px solid rgba(240,230,210,0.06);
+          padding: 0 18px;
+          border-bottom: 1px solid rgba(240,235,224,0.08);
         }
-        .status-entry:last-child {
+        .status-panel-head h2 {
+          margin: 0;
+          color: var(--g-white);
+          font-family: var(--g-sans);
+          font-size: 1rem;
+          font-weight: 700;
+          line-height: 1.2;
+          letter-spacing: 0;
+        }
+        .status-panel-head span {
+          color: rgba(240,235,224,0.48);
+          font-family: var(--g-sans);
+          font-size: 0.86rem;
+        }
+        .status-platform-row {
+          padding: 16px 18px;
+          border-bottom: 1px solid rgba(240,235,224,0.08);
+        }
+        .status-platform-row:last-child {
           border-bottom: 0;
         }
-        .status-feature {
-          color: rgba(240,230,210,0.88);
-          font-family: var(--g-sans);
-          font-size: 14px;
-          font-weight: 600;
+        .status-platform-main {
+          display: flex;
+          align-items: center;
+          gap: 13px;
         }
-        .status-entry p {
-          margin-top: 5px;
-          color: rgba(240,230,210,0.46);
-          font-size: 12.5px;
-          line-height: 1.5;
+        .status-platform-logo {
+          width: 30px;
+          height: 30px;
+          flex: 0 0 auto;
         }
-        .status-entry-meta {
+        .status-platform-title {
           display: flex;
           align-items: center;
           flex-wrap: wrap;
-          gap: 7px;
-          color: rgba(240,230,210,0.3);
-          font-family: var(--g-mono);
-          font-size: 10px;
-          letter-spacing: 0.02em;
+          gap: 9px;
         }
-        .guardrail-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 1px;
-          margin-top: 18px;
-          border: 1px solid rgba(240,230,210,0.08);
-          border-radius: 8px;
-          overflow: hidden;
-          background: rgba(240,230,210,0.08);
+        .status-platform-title strong,
+        .status-history-row strong {
+          color: var(--g-white);
+          font-family: var(--g-sans);
+          font-size: 0.95rem;
+          font-weight: 700;
+          line-height: 1.25;
         }
-        .guardrail-grid p {
-          min-height: 112px;
-          margin: 0;
-          padding: 16px;
-          background: var(--g-bg);
-          font-size: 13px;
-          line-height: 1.6;
-        }
-        .status-actions-row {
+        .status-platform-sub {
           display: flex;
-          gap: 18px;
-          margin-top: 18px;
+          align-items: center;
+          gap: 6px;
+          margin-top: 4px;
+          color: rgba(240,235,224,0.52);
+          font-family: var(--g-sans);
+          font-size: 0.86rem;
+          line-height: 1.35;
+        }
+        .status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          min-height: 24px;
+          padding: 0 8px;
+          border-radius: 999px;
+          border: 1px solid rgba(240,235,224,0.1);
+          background: rgba(240,235,224,0.035);
+          font-family: var(--g-sans);
+          font-size: 0.78rem;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+        .status-ok {
+          color: #75D88D;
+        }
+        .status-warn {
+          color: #D8A16F;
+        }
+        .status-bad {
+          color: #DF765F;
+        }
+        .status-muted {
+          color: rgba(240,235,224,0.56);
+        }
+        .status-rail {
+          display: grid;
+          grid-template-columns: repeat(30, minmax(3px, 1fr));
+          gap: 3px;
+          margin-top: 13px;
+        }
+        .status-rail-segment {
+          height: 14px;
+          border-radius: 2px;
+          background: rgba(240,235,224,0.14);
+        }
+        .status-rail-ok {
+          background: #54C786;
+        }
+        .status-rail-warn {
+          background: #D8A16F;
+        }
+        .status-rail-bad {
+          background: #DF765F;
+        }
+        .status-rail-muted {
+          background: rgba(240,235,224,0.18);
+        }
+        .status-feature-list {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 12px;
+        }
+        .status-feature-row {
+          min-width: 0;
+          color: rgba(240,235,224,0.56);
+          font-family: var(--g-sans);
+          font-size: 0.8rem;
+          line-height: 1.35;
+        }
+        .status-feature-row span {
+          display: block;
+        }
+        .status-feature-state {
+          margin-top: 2px;
+          font-weight: 650;
+        }
+        .status-actions {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          margin: 28px 0 0;
           flex-wrap: wrap;
         }
+        .status-footnote {
+          max-width: 640px;
+          margin: 36px auto 0;
+          color: rgba(240,235,224,0.48);
+          text-align: center;
+          font-size: 0.78rem;
+        }
         .status-history-list {
-          border-top: 1px solid rgba(240,230,210,0.08);
-        }
-        .status-history-item {
           display: grid;
-          grid-template-columns: 132px minmax(0, 1fr) auto;
-          gap: 22px;
+        }
+        .status-history-row {
+          display: grid;
+          grid-template-columns: 20px 104px minmax(0, 1fr) auto;
+          gap: 12px;
           align-items: start;
-          padding: 22px 0;
-          border-bottom: 1px solid rgba(240,230,210,0.08);
+          padding: 16px 18px;
+          border-bottom: 1px solid rgba(240,235,224,0.08);
         }
-        .status-history-date {
-          color: rgba(240,230,210,0.35);
-          font-family: var(--g-mono);
-          font-size: 11px;
-          letter-spacing: 0.04em;
+        .status-history-row:last-child {
+          border-bottom: 0;
         }
-        .status-history-item p {
-          margin-top: 8px;
-          font-size: 13.5px;
-        }
-        @media (max-width: 920px) {
-          .status-topline,
-          .status-platforms,
-          .guardrail-grid {
-            grid-template-columns: 1fr;
-          }
-          .guardrail-grid p {
-            min-height: 0;
-          }
+        .status-history-row time {
+          color: rgba(240,235,224,0.52);
+          font-family: var(--g-sans);
+          font-size: 0.86rem;
+          line-height: 1.3;
+          white-space: nowrap;
         }
         @media (max-width: 640px) {
           .status-page {
-            padding-top: 96px;
+            padding: 82px 14px 56px;
           }
-          .status-history-item {
+          .status-topbar {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .status-topbar h1 {
+            font-size: 1.5rem;
+          }
+          .status-topbar a,
+          .status-actions a {
+            width: 100%;
+          }
+          .status-notice-body,
+          .status-platform-row,
+          .status-panel-head,
+          .status-history-row {
+            padding-left: 14px;
+            padding-right: 14px;
+          }
+          .status-feature-list {
             grid-template-columns: 1fr;
-            gap: 10px;
+            gap: 7px;
+          }
+          .status-rail {
+            grid-template-columns: repeat(30, 1fr);
+            gap: 2px;
+          }
+          .status-rail-segment {
+            height: 12px;
+          }
+          .status-history-row {
+            grid-template-columns: 20px minmax(0, 1fr);
+          }
+          .status-history-row time,
+          .status-history-row > div,
+          .status-history-row .status-pill {
+            grid-column: 2;
+          }
+          .status-history-row .status-pill {
+            justify-self: start;
           }
         }
       `}</style>

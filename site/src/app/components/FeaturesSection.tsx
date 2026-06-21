@@ -401,23 +401,26 @@ export function FeaturesSection() {
       </div>
 
       <style>{`
-        .features-section::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          right: 0;
-          top: -72px;
-          height: 96px;
-          z-index: 0;
-          pointer-events: none;
-          background: linear-gradient(180deg, rgba(11,10,8,0) 0%, rgba(11,10,8,0.86) 58%, #0B0A08 100%);
-        }
         .features-section > * {
           position: relative;
           z-index: 1;
         }
         @media (max-width: 900px) {
-          .feat-outer { grid-template-columns: 1fr !important; }
+          #features > div:first-child,
+          .feat-outer {
+            width: min(100%, 700px) !important;
+            max-width: 700px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            box-sizing: border-box !important;
+          }
+          .feat-outer {
+            grid-template-columns: 1fr !important;
+          }
+          .feat-col,
+          .feat-bottom {
+            width: 100% !important;
+          }
           .feat-f1 { border-right: none !important; border-bottom: ${H} !important; }
           .feat-bottom { grid-template-columns: 1fr !important; }
           .feat-f3 { border-right: none !important; border-bottom: ${H} !important; }

@@ -1419,7 +1419,14 @@ export function DemoSection() {
       }}
     >
       {/* Section heading */}
-      <div className="demo-section-heading" style={{ marginBottom: 36 }}>
+      <motion.div
+        className="demo-section-heading"
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.7, margin: '0px 0px -18% 0px' }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        style={{ marginBottom: 36 }}
+      >
         <h2
           style={{
             fontFamily: 'var(--g-sans)',
@@ -1433,7 +1440,7 @@ export function DemoSection() {
         >
           Try it. Switch surfaces. Toggle controls.
         </h2>
-      </div>
+      </motion.div>
 
       {/* Browser chrome wrapper */}
       <div

@@ -4,7 +4,7 @@ import { Github } from 'lucide-react';
 const navItems = [
   { label: 'Features', href: '#features', mobileLabel: 'Features' },
   { label: 'Platforms', href: '#platforms', mobileLabel: 'Apps' },
-  { label: 'Privacy', href: '#privacy', mobileLabel: 'Privacy' },
+  { label: 'Privacy', href: '#limits', mobileLabel: 'Privacy' },
 ];
 
 let activeScrollFrame = 0;
@@ -259,35 +259,21 @@ export function Header() {
           .site-nav a {
             font-size: 12px !important;
           }
+          .site-nav a:last-child {
+            display: none !important;
+          }
+        }
+        @media (max-width: 560px) {
+          .site-nav button:nth-of-type(3) {
+            display: none !important;
+          }
         }
         @media (max-width: 520px) {
           .site-nav-frame {
             padding: 0 14px !important;
           }
           .site-nav {
-            gap: 5px !important;
-            padding-left: 8px !important;
-          }
-          .site-nav button,
-          .site-nav a {
-            justify-content: center !important;
-          }
-          .site-nav button[data-mobile-label] {
-            min-width: 44px !important;
-            padding: 0 3px !important;
-            font-size: 0 !important;
-          }
-          .site-nav button[data-mobile-label]::before {
-            content: attr(data-mobile-label);
-            font-size: 11px;
-            line-height: 1;
-          }
-          .site-nav a:last-child {
-            width: 44px !important;
-            min-height: 44px !important;
-            justify-content: center !important;
-            gap: 0 !important;
-            font-size: 0 !important;
+            display: none !important;
           }
         }
         @media (max-width: 360px) {
@@ -303,6 +289,15 @@ export function Header() {
           }
           .site-nav button[data-mobile-label]::before {
             font-size: 10.5px;
+          }
+        }
+        @media (max-width: 430px) {
+          .site-nav {
+            display: none !important;
+          }
+          .site-nav button:nth-of-type(3),
+          .site-nav a:last-child {
+            display: none !important;
           }
         }
         @media (max-width: 340px) {

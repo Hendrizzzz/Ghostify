@@ -1,35 +1,56 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, useInView } from 'motion/react';
+import { motion, useInView, useReducedMotion } from 'motion/react';
 
-function CountUp({ target }: { target: number }) {
+function CountUp({ target, active }: { target: number; active: boolean }) {
   const [value, setValue] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true });
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!inView) return;
+    if (!active) return;
+    if (shouldReduceMotion) {
+      setValue(target);
+      return;
+    }
+
     const duration = 1200;
     const start = performance.now();
+    let frame = 0;
+
     const update = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
       const ease = 1 - Math.pow(1 - t, 3);
       setValue(Math.round(ease * target * 100) / 100);
-      if (t < 1) requestAnimationFrame(update);
+      if (t < 1) frame = requestAnimationFrame(update);
       else setValue(target);
     };
-    requestAnimationFrame(update);
-  }, [inView, target]);
+
+    frame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [active, shouldReduceMotion, target]);
 
   return (
-    <span ref={ref}>
+    <span>
       {target % 1 !== 0 ? value.toFixed(2) : Math.round(value)}
+    </span>
+  );
+}
+
+function StableCount({ target, reserve, active }: { target: number; reserve: string; active: boolean }) {
+  return (
+    <span className="stable-count" aria-label={reserve}>
+      <span className="stable-count-measure" aria-hidden="true">{reserve}</span>
+      <span className="stable-count-value" aria-hidden="true">
+        <CountUp target={target} active={active} />
+      </span>
     </span>
   );
 }
 
 export function LightweightSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, margin: '-80px' });
+  const statsInView = useInView(statsRef, { once: true, amount: 0.12, margin: '0px' });
 
   return (
     <section
@@ -99,6 +120,7 @@ export function LightweightSection() {
 
         {/* Stats — receipt row, no card wrapper */}
         <div
+          ref={statsRef}
           style={{
             display: 'flex',
             alignItems: 'flex-end',
@@ -122,7 +144,7 @@ export function LightweightSection() {
                 marginBottom: 'clamp(16px, 1.4vw, 22px)',
               }}
             >
-              <CountUp target={50.28} />
+              <StableCount target={50.28} reserve="50.28" active={statsInView} />
               <span style={{ fontSize: '0.38em', fontWeight: 400, marginLeft: 6, color: 'var(--g-body)' }}>KiB</span>
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -133,7 +155,7 @@ export function LightweightSection() {
           {/* Stat 2 */}
           <div style={{ padding: 'clamp(20px, 3vw, 32px) 0', paddingLeft: 'clamp(28px, 5vw, 64px)', paddingRight: 'clamp(28px, 5vw, 64px)', borderRight: '1px solid rgba(240,230,210,0.07)', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 300, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
-              <CountUp target={0} />
+              <CountUp target={0} active={statsInView} />
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               tracking relays
@@ -143,7 +165,7 @@ export function LightweightSection() {
           {/* Stat 3 */}
           <div style={{ padding: 'clamp(20px, 3vw, 32px) 0', paddingLeft: 'clamp(28px, 5vw, 64px)', paddingRight: 'clamp(28px, 5vw, 64px)', borderRight: '1px solid rgba(240,230,210,0.07)', flexShrink: 0 }} className="stat-accounts">
             <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 300, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
-              <CountUp target={0} />
+              <CountUp target={0} active={statsInView} />
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               accounts required
@@ -174,6 +196,21 @@ export function LightweightSection() {
       <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.07) 20%, rgba(240,230,210,0.07) 80%, transparent)' }} />
 
       <style>{`
+        .stable-count {
+          display: inline-grid;
+          grid-template-areas: 'count';
+          font-variant-numeric: tabular-nums;
+          font-feature-settings: 'tnum' 1;
+        }
+        .stable-count > span {
+          grid-area: count;
+        }
+        .stable-count-measure {
+          visibility: hidden;
+        }
+        .stable-count-value {
+          justify-self: end;
+        }
         @media (max-width: 700px) {
           .receipt-row { flex-direction: column !important; border-top: 1px solid rgba(240,230,210,0.07); }
           .receipt-row > div { border-right: none !important; border-bottom: 1px solid rgba(240,230,210,0.07); padding-left: 0 !important; padding-right: 0 !important; width: 100%; }

@@ -1,6 +1,5 @@
 import { motion } from 'motion/react';
 import { Chrome, Github } from 'lucide-react';
-import { GhostMark } from './GhostSVG';
 
 export function FinalCTA() {
   return (
@@ -18,7 +17,6 @@ export function FinalCTA() {
 
       <div style={{ padding: 'clamp(72px, 10vw, 120px) clamp(28px, 5vw, 80px)', maxWidth: 1280, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
         <div className="cta-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(48px, 7vw, 96px)', alignItems: 'center' }}>
-
           {/* Left: headline */}
           <motion.div
             initial={{ opacity: 0, x: -14 }}
@@ -34,7 +32,7 @@ export function FinalCTA() {
             </p>
           </motion.div>
 
-          {/* Right: CTAs + identity */}
+          {/* Right: CTAs */}
           <motion.div
             initial={{ opacity: 0, x: 14 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -42,20 +40,6 @@ export function FinalCTA() {
             transition={{ duration: 0.65, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-start' }}
           >
-            {/* Identity chip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: 'rgba(240,230,210,0.03)', border: '1px solid rgba(240,230,210,0.07)', borderRadius: 8, marginBottom: 6 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(196,72,48,0.15)', border: '1px solid rgba(196,72,48,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <GhostMark size={15} />
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 500, color: 'var(--g-white)', letterSpacing: 0 }}>Ghostify</div>
-                <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)' }}>open source · local-only</div>
-              </div>
-              <div style={{ marginLeft: 'auto', fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(196,72,48,0.7)', letterSpacing: '0.04em' }}>
-                Free
-              </div>
-            </div>
-
             {/* Primary CTA */}
             <a
               href="https://chromewebstore.google.com/detail/ghostify-hide-seen-typing/flpnibonbhdmnpgflnbemgghghhblmpm?utm_source=item-share-cb"
@@ -82,7 +66,7 @@ export function FinalCTA() {
               View source
             </a>
 
-            {/* Edge — quiet tertiary */}
+            {/* Edge tertiary */}
             <div style={{ marginTop: 2 }}>
               <a
                 href="https://microsoftedge.microsoft.com/addons/detail/ghostify-hide-seen-typ/mgbppdkolkeelimnemlbpmfdddhoeeal"
@@ -92,17 +76,16 @@ export function FinalCTA() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--g-body)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.25)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--g-dim)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(240,230,210,0.12)'; }}
               >
-                Also available for Edge →
+                Also available for Edge &rarr;
               </a>
             </div>
 
-            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'rgba(240,230,210,0.18)', margin: '6px 0 0', letterSpacing: '0.03em', lineHeight: 1.7 }}>
-              Free · Open source · No account required
+            <p style={{ fontFamily: 'var(--g-mono)', fontSize: 10, color: 'var(--g-dim)', margin: '6px 0 0', letterSpacing: '0.02em', lineHeight: 1.7 }}>
+              Free &middot; Open source &middot; No account required
               <br />
-              Messenger · Facebook · Instagram
+              Messenger &middot; Facebook &middot; Instagram
             </p>
           </motion.div>
-
         </div>
       </div>
 

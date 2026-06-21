@@ -5,7 +5,6 @@ import { HeroSection } from './components/HeroSection';
 import { FeaturesSection } from './components/FeaturesSection';
 import { PlatformSection } from './components/PlatformSection';
 import { PersonalityBand } from './components/PersonalityBand';
-import { PrivacySection } from './components/PrivacySection';
 import { LightweightSection } from './components/LightweightSection';
 import { LimitsSection } from './components/LimitsSection';
 import { FAQSection } from './components/FAQSection';
@@ -18,7 +17,7 @@ const NAV_ANCHOR_OFFSET = 0;
 export default function App() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
   const statusView = pathname === '/status/history' ? 'history' : pathname === '/status' ? 'current' : null;
-  const [mascotHiddenForHero, setMascotHiddenForHero] = useState(() => !statusView && window.scrollY < window.innerHeight * 0.82);
+  const [mascotHiddenForHero, setMascotHiddenForHero] = useState(() => Boolean(statusView) || window.scrollY < window.innerHeight * 0.82);
 
   useEffect(() => {
     const scrollToHash = (nextHash = window.location.hash) => {
@@ -79,12 +78,20 @@ export default function App() {
 
   useEffect(() => {
     if (statusView) {
-      setMascotHiddenForHero(false);
+      setMascotHiddenForHero(true);
       return;
     }
 
     const updateMascotVisibility = () => {
-      setMascotHiddenForHero(window.scrollY < window.innerHeight * 0.82);
+      const limits = document.getElementById('limits');
+      const limitsRect = limits?.getBoundingClientRect();
+      const limitsVisible = Boolean(
+        limitsRect &&
+        limitsRect.top < window.innerHeight * 0.9 &&
+        limitsRect.bottom > window.innerHeight * 0.1
+      );
+
+      setMascotHiddenForHero(window.scrollY < window.innerHeight * 0.82 || limitsVisible);
     };
 
     updateMascotVisibility();
@@ -127,7 +134,6 @@ export default function App() {
           <FeaturesSection />
           <PlatformSection />
           <PersonalityBand />
-          <PrivacySection />
           <LightweightSection />
           <LimitsSection />
           <FAQSection />
