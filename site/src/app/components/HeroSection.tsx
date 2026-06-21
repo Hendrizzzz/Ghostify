@@ -4,6 +4,7 @@ import { Chrome, Github, Globe } from 'lucide-react';
 import { GhostMark } from './GhostSVG';
 
 type HeroPlatform = 'messenger' | 'facebook' | 'instagram';
+type HeroProofKind = 'messenger' | 'instagram' | 'facebook' | 'local' | 'source';
 
 interface MsgControls {
   seen: boolean;
@@ -16,6 +17,60 @@ interface UnreadBadges {
 
 function dispatchMascot(type: string) {
   window.dispatchEvent(new CustomEvent('ghostify:mascot', { detail: { type } }));
+}
+
+function HeroProofIcon({ kind, label }: { kind: HeroProofKind; label: string }) {
+  if (kind === 'messenger') {
+    return (
+      <svg width="19" height="19" viewBox="0 0 32 32" fill="none" aria-label={label}>
+        <path
+          d="M16 4C9.1 4 4 8.75 4 15.15c0 3.45 1.48 6.45 3.95 8.45v4.1c0 .72.77 1.18 1.39.82l3.55-2.05c1 .25 2.05.38 3.11.38 6.9 0 12-4.75 12-11.7S22.9 4 16 4Z"
+          fill="url(#heroMessengerGradient)"
+        />
+        <path d="M9.2 18.8 14 13.7l3.42 3.52 5.38-5.52-4.8 7.88-3.52-3.52-5.28 2.74Z" fill="white" />
+        <defs>
+          <linearGradient id="heroMessengerGradient" x1="5" y1="27" x2="27" y2="5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#0078FF" />
+            <stop offset="0.55" stopColor="#00C6FF" />
+            <stop offset="1" stopColor="#A033FF" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  if (kind === 'instagram') {
+    return (
+      <svg width="19" height="19" viewBox="0 0 32 32" fill="none" aria-label={label}>
+        <rect x="3" y="3" width="26" height="26" rx="8" fill="url(#heroInstagramGradient)" />
+        <rect x="9.4" y="9.4" width="13.2" height="13.2" rx="4" stroke="white" strokeWidth="2.2" />
+        <circle cx="16" cy="16" r="3.8" stroke="white" strokeWidth="2.2" />
+        <circle cx="21.2" cy="10.9" r="1.45" fill="white" />
+        <defs>
+          <linearGradient id="heroInstagramGradient" x1="6" y1="27" x2="27" y2="5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FEDA75" />
+            <stop offset="0.32" stopColor="#FA7E1E" />
+            <stop offset="0.62" stopColor="#D62976" />
+            <stop offset="1" stopColor="#4F5BD5" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  if (kind === 'facebook') {
+    return (
+      <svg width="19" height="19" viewBox="0 0 32 32" fill="none" aria-label={label}>
+        <rect x="4" y="4" width="24" height="24" rx="7" fill="#1877F2" />
+        <path
+          d="M18.25 27.2v-9.55h3.2l.48-3.72h-3.68v-2.38c0-1.08.3-1.82 1.85-1.82h1.98V6.4c-.34-.05-1.52-.15-2.88-.15-2.85 0-4.8 1.74-4.8 4.94v2.74h-3.23v3.72h3.23v9.55h3.85Z"
+          fill="white"
+        />
+      </svg>
+    );
+  }
+
+  return kind === 'local' ? <Globe size={16} aria-label={label} /> : <Github size={15} aria-label={label} />;
 }
 
 /* ── Cursor waypoints (% of browser container dims) ──── */
@@ -896,22 +951,722 @@ function HeroBrowserScene() {
 }
 
 /* ── Hero section ─────────────────────────────────────── */
+const privacyPixelClassNames = Array.from({ length: 14 }, (_, index) => `hpv-pixel hpv-pixel-${index + 1}`);
+
+function PrivacySignalConsole() {
+  return (
+    <div className="hpv-scene">
+      <div className="hpv-grid" />
+      <div className="hpv-pane hpv-pane-left" />
+      <div className="hpv-pane hpv-pane-center" />
+      <div className="hpv-pane hpv-pane-right" />
+
+      <svg className="hpv-routes" viewBox="0 0 760 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="hpvLaneFade" x1="72" y1="120" x2="384" y2="120" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#F0EBE0" stopOpacity="0.04" />
+            <stop offset="0.45" stopColor="#D8A16F" stopOpacity="0.34" />
+            <stop offset="1" stopColor="#D8A16F" stopOpacity="0.7" />
+          </linearGradient>
+        </defs>
+        <path className="hpv-lane hpv-lane-a" d="M78 176C150 152 215 164 274 214C306 241 330 252 370 252" />
+        <path className="hpv-lane hpv-lane-b" d="M72 318H372" />
+        <path className="hpv-lane hpv-lane-c" d="M78 462C148 486 222 470 280 418C312 389 336 374 370 374" />
+        <path className="hpv-lane hpv-lane-pulse hpv-lane-a" pathLength="1" d="M78 176C150 152 215 164 274 214C306 241 330 252 370 252" />
+        <path className="hpv-lane hpv-lane-pulse hpv-lane-b" pathLength="1" d="M72 318H372" />
+        <path className="hpv-lane hpv-lane-pulse hpv-lane-c" pathLength="1" d="M78 462C148 486 222 470 280 418C312 389 336 374 370 374" />
+        <g className="hpv-catchers">
+          <g className="hpv-catcher hpv-catcher-a">
+            <circle cx="382" cy="252" r="24" />
+            <rect x="367" y="230" width="30" height="44" rx="15" />
+            <path d="M375 244L389 260M389 244L375 260" />
+          </g>
+          <g className="hpv-catcher hpv-catcher-b">
+            <circle cx="382" cy="318" r="24" />
+            <rect x="367" y="296" width="30" height="44" rx="15" />
+            <path d="M375 310L389 326M389 310L375 326" />
+          </g>
+          <g className="hpv-catcher hpv-catcher-c">
+            <circle cx="382" cy="374" r="24" />
+            <rect x="367" y="352" width="30" height="44" rx="15" />
+            <path d="M375 366L389 382M389 366L375 382" />
+          </g>
+        </g>
+        <g className="hpv-source-nodes">
+          <circle className="hpv-node-messenger" cx="78" cy="176" r="6" />
+          <circle className="hpv-node-instagram" cx="72" cy="318" r="6" />
+          <circle className="hpv-node-facebook" cx="78" cy="462" r="6" />
+        </g>
+      </svg>
+
+      <svg className="hpv-ghost" viewBox="0 0 520 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="hpvGhostClip">
+            <path d="M116 444V220C116 117.3 181.7 52 260 52s144 65.3 144 168v224c0 17.8-20.6 27.7-34.5 16.6l-28.2-22.5-28.3 22.5a25.2 25.2 0 0 1-31.5 0L260 443.5l-21.5 17.1a25.2 25.2 0 0 1-31.5 0l-28.3-22.5-28.2 22.5C136.6 471.7 116 461.8 116 444Z" />
+          </clipPath>
+          <linearGradient id="hpvGhostFill" x1="141" y1="59" x2="397" y2="475" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#F5F1E7" stopOpacity="0.64" />
+            <stop offset="0.52" stopColor="#D9D6CF" stopOpacity="0.48" />
+            <stop offset="1" stopColor="#8F9AA2" stopOpacity="0.14" />
+          </linearGradient>
+          <pattern id="hpvGhostLines" width="9" height="9" patternUnits="userSpaceOnUse">
+            <rect width="3.3" height="9" fill="url(#hpvGhostFill)" />
+          </pattern>
+        </defs>
+        <g clipPath="url(#hpvGhostClip)">
+          <rect x="92" y="34" width="336" height="462" fill="url(#hpvGhostLines)" />
+          <rect className="hpv-ghost-shade" x="92" y="34" width="336" height="462" fill="url(#hpvGhostFill)" opacity="0.22" />
+          <rect className="hpv-ghost-mask" x="92" y="390" width="336" height="120" />
+        </g>
+        <path className="hpv-ghost-edge" d="M116 444V220C116 117.3 181.7 52 260 52s144 65.3 144 168v224c0 17.8-20.6 27.7-34.5 16.6l-28.2-22.5-28.3 22.5a25.2 25.2 0 0 1-31.5 0L260 443.5l-21.5 17.1a25.2 25.2 0 0 1-31.5 0l-28.3-22.5-28.2 22.5C136.6 471.7 116 461.8 116 444Z" />
+        <ellipse className="hpv-eye hpv-eye-left" cx="215" cy="226" rx="28" ry="46" />
+        <ellipse className="hpv-eye hpv-eye-right" cx="305" cy="226" rx="28" ry="46" />
+      </svg>
+
+      <div className="hpv-pixel-field">
+        {privacyPixelClassNames.map((className) => (
+          <span key={className} className={className} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function HeroSection() {
+  const proofItems = [
+    { title: 'Messenger', detail: 'No seen receipts', kind: 'messenger' as const },
+    { title: 'Instagram', detail: 'Hide story views', kind: 'instagram' as const },
+    { title: 'Facebook', detail: 'Stay invisible', kind: 'facebook' as const },
+    { title: 'Local-only', detail: 'Nothing leaves your browser', kind: 'local' as const },
+    { title: 'Open source', detail: 'Read it yourself', kind: 'source' as const },
+  ];
+
   return (
     <section
       id="hero"
       className="snap-start hero-section"
-      style={{ height: '100svh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 60, background: 'var(--g-bg)' }}
+      style={{
+        minHeight: 'clamp(700px, 86svh, 860px)',
+        display: 'flex',
+        alignItems: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        paddingTop: 60,
+        background: '#0B0A08',
+      }}
     >
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'var(--g-bg)', zIndex: 0, pointerEvents: 'none' }} />
+      <div aria-hidden className="hero-backdrop" />
+      <div aria-hidden className="hero-texture" />
+      <div aria-hidden className="hero-vignette" />
 
       <div
         className="hero-grid"
         style={{
-          width: '100%', maxWidth: 1480, margin: '0 auto',
-          padding: '0 clamp(22px, 3vw, 48px)',
-          display: 'grid', gridTemplateColumns: '42fr 58fr',
-          gap: 'clamp(32px, 4vw, 56px)',
+          width: '100%',
+          maxWidth: 1480,
+          margin: '0 auto',
+          padding: 'clamp(42px, 5.8vw, 76px) clamp(24px, 4vw, 72px) clamp(34px, 5vw, 72px)',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(520px, 0.95fr) minmax(520px, 1.05fr)',
+          gap: 'clamp(28px, 4vw, 64px)',
+          alignItems: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ position: 'relative', zIndex: 2, maxWidth: 760 }}
+        >
+          <div style={{ fontFamily: 'var(--g-mono)', fontSize: 12, letterSpacing: '0.16em', color: 'rgba(196,106,74,0.86)', textTransform: 'uppercase', marginBottom: 24 }}>
+            Private by default
+          </div>
+
+          <h1 className="hero-title">
+            Read messages
+            <br />
+            <span>without</span>
+            <br />
+            being seen.
+          </h1>
+
+          <p style={{ fontFamily: 'var(--g-sans)', fontSize: 'clamp(1rem, 1.35vw, 1.26rem)', lineHeight: 1.55, color: 'rgba(240,235,224,0.72)', margin: '0 0 30px', maxWidth: 560 }}>
+            Ghostify hides seen receipts, typing indicators, and story-view signals on Messenger, Instagram, and Facebook, <span className="hero-local-phrase">all <span className="hero-local-word">locally</span> in your browser.</span>
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
+            <a
+              href="https://chromewebstore.google.com/detail/ghostify-hide-seen-typing/flpnibonbhdmnpgflnbemgghghhblmpm?utm_source=item-share-cb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-primary-cta"
+            >
+              <Chrome size={16} />
+              Add to Chrome
+            </a>
+            <a
+              href="https://github.com/Hendrizzzz/Ghostify"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-secondary-cta"
+            >
+              <Github size={14} strokeWidth={1.5} />
+              View source
+            </a>
+          </div>
+
+          <div className="hero-proof-row">
+            {proofItems.map((item) => (
+              <div key={item.title} className="hero-proof-item">
+                <div className="hero-proof-icon">
+                  <HeroProofIcon kind={item.kind} label={item.title} />
+                </div>
+                <div>
+                  <div className="hero-proof-title">{item.title}</div>
+                  <div className="hero-proof-detail">{item.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="hero-privacy-visual"
+          initial={{ opacity: 0, x: 18 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          onPointerMove={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const px = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+            const py = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+            const x = (px - 0.5) * 2;
+            const y = (py - 0.5) * 2;
+            event.currentTarget.style.setProperty('--hero-pointer-x', x.toFixed(3));
+            event.currentTarget.style.setProperty('--hero-pointer-y', y.toFixed(3));
+            event.currentTarget.style.setProperty('--hero-hover', '1');
+          }}
+          onPointerLeave={(event) => {
+            event.currentTarget.style.setProperty('--hero-pointer-x', '0');
+            event.currentTarget.style.setProperty('--hero-pointer-y', '0');
+            event.currentTarget.style.setProperty('--hero-hover', '0');
+          }}
+          aria-hidden
+        >
+          <PrivacySignalConsole />
+        </motion.div>
+      </div>
+
+      <style>{`
+        .hero-backdrop {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          background:
+            radial-gradient(ellipse at 23% 49%, rgba(196,106,74,0.075), transparent 24%),
+            radial-gradient(ellipse at 74% 45%, rgba(240,235,224,0.045), transparent 34%),
+            radial-gradient(ellipse at 76% 70%, rgba(216,161,111,0.035), transparent 32%),
+            linear-gradient(90deg, rgba(11,10,8,0.99) 0%, rgba(11,10,8,0.94) 41%, rgba(11,10,8,0.88) 63%, rgba(11,10,8,0.99) 100%);
+        }
+        .hero-section::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -1px;
+          height: clamp(96px, 13vh, 150px);
+          z-index: 0;
+          pointer-events: none;
+          background: linear-gradient(180deg, rgba(11,10,8,0), #0B0A08 78%);
+        }
+        .hero-texture {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          opacity: 0.24;
+          background-image:
+            repeating-linear-gradient(0deg, rgba(240,235,224,0.03) 0 1px, transparent 1px 5px),
+            repeating-linear-gradient(90deg, rgba(240,235,224,0.018) 0 1px, transparent 1px 4px),
+            radial-gradient(circle at 30% 12%, rgba(240,235,224,0.05), transparent 20%);
+          mix-blend-mode: soft-light;
+          -webkit-mask-image: linear-gradient(180deg, black 0%, black 100%);
+          mask-image: linear-gradient(180deg, black 0%, black 100%);
+        }
+        .hero-vignette {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          background:
+            linear-gradient(180deg, rgba(0,0,0,0.28), transparent 24%, transparent 82%, rgba(0,0,0,0.14) 100%),
+            radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.5) 100%);
+        }
+        .hero-title {
+          font-family: var(--g-display);
+          font-size: clamp(3.6rem, 5.45vw, 6.25rem);
+          font-weight: 400;
+          line-height: 0.94;
+          letter-spacing: 0;
+          color: var(--g-white);
+          margin: 0 0 22px;
+          white-space: nowrap;
+        }
+        .hero-title span { color: #C46A4A; font-style: italic; }
+        .hero-local-word {
+          font-family: var(--g-display);
+          font-style: italic;
+          color: #D8A16F;
+          font-size: 1.32em;
+          line-height: 0.72;
+          letter-spacing: 0;
+        }
+        .hero-local-phrase { white-space: nowrap; }
+        .hero-primary-cta,
+        .hero-secondary-cta {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
+          min-height: 48px;
+          padding: 0 28px;
+          border-radius: 6px;
+          font-family: var(--g-sans);
+          font-size: 15px;
+          font-weight: 500;
+          text-decoration: none;
+          letter-spacing: 0;
+          box-sizing: border-box;
+          transition: transform 0.16s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+        }
+        .hero-primary-cta {
+          background: linear-gradient(135deg, #F3EDE2, #D8CBB8);
+          color: #0B0A08;
+          box-shadow: 0 12px 34px rgba(216,161,111,0.16);
+        }
+        .hero-secondary-cta {
+          color: rgba(240,235,224,0.88);
+          border: 1px solid rgba(240,235,224,0.28);
+          background: rgba(240,235,224,0.02);
+        }
+        .hero-primary-cta:hover,
+        .hero-secondary-cta:hover { transform: translateY(-1px); }
+        .hero-secondary-cta:hover { border-color: rgba(240,235,224,0.42); color: var(--g-white); }
+        .hero-proof-row {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: clamp(12px, 1vw, 16px);
+          width: min(100%, 680px);
+          max-width: 100%;
+          padding-top: 14px;
+          border-top: 1px solid rgba(240,235,224,0.12);
+        }
+        .hero-proof-item { display: flex; gap: 10px; align-items: start; min-width: 0; }
+        .hero-proof-icon {
+          width: 28px; height: 28px;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 50%;
+          background: rgba(196,106,74,0.14);
+          color: #D8A16F;
+          font-family: var(--g-sans); font-size: 15px; font-weight: 700;
+          border: 1px solid rgba(216,161,111,0.2);
+        }
+        .hero-proof-title {
+          font-family: var(--g-sans); font-size: 13.5px; color: rgba(240,235,224,0.92);
+          line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .hero-proof-detail {
+          margin-top: 5px;
+          font-family: var(--g-sans); font-size: 11.5px; color: rgba(240,235,224,0.42);
+          line-height: 1.3; white-space: normal;
+        }
+        .hero-privacy-visual {
+          min-height: min(78svh, 760px);
+          position: relative;
+          pointer-events: auto;
+          perspective: 1500px;
+          transform-style: preserve-3d;
+          z-index: 1;
+          --hero-pointer-x: 0;
+          --hero-pointer-y: 0;
+          --hero-hover: 0;
+        }
+
+        .hpv-scene {
+          position: absolute;
+          inset: -7% -9% -10% -3%;
+          overflow: visible;
+          pointer-events: none;
+          transform-style: preserve-3d;
+          isolation: isolate;
+        }
+        .hpv-grid {
+          position: absolute;
+          inset: 8% 2% 9% 4%;
+          opacity: 0.105;
+          background-image:
+            linear-gradient(90deg, rgba(240,235,224,0.14) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(240,235,224,0.09) 1px, transparent 1px);
+          background-size: 46px 46px;
+          mask-image: radial-gradient(ellipse at 58% 52%, black 0 50%, transparent 78%);
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * -6px), calc(var(--hero-pointer-y, 0) * -4px), -170px)
+            rotateY(-20deg)
+            skewY(-4deg);
+          transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hpv-pane {
+          position: absolute;
+          border: 1px solid rgba(221,229,232,0.16);
+          background:
+            linear-gradient(116deg, rgba(170,184,193,0.13), rgba(170,184,193,0.038) 42%, rgba(240,235,224,0.045)),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 44px),
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.028) 0 1px, transparent 1px 42px);
+          box-shadow:
+            inset 0 0 1px rgba(255,255,255,0.28),
+            0 28px 70px rgba(0,0,0,0.36);
+          opacity: 0.5;
+          transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+        }
+        .hpv-pane::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-left: 1px solid rgba(255,255,255,0.10);
+          opacity: 0.38;
+        }
+        .hpv-pane-left {
+          width: 36%;
+          height: 52%;
+          left: 6%;
+          top: 28%;
+          clip-path: polygon(0 28%, 100% 0, 100% 100%, 0 84%);
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * -15px), calc(var(--hero-pointer-y, 0) * -7px), -48px)
+            rotateY(-25deg)
+            skewY(-6deg);
+        }
+        .hpv-pane-center {
+          width: 31%;
+          height: 74%;
+          left: 35%;
+          top: 5%;
+          opacity: 0.42;
+          clip-path: polygon(0 0, 100% 9%, 100% 100%, 0 90%);
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * -6px), calc(var(--hero-pointer-y, 0) * -11px), -92px)
+            rotateY(-14deg)
+            skewY(-4deg);
+        }
+        .hpv-pane-right {
+          width: 43%;
+          height: 58%;
+          right: 5%;
+          top: 22%;
+          opacity: 0.38;
+          clip-path: polygon(0 10%, 100% 30%, 100% 92%, 0 100%);
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * 13px), calc(var(--hero-pointer-y, 0) * -6px), -30px)
+            rotateY(-16deg)
+            skewY(4deg);
+        }
+        .hpv-routes {
+          position: absolute;
+          inset: 1% 3% 5% 1%;
+          width: 100%;
+          height: 100%;
+          overflow: visible;
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * -9px), calc(var(--hero-pointer-y, 0) * -4px), 38px)
+            rotateY(-6deg);
+          transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 5;
+        }
+        .hpv-lane {
+          fill: none;
+          stroke: url(#hpvLaneFade);
+          stroke-width: 1.45;
+          stroke-linecap: round;
+          opacity: 0.5;
+        }
+        .hpv-lane-b { opacity: 0.42; }
+        .hpv-lane-pulse {
+          stroke: rgba(240,235,224,0.92);
+          stroke-width: 3.2;
+          opacity: 0;
+          stroke-dasharray: 0.075 0.925;
+          animation: hpvSignalStop 4.9s cubic-bezier(0.55, 0, 0.2, 1) infinite;
+        }
+        .hpv-lane-pulse.hpv-lane-b { animation-delay: -1.6s; }
+        .hpv-lane-pulse.hpv-lane-c { animation-delay: -3.2s; }
+        .hpv-catcher circle {
+          fill: transparent;
+          stroke: rgba(216,161,111,0.42);
+          stroke-width: 1;
+          opacity: 0;
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: hpvBlockCatch 4.9s ease-out infinite;
+        }
+        .hpv-catcher-b circle { animation-delay: -1.6s; }
+        .hpv-catcher-c circle { animation-delay: -3.2s; }
+        .hpv-catcher rect {
+          fill: rgba(11,10,8,0.88);
+          stroke: rgba(216,161,111,0.58);
+          stroke-width: 1.2;
+        }
+        .hpv-catcher path {
+          stroke: rgba(240,235,224,0.76);
+          stroke-width: 1.55;
+          stroke-linecap: round;
+        }
+        .hpv-source-nodes circle {
+          fill: rgba(216,161,111,0.8);
+          stroke: rgba(240,235,224,0.22);
+          stroke-width: 1;
+        }
+        .hpv-source-nodes .hpv-node-messenger { fill: #4AA3FF; opacity: 0.72; }
+        .hpv-source-nodes .hpv-node-instagram { fill: #D8A16F; opacity: 0.8; }
+        .hpv-source-nodes .hpv-node-facebook { fill: #C44830; opacity: 0.78; }
+        .hpv-source-nodes circle {
+          animation: hpvNodeBreathe 4.9s ease-in-out infinite;
+        }
+        .hpv-node-instagram { animation-delay: -1.6s; }
+        .hpv-node-facebook { animation-delay: -3.2s; }
+        .hpv-ghost {
+          position: absolute;
+          width: min(39vw, 560px);
+          max-width: 82%;
+          right: 11%;
+          top: 49%;
+          overflow: visible;
+          z-index: 4;
+          opacity: 0.78;
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * 14px), calc(-50% + var(--hero-pointer-y, 0) * 9px), 84px)
+            rotateX(calc(var(--hero-pointer-y, 0) * -1.6deg))
+            rotateY(calc(var(--hero-pointer-x, 0) * 3.6deg))
+            rotateZ(-1.2deg);
+          transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+        }
+        .hpv-ghost-edge {
+          stroke: rgba(255,255,255,0.2);
+          stroke-width: 1.1;
+          fill: transparent;
+        }
+        .hpv-ghost-mask {
+          fill: rgba(11,10,8,0.56);
+        }
+        .hpv-eye {
+          fill: rgba(13,18,22,0.86);
+        }
+        .hpv-pixel-field {
+          position: absolute;
+          left: 24%;
+          right: 12%;
+          bottom: 7%;
+          height: 28%;
+          z-index: 3;
+          opacity: 0.22;
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * 8px), calc(var(--hero-pointer-y, 0) * 6px), 52px)
+            rotateY(-11deg)
+            skewY(-4deg);
+          transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hpv-pixel {
+          position: absolute;
+          width: var(--px-w, 14px);
+          height: var(--px-h, 28px);
+          left: var(--px-x);
+          bottom: var(--px-y);
+          background: rgba(155,166,170,0.14);
+          border: 1px solid rgba(240,235,224,0.055);
+          animation: hpvPixelDrift var(--px-dur, 8s) ease-in-out infinite;
+          animation-delay: var(--px-delay, 0s);
+        }
+        .hpv-pixel-1 { --px-x: 4%; --px-y: 8%; --px-w: 10px; --px-h: 18px; --px-dur: 7.2s; }
+        .hpv-pixel-2 { --px-x: 13%; --px-y: 33%; --px-w: 14px; --px-h: 38px; --px-delay: -1s; }
+        .hpv-pixel-3 { --px-x: 21%; --px-y: 5%; --px-w: 7px; --px-h: 58px; --px-delay: -2.3s; }
+        .hpv-pixel-4 { --px-x: 31%; --px-y: 25%; --px-w: 19px; --px-h: 27px; --px-delay: -4.2s; }
+        .hpv-pixel-5 { --px-x: 39%; --px-y: 11%; --px-w: 6px; --px-h: 68px; --px-delay: -1.8s; }
+        .hpv-pixel-6 { --px-x: 48%; --px-y: 40%; --px-w: 18px; --px-h: 18px; --px-delay: -5.1s; }
+        .hpv-pixel-7 { --px-x: 57%; --px-y: 18%; --px-w: 11px; --px-h: 42px; --px-delay: -0.8s; }
+        .hpv-pixel-8 { --px-x: 66%; --px-y: 3%; --px-w: 22px; --px-h: 23px; --px-delay: -3.4s; }
+        .hpv-pixel-9 { --px-x: 74%; --px-y: 38%; --px-w: 8px; --px-h: 52px; --px-delay: -6s; }
+        .hpv-pixel-10 { --px-x: 82%; --px-y: 17%; --px-w: 17px; --px-h: 28px; --px-delay: -2s; }
+        .hpv-pixel-11 { --px-x: 89%; --px-y: 6%; --px-w: 10px; --px-h: 64px; --px-delay: -4.8s; }
+        .hpv-pixel-12 { --px-x: 18%; --px-y: 58%; --px-w: 22px; --px-h: 16px; --px-delay: -1.2s; }
+        .hpv-pixel-13 { --px-x: 52%; --px-y: 61%; --px-w: 18px; --px-h: 15px; --px-delay: -3.8s; }
+        .hpv-pixel-14 { --px-x: 84%; --px-y: 57%; --px-w: 20px; --px-h: 16px; --px-delay: -5.6s; }
+
+        @keyframes hpvSignalStop {
+          0% { stroke-dashoffset: 1; opacity: 0; }
+          14% { opacity: 0.9; }
+          48% { opacity: 0.72; }
+          66%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes hpvBlockCatch {
+          0%, 55% { opacity: 0; transform: scale(0.7); }
+          64% { opacity: 0.92; transform: scale(1); }
+          86%, 100% { opacity: 0; transform: scale(1.7); }
+        }
+        @keyframes hpvNodeBreathe {
+          0%, 100% { opacity: 0.44; }
+          18%, 56% { opacity: 0.88; }
+        }
+        @keyframes hpvPixelDrift {
+          0%, 100% { transform: translateY(0); opacity: 0.22; }
+          52% { transform: translateY(-11px); opacity: 0.42; }
+        }
+
+        @keyframes ghostBlink {
+          0%, 90%, 100% { transform: scaleY(1); }
+          95%            { transform: scaleY(0.1); }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .hpv-lane-pulse,
+          .hpv-catcher circle,
+          .hpv-source-nodes circle,
+          .hpv-pixel {
+            animation: none !important;
+          }
+          .hpv-grid,
+          .hpv-pane,
+          .hpv-routes,
+          .hpv-ghost,
+          .hpv-pixel-field {
+            transition: none !important;
+          }
+        }
+
+        /* Breakpoints */
+        @media (max-width: 1180px) {
+          .hero-grid {
+            grid-template-columns: minmax(390px, 0.82fr) minmax(470px, 1.18fr) !important;
+            gap: 18px !important;
+            padding-left: 32px !important;
+            padding-right: 32px !important;
+          }
+          .hero-title { font-size: clamp(3.45rem, 5.65vw, 5.45rem); }
+          .hero-proof-row { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 440px); max-width: calc(100vw - 64px); gap: 12px 14px; }
+          .hero-proof-item { min-width: 0; }
+          .hero-proof-detail { white-space: normal; }
+          .hero-proof-icon { width: 26px; height: 26px; }
+          .hero-proof-title { font-size: 13px; }
+          .hero-proof-detail { font-size: 11px; }
+          .hpv-scene { inset: -6% -12% -10% -4%; }
+          .hpv-ghost { width: min(43vw, 520px); right: 8%; }
+        }
+        @media (max-width: 900px) {
+          .hero-section {
+            min-height: 100svh !important;
+            align-items: flex-start !important;
+            padding-top: 82px !important;
+            padding-bottom: 48px !important;
+          }
+          .hero-grid {
+            grid-template-columns: minmax(365px, 0.78fr) minmax(420px, 1.22fr) !important;
+            max-width: none !important;
+            box-sizing: border-box !important;
+            padding: 0 32px !important;
+            gap: 8px !important;
+            align-items: center !important;
+          }
+          .hero-grid > * { min-width: 0 !important; }
+          .hero-title { font-size: clamp(3.25rem, 7.4vw, 4.7rem); }
+          .hero-proof-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; max-width: min(100%, 430px); overflow: hidden; }
+          .hero-privacy-visual { min-height: clamp(420px, 58vw, 560px); width: 100%; max-width: none; justify-self: center; }
+          .hpv-scene { inset: -5% -16% -8% -8%; }
+          .hpv-ghost { width: min(52vw, 500px); right: 5%; }
+        }
+        @media (max-width: 820px) {
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            max-width: min(620px, calc(100vw - 48px)) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding: 0 24px !important;
+            gap: 20px !important;
+            overflow: visible;
+          }
+          .hero-grid p { max-width: 460px !important; font-size: 1rem !important; line-height: 1.5 !important; }
+          .hero-title { font-size: clamp(3.35rem, 9.2vw, 4.35rem); }
+          .hero-proof-row { grid-template-columns: repeat(2, minmax(0, max-content)) !important; width: 100% !important; max-width: 470px !important; }
+          .hero-proof-item { min-width: 0; }
+          .hero-primary-cta, .hero-secondary-cta { width: 100%; }
+          .hero-privacy-visual {
+            position: absolute;
+            inset: 86px -220px auto auto;
+            width: 560px;
+            height: 520px;
+            min-height: 0;
+            max-width: none;
+            justify-self: auto;
+            opacity: 0.18;
+            pointer-events: none;
+            perspective: none;
+            -webkit-mask-image: linear-gradient(90deg, transparent 0 24%, rgba(0,0,0,0.35) 42%, black 68%);
+            mask-image: linear-gradient(90deg, transparent 0 24%, rgba(0,0,0,0.35) 42%, black 68%);
+          }
+          .hpv-scene { inset: 0; transform-style: flat; }
+          .hpv-grid,
+          .hpv-routes { display: none; }
+          .hpv-pane-left,
+          .hpv-pane-right { display: none; }
+          .hpv-pane-center { width: 66%; height: 64%; left: 28%; top: 14%; transform: rotateY(-12deg) skewY(-4deg); opacity: 0.2; }
+          .hpv-ghost { width: 410px; right: 0; top: 15%; transform: translate3d(0, 0, 0) rotateZ(-1.2deg); opacity: 0.64; }
+          .hpv-pixel-field { left: 24%; right: 8%; bottom: 5%; height: 25%; opacity: 0.16; }
+        }
+        @media (max-width: 480px) {
+          .hero-grid { max-width: min(354px, calc(100vw - 36px)) !important; padding: 0 18px !important; margin-left: 0 !important; margin-right: auto !important; }
+          .hero-title { font-size: clamp(2.42rem, 11.8vw, 3.25rem); }
+          .hero-proof-row { grid-template-columns: 1fr !important; max-width: 100% !important; }
+          .hero-primary-cta, .hero-secondary-cta { width: 100%; }
+          .hero-privacy-visual {
+            inset: 156px -300px auto auto;
+            width: 560px;
+            height: 470px;
+            opacity: 0.16;
+            -webkit-mask-image: linear-gradient(90deg, transparent 0 30%, rgba(0,0,0,0.2) 47%, black 74%);
+            mask-image: linear-gradient(90deg, transparent 0 30%, rgba(0,0,0,0.2) 47%, black 74%);
+          }
+          .hpv-ghost { width: 390px; right: 0; top: 16%; }
+          .hpv-pane-center { left: 34%; top: 14%; width: 60%; opacity: 0.16; }
+        }
+        @media (max-width: 400px) {
+          .hero-title { font-size: clamp(2.34rem, 11.6vw, 3rem); }
+          .hero-grid p { max-width: 306px !important; }
+          .hero-privacy-visual { inset: 168px -318px auto auto; opacity: 0.145; }
+          .hpv-ghost { width: 382px; }
+        }
+
+      `}</style>
+    </section>
+  );
+}
+
+function LegacyHeroSection() {
+  return (
+    <section
+      id="hero"
+      className="snap-start hero-section"
+      style={{ height: '100svh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 60, background: '#0B0A08' }}
+    >
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,10,8,0.96) 0%, rgba(11,10,8,0.9) 36%, rgba(11,10,8,0.72) 68%, rgba(11,10,8,0.94) 100%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div aria-hidden className="hero-grain" />
+
+      <div
+        className="hero-grid"
+        style={{
+          width: '100%', maxWidth: 1440, margin: '0 auto',
+          padding: '0 clamp(24px, 4vw, 72px)',
+          display: 'grid', gridTemplateColumns: 'minmax(360px, 0.82fr) minmax(0, 1.18fr)',
+          gap: 'clamp(28px, 3vw, 48px)',
           alignItems: 'center', position: 'relative', zIndex: 1,
         }}
       >
@@ -920,6 +1675,7 @@ export function HeroSection() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ position: 'relative', zIndex: 2, maxWidth: 480 }}
         >
           <h1 style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 4.4vw, 4.4rem)', fontWeight: 400, fontStyle: 'italic', lineHeight: 1.06, letterSpacing: 0, color: 'var(--g-white)', margin: '0 0 8px' }}>
             Read it.
@@ -970,18 +1726,153 @@ export function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Right: browser autoplay */}
+        {/* Right: laptop product visual */}
         <motion.div
+          className="hero-laptop-visual"
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.78, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
-          style={{ height: 'min(calc(100svh - 104px), 600px)', position: 'relative' }}
+          style={{ height: 'min(calc(100svh - 96px), 640px)', minHeight: 460, position: 'relative', pointerEvents: 'none' }}
         >
-          <HeroBrowserScene />
+          <div aria-hidden className="hero-laptop-shadow" />
+          <div
+            aria-hidden
+            className="hero-laptop-haze"
+            style={{
+              position: 'absolute',
+              width: 'min(58vw, 900px)',
+              height: 'min(42vw, 620px)',
+              right: 'clamp(-94px, -6vw, -36px)',
+              bottom: 'clamp(-72px, -4vw, -30px)',
+              background: 'linear-gradient(135deg, rgba(240,235,224,0.13), rgba(240,235,224,0.02) 38%, transparent 72%)',
+              filter: 'blur(22px)',
+              opacity: 0.34,
+            }}
+          />
+          <picture
+            className="hero-laptop-picture"
+            style={{
+              position: 'absolute',
+              width: 'clamp(520px, 55vw, 900px)',
+              maxWidth: 'none',
+              right: 'clamp(-86px, -5.4vw, -32px)',
+              bottom: 'clamp(-98px, -5.8vw, -42px)',
+              filter: 'brightness(1.24) contrast(1.08) saturate(1.04)',
+              userSelect: 'none',
+            }}
+          >
+            <source media="(max-width: 900px)" srcSet="/hero-laptop-scene-tight.webp" />
+            <img
+              src="/hero-laptop-scene.webp"
+              alt="Ghostify privacy controls shown in a laptop browser."
+              className="hero-laptop-image"
+              draggable={false}
+            />
+          </picture>
         </motion.div>
       </div>
 
       <style>{`
+        .hero-grain {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          opacity: 0.18;
+          background-image:
+            repeating-linear-gradient(0deg, rgba(240,235,224,0.025) 0 1px, transparent 1px 3px),
+            repeating-linear-gradient(90deg, rgba(240,235,224,0.018) 0 1px, transparent 1px 4px);
+          mix-blend-mode: soft-light;
+        }
+        .hero-laptop-visual {
+          mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 96%, transparent 100%);
+          -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 96%, transparent 100%);
+        }
+        .hero-laptop-picture {
+          display: block;
+          line-height: 0;
+          mask-image: radial-gradient(ellipse at 57% 57%, #000 0 66%, rgba(0,0,0,0.96) 80%, transparent 100%);
+          -webkit-mask-image: radial-gradient(ellipse at 57% 57%, #000 0 66%, rgba(0,0,0,0.96) 80%, transparent 100%);
+        }
+        .hero-laptop-image {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+        .hero-laptop-shadow {
+          position: absolute;
+          width: min(54vw, 860px);
+          height: min(18vw, 230px);
+          right: clamp(-80px, -5vw, -28px);
+          bottom: clamp(-30px, -2vw, -12px);
+          background: radial-gradient(closest-side, rgba(0,0,0,0.66), transparent 72%);
+          filter: blur(14px);
+          opacity: 0.78;
+        }
+        @media (max-width: 1100px) and (min-width: 901px) {
+          .hero-grid {
+            grid-template-columns: minmax(320px, 0.9fr) minmax(470px, 1.1fr) !important;
+            gap: 28px !important;
+            padding: 0 32px !important;
+          }
+          .hero-laptop-visual {
+            min-height: 430px !important;
+            height: min(calc(100svh - 104px), 560px) !important;
+          }
+          .hero-laptop-picture {
+            width: clamp(560px, 58vw, 660px) !important;
+            right: clamp(-92px, -7vw, -54px) !important;
+            bottom: clamp(-76px, -7vh, -42px) !important;
+          }
+        }
+        @media (max-width: 900px) {
+          .hero-section {
+            height: auto !important;
+            min-height: 100svh !important;
+            align-items: flex-start !important;
+            overflow: visible !important;
+            padding-top: 82px !important;
+            padding-bottom: 48px !important;
+          }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            max-width: 780px !important;
+            box-sizing: border-box !important;
+            padding: 0 24px !important;
+            gap: 28px !important;
+            align-items: start !important;
+          }
+          .hero-grid > * {
+            min-width: 0 !important;
+          }
+          .hero-laptop-visual {
+            width: 100% !important;
+            max-width: 760px !important;
+            min-height: 330px !important;
+            height: min(44svh, 380px) !important;
+            justify-self: center !important;
+            overflow: hidden !important;
+            mask-image: linear-gradient(180deg, #000 0 88%, transparent 100%) !important;
+            -webkit-mask-image: linear-gradient(180deg, #000 0 88%, transparent 100%) !important;
+          }
+          .hero-laptop-visual > div {
+            width: 100% !important;
+            height: 70% !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            filter: blur(20px) !important;
+            opacity: 0.34 !important;
+          }
+          .hero-laptop-picture {
+            width: min(96vw, 640px) !important;
+            left: 50% !important;
+            right: auto !important;
+            bottom: -4% !important;
+            transform: translateX(-50%) !important;
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
+          }
+        }
         @media (max-width: 768px) {
           .hero-section {
             height: auto !important;
@@ -1004,11 +1895,27 @@ export function HeroSection() {
           .hero-glow {
             display: none !important;
           }
-          .hero-grid > :last-child {
+          .hero-laptop-visual {
             width: 100% !important;
             max-width: 640px !important;
-            height: min(48svh, 340px) !important;
+            min-height: 270px !important;
+            height: min(42svh, 340px) !important;
             justify-self: center !important;
+            overflow: hidden !important;
+          }
+          .hero-laptop-visual > div {
+            width: 100% !important;
+            height: 72% !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            filter: blur(18px) !important;
+            opacity: 0.34 !important;
+          }
+          .hero-laptop-visual img {
+            width: min(116vw, 680px) !important;
+            right: 50% !important;
+            bottom: -16% !important;
+            transform: translateX(50%) !important;
           }
           .hero-tabbar {
             padding-left: 8px !important;
@@ -1041,8 +1948,13 @@ export function HeroSection() {
           }
         }
         @media (max-width: 420px) {
-          .hero-grid > :last-child {
-            height: clamp(320px, 54svh, 340px) !important;
+          .hero-laptop-visual {
+            height: clamp(220px, 34svh, 280px) !important;
+            min-height: 220px !important;
+          }
+          .hero-laptop-picture {
+            width: min(108vw, 430px) !important;
+            bottom: 0 !important;
           }
           .hero-chat-list {
             width: clamp(108px, 35%, 126px) !important;
