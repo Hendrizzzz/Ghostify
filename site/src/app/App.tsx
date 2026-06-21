@@ -1,5 +1,5 @@
 import { GhostMascot } from './components/GhostMascot';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { FeaturesSection } from './components/FeaturesSection';
@@ -18,6 +18,7 @@ const NAV_ANCHOR_OFFSET = 0;
 export default function App() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
   const statusView = pathname === '/status/history' ? 'history' : pathname === '/status' ? 'current' : null;
+  const [mascotHiddenForHero, setMascotHiddenForHero] = useState(() => !statusView && window.scrollY < window.innerHeight * 0.82);
 
   useEffect(() => {
     const scrollToHash = (nextHash = window.location.hash) => {
@@ -76,6 +77,25 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (statusView) {
+      setMascotHiddenForHero(false);
+      return;
+    }
+
+    const updateMascotVisibility = () => {
+      setMascotHiddenForHero(window.scrollY < window.innerHeight * 0.82);
+    };
+
+    updateMascotVisibility();
+    window.addEventListener('scroll', updateMascotVisibility, { passive: true });
+    window.addEventListener('resize', updateMascotVisibility);
+    return () => {
+      window.removeEventListener('scroll', updateMascotVisibility);
+      window.removeEventListener('resize', updateMascotVisibility);
+    };
+  }, [statusView]);
+
   return (
     <div
       style={{
@@ -89,7 +109,9 @@ export default function App() {
       <div className="grain-layer" aria-hidden="true" />
 
       {/* Draggable mascot — sits above everything */}
-      <GhostMascot />
+      <div className="mascot-stage" data-hero-hidden={mascotHiddenForHero ? 'true' : 'false'}>
+        <GhostMascot />
+      </div>
 
       {/* Navigation */}
       <Header />
@@ -118,6 +140,20 @@ export default function App() {
       <style>{`
         @media (max-width: 640px) {
           body { overflow-x: hidden; }
+        }
+        .mascot-stage {
+          opacity: 1;
+          transition: opacity 0.24s ease;
+        }
+        .mascot-stage[data-hero-hidden="true"] {
+          opacity: 0;
+          pointer-events: none;
+        }
+        @media (min-width: 821px) {
+          .mascot-stage[data-hero-hidden="true"] {
+            opacity: 1;
+            pointer-events: auto;
+          }
         }
         *:focus-visible {
           outline: 2px solid rgba(196,72,48,0.6);

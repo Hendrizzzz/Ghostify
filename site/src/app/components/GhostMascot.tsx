@@ -18,6 +18,7 @@ const MAX_THROW_SPEED = 64;
 const GHOST_W   = 64;
 const GHOST_H   = 64;
 const GLIDE_K   = 0.045;
+const HERO_DOCK_K = 0.18;
 const BUBBLE_W  = 200;
 const BUBBLE_MIN_W = 158;
 const DANCE_DURATION_MS = 1740;
@@ -36,6 +37,12 @@ const THROW_PHRASES = [
   'good toss.',
   'whee. local-only flight.',
   'that had range.',
+];
+const HERO_DOCK_PHRASES = [
+  'seen message stopped locally.',
+  'typing stays in browser.',
+  'story viewing never leaves.',
+  'backend gets nothing.',
 ];
 
 export function GhostMascot() {
@@ -67,6 +74,7 @@ export function GhostMascot() {
   const bubbleLayout  = useRef({ below: false, left: 0, top: -200, width: BUBBLE_W });
   const typingActive  = useRef(false);
   const typingBurstUntil = useRef(0);
+  const heroDockActive = useRef(false);
 
   // Hold-center state
   const isHoldingCenter  = useRef(false);
@@ -155,6 +163,36 @@ export function GhostMascot() {
     return rect.top < window.innerHeight * 0.75 && rect.bottom > window.innerHeight * 0.2;
   }, []);
 
+  const heroDockTarget = useCallback(() => {
+    if (window.innerWidth < 821) return null;
+    const hero = document.getElementById('hero');
+    const dock = document.querySelector<HTMLElement>('[data-hero-mascot-dock]');
+    if (!hero || !dock) return null;
+
+    const heroRect = hero.getBoundingClientRect();
+    const dockRect = dock.getBoundingClientRect();
+    const visibleW = Math.max(0, Math.min(dockRect.right, window.innerWidth) - Math.max(dockRect.left, 0));
+    const visibleH = Math.max(0, Math.min(dockRect.bottom, window.innerHeight) - Math.max(dockRect.top, 0));
+    const visibleRatio = (visibleW * visibleH) / Math.max(1, dockRect.width * dockRect.height);
+
+    if (
+      heroRect.bottom <= 0 ||
+      heroRect.top >= window.innerHeight * 0.92 ||
+      dockRect.width <= 0 ||
+      dockRect.height <= 0 ||
+      dockRect.top < 92 ||
+      dockRect.bottom > window.innerHeight - 18 ||
+      visibleRatio < 0.72
+    ) {
+      return null;
+    }
+
+    return {
+      x: Math.max(8, Math.min(window.innerWidth - GHOST_W - 8, dockRect.left + dockRect.width / 2 - GHOST_W / 2)),
+      y: Math.max(8, Math.min(window.innerHeight - GHOST_H - 8, dockRect.top + dockRect.height / 2 - GHOST_H / 2)),
+    };
+  }, []);
+
   const glideToHeroCallout = useCallback((type: string) => {
     const parked = window.innerWidth <= 640 ? safeMascotPos() : null;
     const heroBrowser = document.querySelector<HTMLElement>('[data-hero-cursor]')?.parentElement;
@@ -236,7 +274,33 @@ export function GhostMascot() {
   // RAF physics + hold-center glide
   const tick = useCallback(() => {
     if (!isDragging.current) {
-      if (isHoldingCenter.current) {
+      const dockTarget = heroDockTarget();
+
+      if (dockTarget) {
+        heroDockActive.current = true;
+        const dx = dockTarget.x - pos.current.x;
+        const dy = dockTarget.y - pos.current.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 0.8) {
+          pos.current.x += dx * HERO_DOCK_K;
+          pos.current.y += dy * HERO_DOCK_K;
+        } else {
+          pos.current = dockTarget;
+        }
+
+        vel.current = { x: 0, y: 0 };
+        applyVisualPos(pos.current.x, pos.current.y);
+        setFlying(distance > 8);
+      } else {
+        if (heroDockActive.current) {
+          heroDockActive.current = false;
+          isHoldingCenter.current = false;
+          vel.current = { x: 0, y: 0 };
+          setFlying(false);
+        }
+
+        if (isHoldingCenter.current) {
         if (Date.now() < holdCenterUntil.current) {
           const cx = centerTarget.current.x;
           const cy = centerTarget.current.y;
@@ -255,7 +319,7 @@ export function GhostMascot() {
         } else {
           isHoldingCenter.current = false;
         }
-      } else {
+        } else {
         const vx = vel.current.x;
         const vy = vel.current.y;
         const speed = Math.sqrt(vx * vx + vy * vy);
@@ -293,9 +357,10 @@ export function GhostMascot() {
           setFlying(false);
         }
       }
+      }
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, [applyVisualPos, setFlying]);
+  }, [applyVisualPos, heroDockTarget, setFlying]);
 
   useEffect(() => {
     pos.current = safeMascotPos();
@@ -456,9 +521,16 @@ export function GhostMascot() {
       releasedSpeed = Math.sqrt(vel.current.x * vel.current.x + vel.current.y * vel.current.y);
     }
     lastPointers.current = [];
+    const dockTarget = heroDockTarget();
+    if (dockTarget) {
+      const dockLine = HERO_DOCK_PHRASES[Math.floor(Math.random() * HERO_DOCK_PHRASES.length)];
+      showMessage(releasedSpeed > 1.1 ? dockLine : 'back on guard.', 3600);
+      return;
+    }
+
     const throwLine = THROW_PHRASES[Math.floor(Math.random() * THROW_PHRASES.length)];
     showMessage(releasedSpeed > 1.1 ? throwLine : 'parked.', 4500);
-  }, [showMessage]);
+  }, [heroDockTarget, showMessage]);
 
   // Pointer drag
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -591,7 +663,6 @@ export function GhostMascot() {
               width: 'var(--ghost-mascot-size, 64px)',
               height: 'var(--ghost-mascot-size, 64px)',
               display: 'block',
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.45)) drop-shadow(0 0 2px rgba(240,235,224,0.06))',
             }}
           />
         </div>

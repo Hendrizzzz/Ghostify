@@ -952,8 +952,45 @@ function HeroBrowserScene() {
 
 /* ── Hero section ─────────────────────────────────────── */
 const privacyPixelClassNames = Array.from({ length: 14 }, (_, index) => `hpv-pixel hpv-pixel-${index + 1}`);
+const heroSignalWords = ['seen', 'typing', 'story-view'] as const;
+type HeroSignalWord = (typeof heroSignalWords)[number];
+
+function HeroSignalText({ routeId, word, begin }: { routeId: string; word: HeroSignalWord; begin: number }) {
+  const duration = 6.2;
+  const beginAt = `${begin.toFixed(2)}s`;
+  const className = `hpv-signal-stage hpv-word-${word.replace(/[^a-z0-9]/g, '-')}`;
+
+  return (
+    <text className={className} opacity="0.92">
+      <animate
+        attributeName="opacity"
+        values="0.92;0.92;0.18"
+        keyTimes="0;0.96;1"
+        dur={`${duration}s`}
+        begin={beginAt}
+        repeatCount="indefinite"
+      />
+      <textPath href={`#${routeId}`} startOffset="0%" method="align" spacing="auto">
+        <animate
+          attributeName="startOffset"
+          values="0%;99%"
+          dur={`${duration}s`}
+          begin={beginAt}
+          repeatCount="indefinite"
+        />
+        {word}
+      </textPath>
+    </text>
+  );
+}
 
 function PrivacySignalConsole() {
+  const signalRoutes = [
+    { id: 'hpv-route-messenger', begin: -0.45 },
+    { id: 'hpv-route-instagram', begin: -1.15 },
+    { id: 'hpv-route-facebook', begin: -1.85 },
+  ];
+
   return (
     <div className="hpv-scene">
       <div className="hpv-grid" />
@@ -963,41 +1000,94 @@ function PrivacySignalConsole() {
 
       <svg className="hpv-routes" viewBox="0 0 760 620" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
+          <linearGradient id="hpvMessengerFade" x1="96" y1="176" x2="536" y2="318" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#4AA3FF" stopOpacity="0.1" />
+            <stop offset="0.6" stopColor="#4AA3FF" stopOpacity="0.36" />
+            <stop offset="1" stopColor="#D8A16F" stopOpacity="0.72" />
+          </linearGradient>
+          <linearGradient id="hpvInstagramFade" x1="96" y1="318" x2="536" y2="318" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#B84CE5" stopOpacity="0.1" />
+            <stop offset="0.42" stopColor="#F06A78" stopOpacity="0.34" />
+            <stop offset="0.75" stopColor="#F6B45E" stopOpacity="0.42" />
+            <stop offset="1" stopColor="#D8A16F" stopOpacity="0.72" />
+          </linearGradient>
+          <linearGradient id="hpvFacebookFade" x1="96" y1="462" x2="536" y2="318" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#1877F2" stopOpacity="0.1" />
+            <stop offset="0.62" stopColor="#1877F2" stopOpacity="0.34" />
+            <stop offset="1" stopColor="#D8A16F" stopOpacity="0.72" />
+          </linearGradient>
           <linearGradient id="hpvLaneFade" x1="72" y1="120" x2="384" y2="120" gradientUnits="userSpaceOnUse">
             <stop stopColor="#F0EBE0" stopOpacity="0.04" />
             <stop offset="0.45" stopColor="#D8A16F" stopOpacity="0.34" />
             <stop offset="1" stopColor="#D8A16F" stopOpacity="0.7" />
           </linearGradient>
+          <linearGradient id="hpvInstagramNode" x1="59" y1="337" x2="99" y2="297" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FEDA75" />
+            <stop offset="0.34" stopColor="#FA7E1E" />
+            <stop offset="0.64" stopColor="#D62976" />
+            <stop offset="1" stopColor="#4F5BD5" />
+          </linearGradient>
+          <clipPath id="hpvSignalBlockClip">
+            <rect x="-24" y="-24" width="528" height="668" rx="0" />
+          </clipPath>
         </defs>
-        <path className="hpv-lane hpv-lane-a" d="M78 176C150 152 215 164 274 214C306 241 330 252 370 252" />
-        <path className="hpv-lane hpv-lane-b" d="M72 318H372" />
-        <path className="hpv-lane hpv-lane-c" d="M78 462C148 486 222 470 280 418C312 389 336 374 370 374" />
-        <path className="hpv-lane hpv-lane-pulse hpv-lane-a" pathLength="1" d="M78 176C150 152 215 164 274 214C306 241 330 252 370 252" />
-        <path className="hpv-lane hpv-lane-pulse hpv-lane-b" pathLength="1" d="M72 318H372" />
-        <path className="hpv-lane hpv-lane-pulse hpv-lane-c" pathLength="1" d="M78 462C148 486 222 470 280 418C312 389 336 374 370 374" />
-        <g className="hpv-catchers">
-          <g className="hpv-catcher hpv-catcher-a">
-            <circle cx="382" cy="252" r="24" />
-            <rect x="367" y="230" width="30" height="44" rx="15" />
-            <path d="M375 244L389 260M389 244L375 260" />
-          </g>
-          <g className="hpv-catcher hpv-catcher-b">
-            <circle cx="382" cy="318" r="24" />
-            <rect x="367" y="296" width="30" height="44" rx="15" />
-            <path d="M375 310L389 326M389 310L375 326" />
-          </g>
-          <g className="hpv-catcher hpv-catcher-c">
-            <circle cx="382" cy="374" r="24" />
-            <rect x="367" y="352" width="30" height="44" rx="15" />
-            <path d="M375 366L389 382M389 366L375 382" />
-          </g>
+        <g className="hpv-server-target">
+          <path className="hpv-server-link" d="M562 318C580 318 588 318 602 318" />
+          <rect className="hpv-server-body" x="600" y="230" width="118" height="188" rx="18" />
+          <rect className="hpv-server-bay" x="620" y="256" width="78" height="34" rx="7" />
+          <rect className="hpv-server-bay" x="620" y="306" width="78" height="34" rx="7" />
+          <rect className="hpv-server-bay" x="620" y="356" width="78" height="34" rx="7" />
+          <circle className="hpv-server-port" cx="638" cy="273" r="3" />
+          <circle className="hpv-server-port" cx="638" cy="323" r="3" />
+          <circle className="hpv-server-port" cx="638" cy="373" r="3" />
+          <path className="hpv-server-core" d="M659 273H688M659 323H688M659 373H688" />
         </g>
+
+        <path id="hpv-route-messenger" className="hpv-lane hpv-lane-a" d="M80 176C170 134 268 154 340 226C392 278 466 318 536 318" />
+        <path id="hpv-route-instagram" className="hpv-lane hpv-lane-b" d="M80 318H536" />
+        <path id="hpv-route-facebook" className="hpv-lane hpv-lane-c" d="M80 462C170 504 268 482 342 410C392 360 466 318 536 318" />
+
+        <g className="hpv-signal-streams" clipPath="url(#hpvSignalBlockClip)">
+          {signalRoutes.flatMap((route, routeIndex) =>
+            heroSignalWords.map((word, wordIndex) => (
+              <HeroSignalText
+                key={`${route.id}-${word}`}
+                routeId={route.id}
+                word={word}
+                begin={route.begin - wordIndex * 1.92 - routeIndex * 0.18}
+              />
+            ))
+          )}
+        </g>
+
+        <g className="hpv-static-signals" clipPath="url(#hpvSignalBlockClip)" aria-hidden="true">
+          <text><textPath href="#hpv-route-messenger" startOffset="16%">seen / typing / story-view</textPath></text>
+          <text><textPath href="#hpv-route-instagram" startOffset="16%">seen / typing / story-view</textPath></text>
+          <text><textPath href="#hpv-route-facebook" startOffset="16%">seen / typing / story-view</textPath></text>
+        </g>
+
         <g className="hpv-source-nodes">
-          <circle className="hpv-node-messenger" cx="78" cy="176" r="6" />
-          <circle className="hpv-node-instagram" cx="72" cy="318" r="6" />
-          <circle className="hpv-node-facebook" cx="78" cy="462" r="6" />
+          <g className="hpv-platform-node hpv-platform-node-messenger">
+            <circle className="hpv-source-ring" cx="78" cy="176" r="19" />
+            <circle className="hpv-source-face hpv-source-face-messenger" cx="78" cy="176" r="13" />
+            <path className="hpv-platform-mark" d="M70.7 179.1 76.6 172.8l4.1 4.2 6.6-6.8-5.8 9.8-4.3-4.3-6.5 3.4Z" />
+          </g>
+          <g className="hpv-platform-node hpv-platform-node-instagram">
+            <circle className="hpv-source-ring" cx="78" cy="318" r="19" />
+            <rect className="hpv-source-face hpv-source-face-instagram" x="65" y="305" width="26" height="26" rx="8" />
+            <rect className="hpv-platform-camera" x="71.4" y="311.4" width="13.2" height="13.2" rx="4" />
+            <circle className="hpv-platform-camera-lens" cx="78" cy="318" r="3.7" />
+            <circle className="hpv-platform-camera-dot" cx="83.2" cy="312.8" r="1.35" />
+          </g>
+          <g className="hpv-platform-node hpv-platform-node-facebook">
+            <circle className="hpv-source-ring" cx="78" cy="462" r="19" />
+            <circle className="hpv-source-face hpv-source-face-facebook" cx="78" cy="462" r="13" />
+            <path className="hpv-platform-mark hpv-platform-mark-facebook" d="M81.1 471v-8.1h2.8l.4-3.2h-3.2v-2c0-.9.3-1.5 1.6-1.5h1.7v-2.9c-.3 0-1.3-.1-2.5-.1-2.4 0-4.1 1.5-4.1 4.2v2.3H75v3.2h2.8v8.1h3.3Z" />
+          </g>
         </g>
       </svg>
+
+      <div className="hpv-mascot-dock" data-hero-mascot-dock aria-hidden />
 
       <svg className="hpv-ghost" viewBox="0 0 520 620" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -1386,55 +1476,140 @@ export function HeroSection() {
         }
         .hpv-lane {
           fill: none;
-          stroke: url(#hpvLaneFade);
+          stroke: var(--hpv-lane-stroke, url(#hpvLaneFade));
           stroke-width: 1.45;
           stroke-linecap: round;
           opacity: 0.5;
         }
-        .hpv-lane-b { opacity: 0.42; }
-        .hpv-lane-pulse {
-          stroke: rgba(240,235,224,0.92);
-          stroke-width: 3.2;
-          opacity: 0;
-          stroke-dasharray: 0.075 0.925;
-          animation: hpvSignalStop 4.9s cubic-bezier(0.55, 0, 0.2, 1) infinite;
+        .hpv-lane-a { --hpv-lane-stroke: url(#hpvMessengerFade); --hpv-pulse-stroke: #74B7FF; }
+        .hpv-lane-b { --hpv-lane-stroke: url(#hpvInstagramFade); --hpv-pulse-stroke: #F3A463; opacity: 0.42; }
+        .hpv-lane-c { --hpv-lane-stroke: url(#hpvFacebookFade); --hpv-pulse-stroke: #5A9BFF; }
+        .hpv-signal-streams,
+        .hpv-static-signals {
+          pointer-events: none;
         }
-        .hpv-lane-pulse.hpv-lane-b { animation-delay: -1.6s; }
-        .hpv-lane-pulse.hpv-lane-c { animation-delay: -3.2s; }
-        .hpv-catcher circle {
-          fill: transparent;
-          stroke: rgba(216,161,111,0.42);
-          stroke-width: 1;
-          opacity: 0;
-          transform-box: fill-box;
-          transform-origin: center;
-          animation: hpvBlockCatch 4.9s ease-out infinite;
+        .hpv-signal-stage,
+        .hpv-static-signals text {
+          font-family: var(--g-mono);
+          font-size: 10.5px;
+          font-weight: 600;
+          letter-spacing: 0.035em;
+          fill: color-mix(in srgb, var(--hpv-signal-color, #D8A16F) 76%, #F0EBE0);
+          text-anchor: middle;
+          paint-order: stroke;
+          stroke: rgba(11,10,8,0.9);
+          stroke-width: 3.5px;
+          stroke-linejoin: round;
+          dominant-baseline: middle;
         }
-        .hpv-catcher-b circle { animation-delay: -1.6s; }
-        .hpv-catcher-c circle { animation-delay: -3.2s; }
-        .hpv-catcher rect {
-          fill: rgba(11,10,8,0.88);
-          stroke: rgba(216,161,111,0.58);
+        .hpv-signal-stage {
+          filter: drop-shadow(0 0 5px color-mix(in srgb, var(--hpv-signal-color, #D8A16F) 36%, transparent));
+        }
+        .hpv-word-seen { --hpv-signal-color: #74B7FF; }
+        .hpv-word-typing { --hpv-signal-color: #E8A15D; }
+        .hpv-word-story-view { --hpv-signal-color: #EF6F87; }
+        .hpv-static-signals {
+          display: none;
+          opacity: 0.62;
+        }
+        .hpv-server-target {
+          opacity: 0.54;
+          transform:
+            translate3d(calc(var(--hero-pointer-x, 0) * 7px), calc(var(--hero-pointer-y, 0) * -3px), -14px);
+          transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+        }
+        .hpv-server-link {
+          fill: none;
+          stroke: rgba(216,161,111,0.4);
+          stroke-width: 1.25;
+          stroke-linecap: round;
+          stroke-dasharray: 7 11;
+          opacity: 0.68;
+        }
+        .hpv-server-body {
+          fill: rgba(14,15,14,0.72);
+          stroke: rgba(240,235,224,0.22);
           stroke-width: 1.2;
         }
-        .hpv-catcher path {
-          stroke: rgba(240,235,224,0.76);
-          stroke-width: 1.55;
-          stroke-linecap: round;
-        }
-        .hpv-source-nodes circle {
-          fill: rgba(216,161,111,0.8);
-          stroke: rgba(240,235,224,0.22);
+        .hpv-server-bay {
+          fill: rgba(240,235,224,0.055);
+          stroke: rgba(240,235,224,0.16);
           stroke-width: 1;
         }
-        .hpv-source-nodes .hpv-node-messenger { fill: #4AA3FF; opacity: 0.72; }
-        .hpv-source-nodes .hpv-node-instagram { fill: #D8A16F; opacity: 0.8; }
-        .hpv-source-nodes .hpv-node-facebook { fill: #C44830; opacity: 0.78; }
-        .hpv-source-nodes circle {
-          animation: hpvNodeBreathe 4.9s ease-in-out infinite;
+        .hpv-server-port {
+          fill: rgba(216,161,111,0.72);
         }
-        .hpv-node-instagram { animation-delay: -1.6s; }
-        .hpv-node-facebook { animation-delay: -3.2s; }
+        .hpv-server-core {
+          stroke: rgba(240,235,224,0.24);
+          stroke-width: 1.2;
+          stroke-linecap: round;
+        }
+        .hpv-mascot-dock {
+          position: absolute;
+          left: 66.4%;
+          top: 51.35%;
+          width: 74px;
+          height: 74px;
+          border-radius: 50%;
+          z-index: 6;
+          pointer-events: none;
+          transform:
+            translate3d(calc(-50% + var(--hero-pointer-x, 0) * 9px), calc(-50% + var(--hero-pointer-y, 0) * -3px), 96px);
+          background:
+            radial-gradient(circle at 50% 50%, rgba(216,161,111,0.18), rgba(216,161,111,0.045) 48%, transparent 70%);
+          border: 1px solid rgba(216,161,111,0.26);
+          box-shadow:
+            inset 0 0 0 1px rgba(240,235,224,0.05),
+            0 0 0 1px rgba(11,10,8,0.5),
+            0 16px 34px rgba(0,0,0,0.28);
+          opacity: 0.66;
+          transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+        }
+        .hpv-mascot-dock::after {
+          content: "";
+          position: absolute;
+          inset: 16px;
+          border-radius: 50%;
+          border: 1px solid rgba(240,235,224,0.18);
+          background: rgba(11,10,8,0.28);
+        }
+        .hpv-platform-node {
+          animation: hpvNodeBreathe 4.9s ease-in-out infinite;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
+        .hpv-platform-node-instagram { animation-delay: -1.6s; }
+        .hpv-platform-node-facebook { animation-delay: -3.2s; }
+        .hpv-source-ring {
+          fill: rgba(11,10,8,0.7);
+          stroke: rgba(240,235,224,0.18);
+          stroke-width: 1;
+        }
+        .hpv-source-face {
+          stroke: rgba(255,255,255,0.2);
+          stroke-width: 1;
+        }
+        .hpv-source-face-messenger { fill: #0A7CFF; }
+        .hpv-source-face-instagram {
+          fill: url(#hpvInstagramNode);
+          stroke: rgba(255,255,255,0.22);
+        }
+        .hpv-source-face-facebook { fill: #1877F2; }
+        .hpv-platform-mark {
+          fill: #fff;
+        }
+        .hpv-platform-mark-facebook {
+          fill: #fff;
+        }
+        .hpv-platform-camera,
+        .hpv-platform-camera-lens {
+          fill: none;
+          stroke: #fff;
+          stroke-width: 1.9;
+        }
+        .hpv-platform-camera-dot {
+          fill: #fff;
+        }
         .hpv-ghost {
           position: absolute;
           width: min(39vw, 560px);
@@ -1502,17 +1677,6 @@ export function HeroSection() {
         .hpv-pixel-13 { --px-x: 52%; --px-y: 61%; --px-w: 18px; --px-h: 15px; --px-delay: -3.8s; }
         .hpv-pixel-14 { --px-x: 84%; --px-y: 57%; --px-w: 20px; --px-h: 16px; --px-delay: -5.6s; }
 
-        @keyframes hpvSignalStop {
-          0% { stroke-dashoffset: 1; opacity: 0; }
-          14% { opacity: 0.9; }
-          48% { opacity: 0.72; }
-          66%, 100% { stroke-dashoffset: 0; opacity: 0; }
-        }
-        @keyframes hpvBlockCatch {
-          0%, 55% { opacity: 0; transform: scale(0.7); }
-          64% { opacity: 0.92; transform: scale(1); }
-          86%, 100% { opacity: 0; transform: scale(1.7); }
-        }
         @keyframes hpvNodeBreathe {
           0%, 100% { opacity: 0.44; }
           18%, 56% { opacity: 0.88; }
@@ -1529,15 +1693,21 @@ export function HeroSection() {
 
         /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
-          .hpv-lane-pulse,
-          .hpv-catcher circle,
-          .hpv-source-nodes circle,
+          .hpv-platform-node,
           .hpv-pixel {
             animation: none !important;
+          }
+          .hpv-signal-streams {
+            display: none;
+          }
+          .hpv-static-signals {
+            display: block;
           }
           .hpv-grid,
           .hpv-pane,
           .hpv-routes,
+          .hpv-mascot-dock,
+          .hpv-server-target,
           .hpv-ghost,
           .hpv-pixel-field {
             transition: none !important;
@@ -1614,6 +1784,7 @@ export function HeroSection() {
             mask-image: linear-gradient(90deg, transparent 0 24%, rgba(0,0,0,0.35) 42%, black 68%);
           }
           .hpv-scene { inset: 0; transform-style: flat; }
+          .hpv-mascot-dock,
           .hpv-grid,
           .hpv-routes { display: none; }
           .hpv-pane-left,
