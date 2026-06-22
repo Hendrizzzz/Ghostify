@@ -11,7 +11,7 @@ export function FinalCTA() {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, var(--g-border) 20%, var(--g-border) 80%, transparent)' }} />
 
       {/* Giant watermark */}
-      <div aria-hidden style={{ position: 'absolute', bottom: 'clamp(30px, 8vw, 96px)', right: 'clamp(24px, 5vw, 72px)', fontFamily: 'var(--g-display)', fontSize: 'clamp(96px, 18vw, 240px)', fontWeight: 700, fontStyle: 'italic', color: 'rgba(239,226,208,0.025)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
+      <div aria-hidden style={{ position: 'absolute', bottom: 'clamp(30px, 8vw, 96px)', right: 'clamp(24px, 5vw, 72px)', fontFamily: 'var(--g-watermark)', fontSize: 'clamp(96px, 18vw, 240px)', fontWeight: 400, fontStyle: 'italic', color: 'rgba(239,226,208,0.025)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
         quiet
       </div>
 
@@ -24,7 +24,7 @@ export function FinalCTA() {
             viewport={{ once: true }}
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h2 style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.4rem, 4.2vw, 4rem)', fontWeight: 400, fontStyle: 'italic', color: 'var(--g-white)', margin: '0 0 22px', lineHeight: 1.06, letterSpacing: 0 }}>
+            <h2 style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.4rem, 4.2vw, 4rem)', fontWeight: 400, fontStyle: 'italic', color: 'var(--g-white)', margin: '0 0 22px', lineHeight: 1.02, letterSpacing: 0 }}>
               Stop letting apps announce every tiny move.
             </h2>
             <p style={{ fontFamily: 'var(--g-sans)', fontSize: 15, lineHeight: 1.65, color: 'var(--g-body)', margin: 0, maxWidth: 380 }}>

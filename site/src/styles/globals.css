@@ -24,8 +24,9 @@
   --g-ghost-body:  #F0E7DC;
 
   /* Fonts */
-  --g-display:     'Cormorant Garamond', Georgia, serif;
-  --g-sans:        'DM Sans', system-ui, sans-serif;
+  --g-display:     'EB Garamond', Georgia, serif;
+  --g-sans:        'Figtree', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --g-watermark:   'EB Garamond', Georgia, serif;
   --g-mono:        'DM Mono', monospace;
 
   /* Motion */
@@ -44,8 +45,7 @@
   --z-modal:    1000;
   --z-mascot:   9999;
 
-  /* Desktop scale: nudges the exported design toward the 125% browser-zoom feel. */
-  --font-size: clamp(16.75px, calc(15px + 0.18vw), 18px);
+  --font-size: 16px;
 }
 
 @media (max-width: 768px) {
@@ -63,6 +63,8 @@ html, body {
   background-color: var(--g-bg);
   color: var(--g-white);
   font-family: var(--g-sans);
+  font-feature-settings: "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;

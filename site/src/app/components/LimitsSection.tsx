@@ -135,7 +135,7 @@ export function LimitsSection() {
           pointer-events: none;
           z-index: -1;
           transform: none;
-          font-family: var(--g-display);
+          font-family: var(--g-watermark);
           font-size: clamp(9rem, 15vw, 17rem);
           font-style: italic;
           font-weight: 400;
@@ -179,9 +179,9 @@ export function LimitsSection() {
         .limits-intro h2 {
           margin: 0 0 26px;
           font-family: var(--g-display);
-          font-size: clamp(2.65rem, 3.15vw, 4rem);
+          font-size: clamp(2.65rem, 3.2vw, 4rem);
           font-weight: 400;
-          line-height: 1;
+          line-height: 0.98;
           color: var(--g-white);
           letter-spacing: 0;
           white-space: nowrap;
@@ -190,8 +190,8 @@ export function LimitsSection() {
           max-width: 390px;
           margin: 0;
           font-family: var(--g-sans);
-          font-size: clamp(0.98rem, 1.1vw, 1.14rem);
-          line-height: 1.58;
+          font-size: clamp(1.03rem, 1.08vw, 1.18rem);
+          line-height: 1.52;
           color: rgba(240,235,224,0.62);
           letter-spacing: 0;
         }
@@ -199,11 +199,12 @@ export function LimitsSection() {
           display: inline-flex;
           align-items: center;
           margin-top: 24px;
-          font-family: var(--g-mono);
-          font-size: 0.76rem;
+          font-family: var(--g-sans);
+          font-size: 0.84rem;
           line-height: 1;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
+          letter-spacing: 0;
+          text-transform: none;
+          font-weight: 600;
           color: rgba(228,139,109,0.82);
           text-decoration: none;
           border-bottom: 1px solid rgba(212,106,82,0.28);
@@ -314,9 +315,10 @@ export function LimitsSection() {
           bottom: 8%;
           transform: translateX(-50%);
           white-space: nowrap;
-          font-family: var(--g-display);
-          font-size: clamp(0.68rem, 0.76vi, 0.78rem);
+          font-family: var(--g-sans);
+          font-size: clamp(0.62rem, 0.72vi, 0.74rem);
           font-style: italic;
+          font-weight: 500;
           color: rgba(228,139,109,0.72);
         }
         .limits-core-dots {
@@ -390,7 +392,7 @@ export function LimitsSection() {
         .limit-callout h3 {
           margin: 0 0 12px;
           font-family: var(--g-display);
-          font-size: clamp(1.3rem, 1.55vw, 1.62rem);
+          font-size: clamp(1.32rem, 1.55vw, 1.68rem);
           font-weight: 400;
           line-height: 1.08;
           color: var(--g-white);
@@ -399,9 +401,9 @@ export function LimitsSection() {
         .limit-callout p {
           margin: 0;
           font-family: var(--g-sans);
-          font-size: 0.86rem;
-          line-height: 1.48;
-          color: rgba(240,235,224,0.58);
+          font-size: 0.94rem;
+          line-height: 1.52;
+          color: rgba(240,235,224,0.62);
           letter-spacing: 0;
         }
         @keyframes limitsBoundaryOrbit {
@@ -493,7 +495,7 @@ export function LimitsSection() {
             color: rgba(240,235,224,0.018);
           }
           .limits-intro h2 {
-            font-size: clamp(2.35rem, 5.4vw, 2.95rem);
+            font-size: clamp(2.05rem, 4.8vw, 2.7rem);
           }
           .limits-map {
             min-height: 0;
@@ -525,7 +527,7 @@ export function LimitsSection() {
             color: rgba(240,235,224,0.62);
           }
           .limit-callout h3 {
-            font-size: clamp(1.1rem, 2.2vw, 1.28rem);
+            font-size: clamp(1.06rem, 2vw, 1.22rem);
           }
           .limit-index-row {
             margin-bottom: 9px;
@@ -554,7 +556,7 @@ export function LimitsSection() {
             padding: 82px 24px 76px;
           }
           .limits-intro h2 {
-            font-size: clamp(2.15rem, 10.2vw, 2.7rem);
+            font-size: clamp(1.92rem, 8.6vw, 2.34rem);
           }
           .limits-section::after {
             left: 0;
@@ -581,7 +583,7 @@ export function LimitsSection() {
             font-size: 0.86rem;
           }
           .limit-callout h3 {
-            font-size: 1.52rem;
+            font-size: 1.22rem;
           }
           .limit-nw,
           .limit-ne,

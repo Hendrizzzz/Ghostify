@@ -1025,7 +1025,7 @@ function MotionSignalToken({
   ].join(' ');
 
   return (
-    <text className={className} textAnchor="middle">
+    <text className={className} textAnchor={direction === 'output' ? 'end' : 'middle'}>
       <animateMotion
         dur={`${duration}s`}
         begin={`${begin.toFixed(2)}s`}
@@ -1098,6 +1098,9 @@ function PrivacySignalConsole() {
           <mask id="hpvFlowMask" maskUnits="userSpaceOnUse" x="-240" y="0" width="1160" height="360">
             <rect x="-240" y="0" width="1160" height="360" fill="url(#hpvFlowFade)" />
           </mask>
+          <clipPath id="hpvOutputClip" clipPathUnits="userSpaceOnUse">
+            <rect x="806" y="0" width="980" height="360" />
+          </clipPath>
         </defs>
 
         <path id="hpv-route-seen" d="M-260 86C114 86 398 102 600 128C682 139 742 142 810 132" />
@@ -1119,7 +1122,7 @@ function PrivacySignalConsole() {
           </g>
         </g>
 
-        <g className="hpv-output-signals" aria-hidden="true">
+        <g className="hpv-output-signals" clipPath="url(#hpvOutputClip)" aria-hidden="true">
           {heroSignalRows.map((row) => (
             <MotionSignalStream key={`output-${row.word}`} row={row} direction="output" />
           ))}
@@ -1165,7 +1168,7 @@ export function HeroSection() {
       id="hero"
       className="snap-start hero-section"
       style={{
-        minHeight: 'max(100vh, 900px)',
+        minHeight: '100svh',
         display: 'flex',
         alignItems: 'center',
         position: 'relative',
@@ -1189,6 +1192,7 @@ export function HeroSection() {
           gridTemplateRows: 'auto auto',
           gap: 'clamp(12px, 1.8vw, 20px)',
           alignItems: 'start',
+          alignContent: 'center',
           position: 'relative',
           zIndex: 1,
         }}
@@ -1295,28 +1299,29 @@ export function HeroSection() {
         }
         .hero-title {
           font-family: var(--g-display);
-          font-size: clamp(3.2rem, 5.6vw, 5.9rem);
+          font-size: clamp(3.25rem, 5.8vw, 6.15rem);
           font-weight: 400;
-          line-height: 1;
+          line-height: 0.92;
           letter-spacing: 0;
           color: var(--g-white);
-          margin: 0 0 22px;
+          margin: 0 0 20px;
           text-wrap: nowrap;
           white-space: nowrap;
         }
         .hero-title span {
           color: #D46A52;
           font-style: italic;
+          font-weight: 400;
           text-shadow: 0 0 32px rgba(212,106,82,0.16);
         }
         .hero-subcopy {
           width: min(100%, 760px);
-          max-width: 760px;
-          margin: 0 auto 24px;
+          max-width: 740px;
+          margin: 0 auto 22px;
           color: rgba(240,235,224,0.76);
           font-family: var(--g-sans);
-          font-size: 1rem;
-          line-height: 1.52;
+          font-size: 1.08rem;
+          line-height: 1.5;
         }
         .hero-action-row {
           display: flex;
@@ -1337,7 +1342,7 @@ export function HeroSection() {
           padding: 0 0.92rem;
           border-radius: 6px;
           font-family: var(--g-sans);
-          font-size: 0.78rem;
+          font-size: 0.82rem;
           font-weight: 600;
           text-decoration: none;
           letter-spacing: 0;
@@ -1531,29 +1536,6 @@ export function HeroSection() {
           z-index: 4;
           isolation: isolate;
         }
-        .hpv-core::before,
-        .hpv-core::after {
-          content: "";
-          position: absolute;
-          inset: -30%;
-          border-radius: 50%;
-          pointer-events: none;
-        }
-        .hpv-core::before {
-          inset: -6%;
-          border: 1px solid rgba(240,235,224,0.14);
-          background: transparent;
-          box-shadow: none;
-          opacity: 0.82;
-          z-index: 1;
-        }
-        .hpv-core::after {
-          inset: -18%;
-          border: 0;
-          background: radial-gradient(circle at 50% 49%, rgba(var(--g-bg-rgb),0.9) 0 45%, rgba(var(--g-bg-rgb),0.54) 58%, transparent 72%);
-          box-shadow: none;
-          z-index: 0;
-        }
         .hpv-core-ghost {
           position: absolute;
           left: 50%;
@@ -1582,21 +1564,17 @@ export function HeroSection() {
             padding-right: 32px !important;
             gap: 14px !important;
           }
-          .hero-title { font-size: clamp(3.2rem, 6.1vw, 5.15rem); }
+          .hero-title { font-size: clamp(3rem, 5.8vw, 5.25rem); }
           .hero-subcopy { max-width: 680px; }
           .hero-privacy-visual { height: 238px; }
         }
         @media (max-width: 900px) {
-          .hero-section {
-            min-height: max(100vh, 860px) !important;
-            padding-top: 78px !important;
-          }
           .hero-grid {
             grid-template-rows: auto auto !important;
             padding: 30px 28px 18px !important;
             gap: 14px !important;
           }
-          .hero-title { font-size: clamp(2.9rem, 7.8vw, 4.15rem); }
+          .hero-title { font-size: clamp(2.85rem, 7.4vw, 4.3rem); }
           .hero-subcopy { max-width: 600px; }
           .hero-action-row { margin-bottom: 0.9rem; }
           .hero-proof-row { max-width: 590px; }
@@ -1606,17 +1584,14 @@ export function HeroSection() {
           }
         }
         @media (max-width: 640px) {
-          .hero-section {
-            min-height: max(100vh, 820px) !important;
-          }
           .hero-grid {
             padding: 24px 18px 18px !important;
             grid-template-rows: auto auto !important;
             gap: 14px !important;
           }
           .hero-title {
-            font-size: clamp(1.82rem, 7.2vw, 2.2rem);
-            line-height: 1.05;
+            font-size: clamp(2.05rem, 8.2vw, 2.48rem);
+            line-height: 0.98;
             margin-bottom: 18px;
           }
           .hero-subcopy {
@@ -1672,9 +1647,8 @@ export function HeroSection() {
           }
         }
         @media (max-width: 400px) {
-          .hero-section { min-height: max(100vh, 800px) !important; }
           .hero-grid { padding-left: 16px !important; padding-right: 16px !important; }
-          .hero-title { font-size: clamp(1.7rem, 7.2vw, 2rem); }
+          .hero-title { font-size: clamp(1.92rem, 7.5vw, 2.26rem); }
           .hero-subcopy { max-width: 320px; }
           .hero-primary-cta,
           .hero-secondary-cta { width: min(100%, 232px); }
@@ -1684,18 +1658,13 @@ export function HeroSection() {
           .hpv-core { width: 156px; height: 156px; }
         }
         @media (max-width: 640px) and (max-height: 700px) {
-          .hero-section {
-            align-items: flex-start !important;
-            min-height: 720px !important;
-            padding-top: 62px !important;
-          }
           .hero-grid {
             padding-top: 18px !important;
             padding-bottom: 10px !important;
             gap: 10px !important;
           }
           .hero-title {
-            font-size: clamp(1.62rem, 7vw, 1.92rem);
+            font-size: clamp(1.86rem, 7.2vw, 2.18rem);
             margin-bottom: 14px;
           }
           .hero-subcopy {
@@ -1732,18 +1701,13 @@ export function HeroSection() {
           }
         }
         @media (min-width: 901px) and (max-height: 820px) {
-          .hero-section {
-            align-items: flex-start !important;
-            min-height: 100vh !important;
-            padding-top: 54px !important;
-          }
           .hero-grid {
             padding-top: 22px !important;
             padding-bottom: 10px !important;
             gap: 8px !important;
           }
           .hero-title {
-            font-size: clamp(2.65rem, 5vw, 4.25rem);
+            font-size: clamp(2.85rem, 5vw, 4.35rem);
             margin-bottom: 14px;
           }
           .hero-subcopy {
@@ -1797,10 +1761,6 @@ export function HeroSection() {
           }
         }
         @media (min-width: 500px) and (max-width: 640px) and (min-height: 701px) and (max-height: 760px) {
-          .hero-section {
-            min-height: 100vh !important;
-            padding-top: 62px !important;
-          }
           .hero-grid {
             padding-top: 22px !important;
             padding-bottom: 18px !important;
@@ -1817,18 +1777,13 @@ export function HeroSection() {
           }
         }
         @media (min-width: 760px) and (max-height: 720px) {
-          .hero-section {
-            align-items: flex-start !important;
-            min-height: 680px !important;
-            padding-top: 54px !important;
-          }
           .hero-grid {
             padding-top: 22px !important;
             padding-bottom: 10px !important;
             gap: 8px !important;
           }
           .hero-title {
-            font-size: clamp(2.65rem, 5vw, 4.2rem);
+            font-size: clamp(2.85rem, 5vw, 4.3rem);
             margin-bottom: 14px;
           }
           .hero-subcopy {

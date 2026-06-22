@@ -352,7 +352,7 @@ export function StatusPage({ view }: StatusPageProps) {
           font-size: 1.7rem;
           font-weight: 700;
           line-height: 1.15;
-          letter-spacing: -0.02em;
+          letter-spacing: 0;
           color: var(--g-white);
         }
         .status-topbar a,

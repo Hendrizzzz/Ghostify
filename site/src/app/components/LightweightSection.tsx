@@ -80,9 +80,9 @@ export function LightweightSection() {
           position: 'absolute',
           bottom: 'clamp(28px, 7vw, 86px)',
           right: 'clamp(28px, 6vw, 92px)',
-          fontFamily: 'var(--g-display)',
+          fontFamily: 'var(--g-watermark)',
           fontSize: 'clamp(86px, 17vw, 220px)',
-          fontWeight: 700,
+          fontWeight: 400,
           fontStyle: 'italic',
           color: 'rgba(239,226,208,0.024)',
           lineHeight: 0.85,
@@ -138,7 +138,7 @@ export function LightweightSection() {
               style={{
                 fontFamily: 'var(--g-display)',
                 fontSize: 'clamp(2.8rem, 7vw, 6rem)',
-                fontWeight: 300,
+                fontWeight: 400,
                 color: 'var(--g-white)',
                 lineHeight: 0.9,
                 letterSpacing: 0,
@@ -155,7 +155,7 @@ export function LightweightSection() {
 
           {/* Stat 2 */}
           <div style={{ padding: 'clamp(20px, 3vw, 32px) 0', paddingLeft: 'clamp(28px, 5vw, 64px)', paddingRight: 'clamp(28px, 5vw, 64px)', borderRight: '1px solid rgba(240,230,210,0.07)', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 300, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
+            <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 400, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
               <CountUp target={0} active={statsInView} />
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -165,7 +165,7 @@ export function LightweightSection() {
 
           {/* Stat 3 */}
           <div style={{ padding: 'clamp(20px, 3vw, 32px) 0', paddingLeft: 'clamp(28px, 5vw, 64px)', paddingRight: 'clamp(28px, 5vw, 64px)', borderRight: '1px solid rgba(240,230,210,0.07)', flexShrink: 0 }} className="stat-accounts">
-            <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 300, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
+            <div style={{ fontFamily: 'var(--g-display)', fontSize: 'clamp(2.8rem, 7vw, 6rem)', fontWeight: 400, color: 'var(--g-white)', lineHeight: 0.9, letterSpacing: 0, marginBottom: 10 }}>
               <CountUp target={0} active={statsInView} />
             </div>
             <div style={{ fontFamily: 'var(--g-mono)', fontSize: 15, color: 'var(--g-dim)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>

@@ -321,7 +321,7 @@ export function PlatformSection() {
           font-size: clamp(2rem, 3.4vw, 3.35rem);
           line-height: 1.04;
           font-weight: 400;
-          font-style: italic;
+          font-style: normal;
           color: var(--g-white);
           letter-spacing: 0;
           margin: 0 0 18px;
