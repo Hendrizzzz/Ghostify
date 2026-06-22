@@ -318,17 +318,17 @@ export function StatusPage({ view }: StatusPageProps) {
 
       <style>{`
         .status-page {
-          --status-red: #ff1f2d;
-          --status-red-soft: rgba(255, 31, 45, 0.11);
-          --status-red-border: rgba(255, 31, 45, 0.38);
-          --status-red-text: #ff626b;
-          --status-surface: rgba(15,15,15,0.9);
-          --status-surface-soft: rgba(255,255,255,0.035);
-          --status-line: rgba(255,255,255,0.1);
-          --status-line-strong: rgba(255,255,255,0.16);
-          --status-text: rgba(245,245,245,0.86);
-          --status-muted: rgba(245,245,245,0.58);
-          --status-faint: rgba(245,245,245,0.42);
+          --status-red: #D46A52;
+          --status-red-soft: rgba(212, 106, 82, 0.12);
+          --status-red-border: rgba(212, 106, 82, 0.4);
+          --status-red-text: #E48B6D;
+          --status-surface: rgba(20,18,16,0.92);
+          --status-surface-soft: rgba(239,226,208,0.04);
+          --status-line: rgba(239,226,208,0.1);
+          --status-line-strong: rgba(239,226,208,0.16);
+          --status-text: rgba(239,226,208,0.86);
+          --status-muted: rgba(239,226,208,0.58);
+          --status-faint: rgba(239,226,208,0.42);
           min-height: 100svh;
           width: 100%;
           padding: 92px 20px 72px;
@@ -438,7 +438,7 @@ export function StatusPage({ view }: StatusPageProps) {
         .status-history-row p,
         .status-footnote {
           margin: 8px 0 0;
-          color: rgba(245,245,245,0.7);
+          color: rgba(239,226,208,0.7);
           font-family: var(--g-sans);
           font-size: 0.91rem;
           line-height: 1.55;
@@ -463,7 +463,7 @@ export function StatusPage({ view }: StatusPageProps) {
           margin-left: 10px;
           vertical-align: middle;
           border-radius: 999px;
-          background: rgba(245,245,245,0.24);
+          background: rgba(239,226,208,0.24);
         }
         .status-panel {
           margin-top: 0;
@@ -567,7 +567,7 @@ export function StatusPage({ view }: StatusPageProps) {
         .status-rail-segment {
           height: 14px;
           border-radius: 2px;
-          background: rgba(255,255,255,0.09);
+          background: rgba(239,226,208,0.09);
         }
         .status-rail-ok {
           background: #54C786;
@@ -579,7 +579,7 @@ export function StatusPage({ view }: StatusPageProps) {
           background: var(--status-red);
         }
         .status-rail-muted {
-          background: rgba(255,255,255,0.12);
+          background: rgba(239,226,208,0.12);
         }
         .status-feature-list {
           display: grid;

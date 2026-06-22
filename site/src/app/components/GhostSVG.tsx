@@ -47,7 +47,7 @@ export function GhostSVG({
       </defs>
 
       <path fill="#0B0A08" fillOpacity={0.09} transform="translate(0 4)" d={GHOST_PATH} />
-      <path fill={`url(#${bodyGradient})`} stroke="rgba(11,10,8,0.12)" strokeWidth={2} strokeLinejoin="round" d={GHOST_PATH} />
+      <path fill={`url(#${bodyGradient})`} stroke="rgba(11,11,12,0.12)" strokeWidth={2} strokeLinejoin="round" d={GHOST_PATH} />
       <path fill={`url(#${sheen})`} d={GHOST_PATH} />
       <path fill={eyeColor} d={EYES_PATH} />
       <path fill="white" fillOpacity={0.45} d={HIGHLIGHT_PATH} />

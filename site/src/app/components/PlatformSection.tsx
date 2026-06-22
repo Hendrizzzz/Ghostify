@@ -100,9 +100,11 @@ export function PlatformSection() {
         flexDirection: 'column',
         justifyContent: 'center',
         padding: 'clamp(64px, 8vw, 104px) 0',
+        background:
+          'radial-gradient(ellipse at 18% 22%, rgba(239,226,208,0.035), transparent 32%), radial-gradient(ellipse at 82% 70%, rgba(212,106,82,0.045), transparent 34%), var(--g-bg)',
       }}
     >
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.06) 20%, rgba(240,230,210,0.06) 80%, transparent)' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, var(--g-border) 20%, var(--g-border) 80%, transparent)' }} />
 
       <div className="platform-inner" style={{ padding: '0 clamp(24px, 4vw, 56px)', maxWidth: 1380, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         <motion.div
@@ -357,9 +359,9 @@ export function PlatformSection() {
         }
 
         .surface-points span.is-active {
-          background: rgba(196,72,48,0.08);
-          border-color: rgba(196,72,48,0.22);
-          color: rgba(196,72,48,0.86);
+          background: rgba(212,106,82,0.08);
+          border-color: rgba(212,106,82,0.24);
+          color: rgba(228,139,109,0.9);
         }
 
         .platform-notes {

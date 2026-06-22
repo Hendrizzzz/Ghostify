@@ -46,6 +46,7 @@ export function FAQSection() {
         padding: 'clamp(56px, 8vw, 100px) clamp(28px, 4vw, 56px)',
         maxWidth: 1280,
         margin: '0 auto',
+        background: 'var(--g-bg)',
       }}
     >
       <div className="faq-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'clamp(40px, 6vw, 80px)', alignItems: 'start' }}>

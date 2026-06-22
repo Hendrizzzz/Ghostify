@@ -158,14 +158,14 @@ function GhostifyHeroPopup({
         <div style={{ position: 'absolute', top: 68, right: 6, zIndex: 30 }}>
           {/* Caret */}
           <div style={{ position: 'absolute', top: -6, right: 8, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '6px solid rgba(240,230,210,0.09)', zIndex: 1 }} />
-          <div style={{ position: 'absolute', top: -5, right: 8, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '6px solid #141210', zIndex: 2 }} />
+          <div style={{ position: 'absolute', top: -5, right: 8, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '6px solid var(--g-surface)', zIndex: 2 }} />
 
           <motion.div
             initial={{ opacity: 0, y: -6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            style={{ width: 220, background: '#141210', border: '1px solid rgba(240,230,210,0.09)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', position: 'relative', zIndex: 3 }}
+            style={{ width: 220, background: 'var(--g-surface)', border: '1px solid var(--g-border)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', position: 'relative', zIndex: 3 }}
           >
             {/* Header */}
             <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(240,230,210,0.06)' }}>
@@ -180,7 +180,7 @@ function GhostifyHeroPopup({
               return (
                 <div key={group.label} style={{ borderBottom: gi < groups.length - 1 ? '1px solid rgba(240,230,210,0.05)' : 'none', opacity: isActive ? 1 : 0.48, transition: 'opacity 0.2s ease' }}>
                   <div style={{ padding: '8px 14px 4px' }}>
-                    <span style={{ fontFamily: 'var(--g-mono)', fontSize: 8.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: isActive ? 'rgba(196,72,48,0.7)' : 'rgba(240,230,210,0.26)' }}>
+                    <span style={{ fontFamily: 'var(--g-mono)', fontSize: 8.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: isActive ? 'rgba(228,139,109,0.82)' : 'rgba(240,230,210,0.26)' }}>
                       {group.label}
                     </span>
                   </div>
@@ -321,7 +321,7 @@ function MessengerView({
             <motion.div key={activeChatId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               {messages.map((msg, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: msg.them ? 'flex-start' : 'flex-end' }}>
-                  <div style={{ maxWidth: '72%', padding: '7px 11px', borderRadius: msg.them ? '4px 16px 16px 16px' : '16px 4px 16px 16px', background: msg.them ? 'rgba(255,255,255,0.09)' : '#0082FB', fontFamily: 'var(--g-sans)', fontSize: 12.5, color: 'white', lineHeight: 1.4 }}>
+                  <div style={{ maxWidth: '72%', padding: '7px 11px', borderRadius: msg.them ? '4px 16px 16px 16px' : '16px 4px 16px 16px', background: msg.them ? 'rgba(239,226,208,0.09)' : '#0082FB', fontFamily: 'var(--g-sans)', fontSize: 12.5, color: 'white', lineHeight: 1.4 }}>
                     {msg.text}
                   </div>
                 </div>
@@ -862,14 +862,14 @@ function HeroBrowserScene() {
       ref={containerRef}
       style={{
         position: 'relative', width: '100%', height: '100%',
-        background: '#141210', borderRadius: 12, overflow: 'hidden',
+        background: 'var(--g-surface)', borderRadius: 12, overflow: 'hidden',
         border: '1px solid rgba(240,230,210,0.08)',
         boxShadow: '0 24px 80px rgba(0,0,0,0.55), 0 8px 24px rgba(0,0,0,0.35)',
         pointerEvents: 'none', display: 'flex', flexDirection: 'column',
       }}
     >
       {/* Window chrome */}
-      <div style={{ height: 36, background: '#141210', borderBottom: '1px solid rgba(240,230,210,0.06)', display: 'flex', alignItems: 'center', padding: '0 12px', gap: 8, flexShrink: 0 }}>
+      <div style={{ height: 36, background: 'var(--g-surface)', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', padding: '0 12px', gap: 8, flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 5 }}>
           <div style={{ width: 10, height: 10, borderRadius: 5, background: '#FF5F57' }} />
           <div style={{ width: 10, height: 10, borderRadius: 5, background: '#FEBC2E' }} />
@@ -878,7 +878,7 @@ function HeroBrowserScene() {
       </div>
 
       {/* Tab bar */}
-      <div className="hero-tabbar" style={{ background: '#141210', display: 'flex', alignItems: 'flex-end', padding: '0 10px', gap: 2, height: 32, borderBottom: '1px solid rgba(240,230,210,0.05)', flexShrink: 0 }}>
+      <div className="hero-tabbar" style={{ background: 'var(--g-surface)', display: 'flex', alignItems: 'flex-end', padding: '0 10px', gap: 2, height: 32, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         {tabs.map((tab) => (
           <div
             key={tab.id}
@@ -886,7 +886,7 @@ function HeroBrowserScene() {
             data-cursor-target={tab.id === 'messenger' ? 'msgTab' : tab.id === 'facebook' ? 'fbTab' : 'igTab'}
             style={{
               height: 27, padding: '0 12px', borderRadius: '6px 6px 0 0',
-              background: activePlatform === tab.id ? '#1C1A17' : 'transparent',
+              background: activePlatform === tab.id ? 'var(--g-surface-2)' : 'transparent',
               fontFamily: 'var(--g-sans)', fontSize: 11,
               color: activePlatform === tab.id ? 'rgba(240,230,210,0.88)' : 'rgba(240,230,210,0.32)',
               display: 'flex', alignItems: 'center', gap: 5,
@@ -899,14 +899,14 @@ function HeroBrowserScene() {
         ))}
         {/* Extension icon */}
         <div className="hero-extension-tab-icon" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingBottom: 3 }}>
-          <div data-cursor-target="extIcon" style={{ width: 21, height: 21, borderRadius: 5, background: popupOpen ? 'rgba(196,72,48,0.22)' : 'rgba(196,72,48,0.12)', border: `1px solid ${popupOpen ? 'rgba(196,72,48,0.45)' : 'rgba(196,72,48,0.25)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}>
+          <div data-cursor-target="extIcon" style={{ width: 21, height: 21, borderRadius: 5, background: popupOpen ? 'rgba(212,106,82,0.18)' : 'rgba(212,106,82,0.1)', border: `1px solid ${popupOpen ? 'rgba(212,106,82,0.42)' : 'rgba(212,106,82,0.24)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}>
             <GhostMark size={13} />
           </div>
         </div>
       </div>
 
       {/* Address bar */}
-      <div className="hero-address" style={{ background: '#1C1A17', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(240,230,210,0.04)', flexShrink: 0 }}>
+      <div className="hero-address" style={{ background: 'var(--g-surface-2)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(255,255,255,0.055)', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 3 }}>
           <span style={{ color: 'rgba(240,230,210,0.18)', fontSize: 12, lineHeight: '18px', width: 18, textAlign: 'center' }}>‹</span>
           <span style={{ color: 'rgba(240,230,210,0.1)', fontSize: 12, lineHeight: '18px', width: 18, textAlign: 'center' }}>›</span>
@@ -1073,15 +1073,15 @@ function PrivacySignalConsole() {
             <stop offset="1" stopColor="#F0EBE0" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="hpvLineTyping" x1="-220" y1="180" x2="820" y2="180" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#FF1F2D" stopOpacity="0" />
-            <stop offset="0.12" stopColor="#FF1F2D" stopOpacity="0.2" />
-            <stop offset="0.76" stopColor="#FF1F2D" stopOpacity="0.46" />
+            <stop stopColor="#D46A52" stopOpacity="0" />
+            <stop offset="0.12" stopColor="#D46A52" stopOpacity="0.2" />
+            <stop offset="0.76" stopColor="#D46A52" stopOpacity="0.46" />
             <stop offset="1" stopColor="#F0EBE0" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="hpvLineStory" x1="-220" y1="270" x2="820" y2="190" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#FF4B45" stopOpacity="0" />
-            <stop offset="0.12" stopColor="#FF4B45" stopOpacity="0.2" />
-            <stop offset="0.74" stopColor="#FF4B45" stopOpacity="0.43" />
+            <stop stopColor="#D46A52" stopOpacity="0" />
+            <stop offset="0.12" stopColor="#D46A52" stopOpacity="0.2" />
+            <stop offset="0.74" stopColor="#D46A52" stopOpacity="0.43" />
             <stop offset="1" stopColor="#F0EBE0" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="hpvFlowFade" x1="-220" y1="0" x2="900" y2="0" gradientUnits="userSpaceOnUse">
@@ -1092,7 +1092,7 @@ function PrivacySignalConsole() {
           </linearGradient>
           <radialGradient id="hpvCoreHalo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(790 160) rotate(90) scale(124)">
             <stop stopColor="#F0EBE0" stopOpacity="0.06" />
-            <stop offset="0.4" stopColor="#FF1F2D" stopOpacity="0.035" />
+            <stop offset="0.4" stopColor="#D46A52" stopOpacity="0.035" />
             <stop offset="1" stopColor="#0B0A08" stopOpacity="0" />
           </radialGradient>
           <mask id="hpvFlowMask" maskUnits="userSpaceOnUse" x="-240" y="0" width="1160" height="360">
@@ -1171,7 +1171,7 @@ export function HeroSection() {
         position: 'relative',
         overflow: 'hidden',
         paddingTop: 60,
-        background: '#0B0A08',
+        background: 'var(--g-bg)',
       }}
     >
       <div aria-hidden className="hero-backdrop" />
@@ -1256,10 +1256,10 @@ export function HeroSection() {
           z-index: 0;
           pointer-events: none;
           background:
-            radial-gradient(ellipse at 50% 28%, rgba(216,161,111,0.09), transparent 32%),
-            radial-gradient(ellipse at 22% 82%, rgba(74,163,255,0.055), transparent 31%),
-            radial-gradient(ellipse at 72% 82%, rgba(196,106,74,0.07), transparent 34%),
-            linear-gradient(180deg, rgba(7,8,8,0.98) 0%, #0B0A08 62%, #0B0A08 100%);
+            radial-gradient(ellipse at 50% 26%, rgba(239,226,208,0.055), transparent 34%),
+            radial-gradient(ellipse at 18% 82%, rgba(212,106,82,0.055), transparent 31%),
+            radial-gradient(ellipse at 74% 82%, rgba(217,166,109,0.055), transparent 34%),
+            linear-gradient(180deg, rgba(11,10,8,0.98) 0%, var(--g-bg) 62%, var(--g-bg) 100%);
         }
         .hero-section::after {
           content: "";
@@ -1271,7 +1271,7 @@ export function HeroSection() {
           z-index: 0;
           pointer-events: none;
           opacity: 0.82;
-          background: linear-gradient(180deg, rgba(11,10,8,0) 0%, rgba(11,10,8,0.72) 68%, #0B0A08 100%);
+          background: linear-gradient(180deg, rgba(var(--g-bg-rgb),0) 0%, rgba(var(--g-bg-rgb),0.72) 68%, var(--g-bg) 100%);
         }
         .hero-texture {
           position: absolute;
@@ -1305,9 +1305,9 @@ export function HeroSection() {
           white-space: nowrap;
         }
         .hero-title span {
-          color: #FF4B45;
+          color: #D46A52;
           font-style: italic;
-          text-shadow: 0 0 32px rgba(255,31,45,0.16);
+          text-shadow: 0 0 32px rgba(212,106,82,0.16);
         }
         .hero-subcopy {
           width: min(100%, 760px);
@@ -1345,9 +1345,9 @@ export function HeroSection() {
           transition: transform 0.16s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
         }
         .hero-primary-cta {
-          background: linear-gradient(135deg, #F4EDE1, #FF4B45 118%);
+          background: linear-gradient(135deg, #F1DFCA, #D46A52 118%);
           color: #0B0A08;
-          box-shadow: 0 18px 46px rgba(255,31,45,0.16);
+          box-shadow: 0 18px 46px rgba(212,106,82,0.16);
         }
         .hero-secondary-cta {
           color: rgba(240,235,224,0.9);
@@ -1359,7 +1359,7 @@ export function HeroSection() {
           transform: translateY(-1px);
         }
         .hero-primary-cta:hover {
-          box-shadow: 0 20px 54px rgba(255,31,45,0.22);
+          box-shadow: 0 20px 54px rgba(212,106,82,0.22);
         }
         .hero-secondary-cta:hover {
           border-color: rgba(240,235,224,0.38);
@@ -1383,7 +1383,7 @@ export function HeroSection() {
           padding: 0 0.58rem;
           border: 1px solid rgba(240,235,224,0.12);
           border-radius: 6px;
-          background: rgba(8,9,9,0.42);
+          background: rgba(20,18,16,0.42);
           box-shadow: inset 0 1px 0 rgba(240,235,224,0.035);
         }
         .hero-proof-icon {
@@ -1393,9 +1393,9 @@ export function HeroSection() {
           align-items: center;
           justify-content: center;
           border-radius: 50%;
-          background: rgba(255,31,45,0.1);
-          color: #FF626B;
-          border: 1px solid rgba(255,31,45,0.18);
+          background: rgba(212,106,82,0.1);
+          color: #E48B6D;
+          border: 1px solid rgba(212,106,82,0.18);
           flex: 0 0 auto;
         }
         .hero-proof-title {
@@ -1430,7 +1430,7 @@ export function HeroSection() {
           right: 0;
           bottom: -20%;
           height: 78%;
-          background: linear-gradient(180deg, transparent, rgba(216,161,111,0.018));
+          background: linear-gradient(180deg, transparent, rgba(239,226,208,0.018));
           opacity: 0.55;
         }
         .hpv-routes {
@@ -1466,7 +1466,7 @@ export function HeroSection() {
           letter-spacing: 0;
           dominant-baseline: middle;
           paint-order: stroke;
-          stroke: rgba(8,9,9,0.72);
+          stroke: rgba(11,10,8,0.72);
           stroke-width: 3px;
           stroke-linejoin: round;
         }
@@ -1474,23 +1474,23 @@ export function HeroSection() {
           fill: rgba(240,235,224,0.76);
         }
         .hpv-input-typing {
-          fill: rgba(255,98,107,0.9);
+          fill: rgba(228,139,109,0.9);
         }
         .hpv-input-story-view {
-          fill: rgba(255,75,69,0.82);
+          fill: rgba(212,106,82,0.82);
         }
         .hpv-output-text {
-          fill: rgba(255,98,107,0.9);
+          fill: rgba(228,139,109,0.9);
           stroke-width: 3.25px;
         }
         .hpv-output-seen {
-          fill: rgba(255,98,107,0.88);
+          fill: rgba(228,139,109,0.88);
         }
         .hpv-output-typing {
           fill: rgba(240,235,224,0.86);
         }
         .hpv-output-story-view {
-          fill: rgba(255,98,107,0.88);
+          fill: rgba(228,139,109,0.88);
         }
         .hpv-type-crossed {
           text-decoration-line: line-through;
@@ -1498,7 +1498,7 @@ export function HeroSection() {
         }
         .hpv-core-burst path {
           fill: none;
-          stroke: rgba(255,31,45,0.14);
+          stroke: rgba(212,106,82,0.14);
           stroke-width: 1;
           stroke-linecap: round;
           stroke-dasharray: 2 7;
@@ -1508,7 +1508,7 @@ export function HeroSection() {
           filter: none;
         }
         .hpv-core-burst > circle:not(:first-child) {
-          fill: rgba(255,31,45,0.24);
+          fill: rgba(212,106,82,0.24);
           filter: none;
         }
         .hpv-output-lines {
@@ -1516,7 +1516,7 @@ export function HeroSection() {
         }
         .hpv-output-lines path {
           fill: none;
-          stroke: rgba(255,31,45,0.35);
+          stroke: rgba(212,106,82,0.35);
           stroke-width: 1.25;
           stroke-linecap: round;
           stroke-dasharray: 2 9;
@@ -1550,7 +1550,7 @@ export function HeroSection() {
         .hpv-core::after {
           inset: -18%;
           border: 0;
-          background: radial-gradient(circle at 50% 49%, rgba(11,10,8,0.9) 0 45%, rgba(11,10,8,0.54) 58%, transparent 72%);
+          background: radial-gradient(circle at 50% 49%, rgba(var(--g-bg-rgb),0.9) 0 45%, rgba(var(--g-bg-rgb),0.54) 58%, transparent 72%);
           box-shadow: none;
           z-index: 0;
         }
@@ -1892,9 +1892,9 @@ function LegacyHeroSection() {
     <section
       id="hero"
       className="snap-start hero-section"
-      style={{ height: '100svh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 60, background: '#0B0A08' }}
+      style={{ height: '100svh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 60, background: 'var(--g-bg)' }}
     >
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,10,8,0.96) 0%, rgba(11,10,8,0.9) 36%, rgba(11,10,8,0.72) 68%, rgba(11,10,8,0.94) 100%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(var(--g-bg-rgb),0.96) 0%, rgba(var(--g-bg-rgb),0.9) 36%, rgba(var(--g-bg-rgb),0.72) 68%, rgba(var(--g-bg-rgb),0.94) 100%)', zIndex: 0, pointerEvents: 'none' }} />
       <div aria-hidden className="hero-grain" />
 
       <div

@@ -105,7 +105,7 @@ export function PersonalityBand() {
           width: 4px;
           height: 4px;
           border-radius: 2px;
-          background: rgba(196,72,48,0.5);
+          background: rgba(212,106,82,0.55);
           flex-shrink: 0;
         }
 

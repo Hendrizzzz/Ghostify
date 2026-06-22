@@ -228,7 +228,7 @@ export function Header() {
           right: 0;
           height: 56px;
           background:
-            linear-gradient(180deg, rgba(8, 8, 7, 0.56) 0%, rgba(8, 8, 7, 0.42) 64%, rgba(8, 8, 7, 0.1) 100%);
+            linear-gradient(180deg, rgba(var(--g-bg-rgb), 0.66) 0%, rgba(var(--g-bg-rgb), 0.48) 64%, rgba(var(--g-bg-rgb), 0.12) 100%);
           box-shadow:
             0 4px 12px rgba(0, 0, 0, 0.1);
           pointer-events: none;
@@ -246,7 +246,7 @@ export function Header() {
             top: 0;
             height: 56px;
             background:
-              linear-gradient(180deg, rgba(8, 8, 7, 0.6) 0%, rgba(8, 8, 7, 0.44) 66%, rgba(8, 8, 7, 0.08) 100%);
+              linear-gradient(180deg, rgba(var(--g-bg-rgb), 0.7) 0%, rgba(var(--g-bg-rgb), 0.5) 66%, rgba(var(--g-bg-rgb), 0.1) 100%);
           }
           .site-nav-frame {
             padding: 0 18px !important;

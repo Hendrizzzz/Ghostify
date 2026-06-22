@@ -57,7 +57,8 @@ export function LightweightSection() {
       ref={sectionRef}
       className="snap-start"
       style={{
-        background: '#0C0B09',
+        background:
+          'radial-gradient(ellipse at 78% 26%, rgba(212,106,82,0.035), transparent 34%), linear-gradient(180deg, #100D0B 0%, var(--g-bg) 100%)',
         position: 'relative',
         overflow: 'hidden',
         minHeight: '80svh',
@@ -67,10 +68,10 @@ export function LightweightSection() {
       }}
     >
       {/* Top hairline */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.07) 20%, rgba(240,230,210,0.07) 80%, transparent)' }} />
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, var(--g-border) 20%, var(--g-border) 80%, transparent)' }} />
 
       {/* Faint grid lines across the full section */}
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(240,230,210,0.018) 40px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(239,226,208,0.02) 40px)', pointerEvents: 'none' }} />
 
       {/* Giant watermark — bleeds to edges */}
       <div
@@ -83,7 +84,7 @@ export function LightweightSection() {
           fontSize: 'clamp(86px, 17vw, 220px)',
           fontWeight: 700,
           fontStyle: 'italic',
-          color: 'rgba(240,230,210,0.014)',
+          color: 'rgba(239,226,208,0.024)',
           lineHeight: 0.85,
           userSelect: 'none',
           pointerEvents: 'none',
@@ -193,7 +194,7 @@ export function LightweightSection() {
       </div>
 
       {/* Bottom hairline */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.07) 20%, rgba(240,230,210,0.07) 80%, transparent)' }} />
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, var(--g-border) 20%, var(--g-border) 80%, transparent)' }} />
 
       <style>{`
         .stable-count {

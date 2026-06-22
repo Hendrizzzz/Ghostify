@@ -111,8 +111,8 @@ export function LimitsSection() {
           overflow: hidden;
           padding: clamp(72px, 5.8vw, 92px) clamp(28px, 4.4vw, 64px);
           background:
-            linear-gradient(180deg, rgba(11,10,8,0.7), #0B0A08 22%, #0B0A08 76%, rgba(11,10,8,0.92)),
-            radial-gradient(ellipse at 67% 48%, rgba(216,161,111,0.055), transparent 46%);
+            linear-gradient(180deg, rgba(var(--g-bg-rgb),0.72), var(--g-bg) 22%, #100D0B 76%, rgba(var(--g-bg-rgb),0.94)),
+            radial-gradient(ellipse at 67% 48%, rgba(212,106,82,0.035), transparent 46%);
         }
         .limits-section::before {
           content: "";
@@ -173,8 +173,8 @@ export function LimitsSection() {
           width: 5px;
           height: 5px;
           border-radius: 999px;
-          background: #FF1F2D;
-          box-shadow: 0 0 16px rgba(255,31,45,0.34);
+          background: #D46A52;
+          box-shadow: 0 0 16px rgba(212,106,82,0.34);
         }
         .limits-intro h2 {
           margin: 0 0 26px;
@@ -204,9 +204,9 @@ export function LimitsSection() {
           line-height: 1;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: rgba(255,98,107,0.82);
+          color: rgba(228,139,109,0.82);
           text-decoration: none;
-          border-bottom: 1px solid rgba(255,31,45,0.28);
+          border-bottom: 1px solid rgba(212,106,82,0.28);
           padding-bottom: 4px;
           transition: color 0.18s ease, border-color 0.18s ease;
         }
@@ -258,22 +258,22 @@ export function LimitsSection() {
           will-change: transform;
         }
         .boundary-perimeter {
-          fill: rgba(11,10,8,0.08);
+          fill: rgba(var(--g-bg-rgb),0.08);
           stroke: rgba(240,235,224,0.13);
           stroke-width: 1;
           vector-effect: non-scaling-stroke;
         }
         .boundary-tick {
-          stroke: rgba(255,31,45,0.42);
+          stroke: rgba(212,106,82,0.42);
           stroke-width: 1;
           vector-effect: non-scaling-stroke;
         }
         .boundary-dot {
-          fill: #FF1F2D;
+          fill: #D46A52;
           opacity: 0.62;
         }
         .boundary-core-ring {
-          fill: rgba(11,10,8,0.42);
+          fill: rgba(var(--g-bg-rgb),0.42);
           stroke: rgba(240,235,224,0.22);
           stroke-width: 1;
         }
@@ -317,7 +317,7 @@ export function LimitsSection() {
           font-family: var(--g-display);
           font-size: clamp(0.68rem, 0.76vi, 0.78rem);
           font-style: italic;
-          color: rgba(255,98,107,0.72);
+          color: rgba(228,139,109,0.72);
         }
         .limits-core-dots {
           position: absolute;
@@ -331,7 +331,7 @@ export function LimitsSection() {
           width: 0.18rem;
           height: 0.18rem;
           border-radius: 999px;
-          background: rgba(255,31,45,0.72);
+          background: rgba(212,106,82,0.72);
         }
         .limit-callout {
           position: relative;
@@ -385,7 +385,7 @@ export function LimitsSection() {
           display: block;
           width: 30px;
           height: 1px;
-          background: rgba(255,31,45,0.42);
+          background: rgba(212,106,82,0.42);
         }
         .limit-callout h3 {
           margin: 0 0 12px;

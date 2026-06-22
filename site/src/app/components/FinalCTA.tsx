@@ -5,13 +5,13 @@ export function FinalCTA() {
   return (
     <section
       className="snap-start"
-      style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', background: 'var(--g-bg)' }}
+      style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', background: 'radial-gradient(ellipse at 23% 42%, rgba(212,106,82,0.065), transparent 30%), radial-gradient(ellipse at 82% 74%, rgba(239,226,208,0.035), transparent 36%), var(--g-bg)' }}
     >
       {/* Top line */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(240,230,210,0.08) 20%, rgba(240,230,210,0.08) 80%, transparent)' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, var(--g-border) 20%, var(--g-border) 80%, transparent)' }} />
 
       {/* Giant watermark */}
-      <div aria-hidden style={{ position: 'absolute', bottom: 'clamp(30px, 8vw, 96px)', right: 'clamp(24px, 5vw, 72px)', fontFamily: 'var(--g-display)', fontSize: 'clamp(96px, 18vw, 240px)', fontWeight: 700, fontStyle: 'italic', color: 'rgba(240,230,210,0.012)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
+      <div aria-hidden style={{ position: 'absolute', bottom: 'clamp(30px, 8vw, 96px)', right: 'clamp(24px, 5vw, 72px)', fontFamily: 'var(--g-display)', fontSize: 'clamp(96px, 18vw, 240px)', fontWeight: 700, fontStyle: 'italic', color: 'rgba(239,226,208,0.025)', lineHeight: 0.85, userSelect: 'none', pointerEvents: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
         quiet
       </div>
 
@@ -45,7 +45,7 @@ export function FinalCTA() {
               href="https://chromewebstore.google.com/detail/ghostify-hide-seen-typing/flpnibonbhdmnpgflnbemgghghhblmpm?utm_source=item-share-cb"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '14px 28px', borderRadius: 9, background: 'var(--g-white)', color: '#0B0A08', fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 500, textDecoration: 'none', letterSpacing: 0, boxShadow: '0 4px 20px rgba(0,0,0,0.35)', transition: 'transform 0.15s ease, box-shadow 0.2s ease' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '14px 28px', borderRadius: 9, background: 'linear-gradient(135deg, var(--g-white), rgba(212,106,82,0.82))', color: 'var(--g-bg)', fontFamily: 'var(--g-sans)', fontSize: 15, fontWeight: 500, textDecoration: 'none', letterSpacing: 0, boxShadow: '0 4px 20px rgba(0,0,0,0.35)', transition: 'transform 0.15s ease, box-shadow 0.2s ease' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(0,0,0,0.4)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.35)'; }}
             >

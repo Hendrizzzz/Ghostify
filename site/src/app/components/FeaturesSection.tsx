@@ -122,16 +122,16 @@ function TypingScene() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, alignSelf: 'flex-end' }}>
         <div style={{ position: 'relative', padding: '8px 14px', borderRadius: '14px 4px 14px 14px', background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.1)' }}>
           {/* Red strikethrough over the dots */}
-          <div style={{ position: 'absolute', left: 8, right: 8, top: '50%', height: 1.5, background: 'rgba(196,72,48,0.7)', transform: 'translateY(-50%)', borderRadius: 1, zIndex: 1 }} />
+          <div style={{ position: 'absolute', left: 8, right: 8, top: '50%', height: 1.5, background: 'rgba(212,106,82,0.72)', transform: 'translateY(-50%)', borderRadius: 1, zIndex: 1 }} />
           <div style={{ display: 'flex', gap: 5 }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.5)', animation: `typingBounce 1.1s ease-in-out ${i * 0.18}s infinite` }} />
             ))}
           </div>
         </div>
-        <div style={{ padding: '3px 8px', borderRadius: 6, background: 'rgba(196,72,48,0.13)', border: '1px solid rgba(196,72,48,0.28)', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+        <div style={{ padding: '3px 8px', borderRadius: 6, background: 'rgba(212,106,82,0.11)', border: '1px solid rgba(212,106,82,0.3)', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
           <GhostMark size={9} />
-          <span style={{ fontFamily: 'var(--g-mono)', fontSize: 9, color: 'rgba(196,72,48,0.82)', letterSpacing: '0.04em' }}>typing held</span>
+          <span style={{ fontFamily: 'var(--g-mono)', fontSize: 9, color: 'rgba(228,139,109,0.88)', letterSpacing: '0.04em' }}>typing held</span>
         </div>
       </div>
       {/* Composer — you are actively typing */}
@@ -247,8 +247,8 @@ function ExtensionScene() {
   ];
 
   return (
-    <div style={{ width: 176, background: '#191713', border: '1px solid rgba(240,230,210,0.11)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' }}>
-      <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 7, borderBottom: '1px solid rgba(240,230,210,0.07)', background: '#141210' }}>
+    <div style={{ width: 176, background: 'var(--g-surface)', border: '1px solid var(--g-border)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' }}>
+      <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 7, borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'var(--g-surface-2)' }}>
         <GhostMark size={14} />
         <span style={{ fontFamily: 'var(--g-sans)', fontSize: 12.5, fontWeight: 500, color: 'var(--g-white)', lineHeight: 1, letterSpacing: 0 }}>Ghostify</span>
         <span style={{ marginLeft: 'auto', fontFamily: 'var(--g-mono)', fontSize: 8.5, color: 'rgba(240,230,210,0.22)' }}>local</span>
@@ -256,7 +256,7 @@ function ExtensionScene() {
       {rows.map(row => (
         <div key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5.5px 12px' }}>
           <span style={{ fontFamily: 'var(--g-sans)', fontSize: 11, color: 'rgba(240,230,210,0.62)' }}>{row.label}</span>
-          <div style={{ width: 26, height: 16, borderRadius: 8, backgroundColor: row.on ? '#C44830' : 'rgba(240,230,210,0.13)', position: 'relative', flexShrink: 0, overflow: 'hidden', contain: 'paint', transition: 'background-color 0.48s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+          <div style={{ width: 26, height: 16, borderRadius: 8, backgroundColor: row.on ? '#D46A52' : 'rgba(240,230,210,0.13)', position: 'relative', flexShrink: 0, overflow: 'hidden', contain: 'paint', transition: 'background-color 0.48s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div
               style={{
                 position: 'absolute', top: 3,
@@ -301,7 +301,7 @@ export function FeaturesSection() {
   const FT = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] };
 
   return (
-    <section id="features" className="snap-start features-section" style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', background: '#0B0A08', marginTop: -1, scrollMarginTop: 76 }}>
+    <section id="features" className="snap-start features-section" style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', background: 'linear-gradient(180deg, var(--g-bg) 0%, #100D0B 44%, var(--g-bg) 100%)', marginTop: -1, scrollMarginTop: 76 }}>
       {/* Section heading */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}

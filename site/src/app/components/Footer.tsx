@@ -22,7 +22,7 @@ export function Footer() {
     <footer
       style={{
         padding: '32px 28px',
-        borderTop: '1px solid rgba(240,230,210,0.05)',
+        borderTop: '1px solid var(--g-border-dim)',
         maxWidth: 1280,
         margin: '0 auto',
         background: 'var(--g-bg)',
@@ -44,7 +44,7 @@ export function Footer() {
               fontFamily: 'var(--g-display)',
               fontSize: 16,
               fontWeight: 500,
-              color: 'rgba(240,230,210,0.4)',
+              color: 'var(--g-body)',
               letterSpacing: '0.01em',
             }}
           >
@@ -102,7 +102,7 @@ export function Footer() {
           marginTop: 20,
           fontFamily: 'var(--g-mono)',
           fontSize: 10,
-          color: 'rgba(240,230,210,0.15)',
+          color: 'var(--g-dim)',
           letterSpacing: '0.04em',
           textAlign: 'center',
         }}
