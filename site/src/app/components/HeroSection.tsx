@@ -1428,16 +1428,6 @@ export function HeroSection() {
           pointer-events: none;
           isolation: isolate;
         }
-        .hpv-scene::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: -20%;
-          height: 78%;
-          background: linear-gradient(180deg, transparent, rgba(239,226,208,0.018));
-          opacity: 0.55;
-        }
         .hpv-routes {
           position: absolute;
           inset: 0;

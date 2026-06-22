@@ -301,7 +301,7 @@ export function FeaturesSection() {
   const FT = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] };
 
   return (
-    <section id="features" className="snap-start features-section" style={{ position: 'relative', minHeight: '90svh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', background: 'linear-gradient(180deg, var(--g-bg) 0%, #100D0B 44%, var(--g-bg) 100%)', marginTop: -1, scrollMarginTop: 76 }}>
+    <section id="features" className="snap-start features-section" style={{ position: 'relative', minHeight: '90svh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', background: 'transparent', marginTop: 0, scrollMarginTop: 76 }}>
       {/* Section heading */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
