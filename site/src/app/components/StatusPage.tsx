@@ -262,6 +262,57 @@ function StatusFootnote() {
   );
 }
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+type HistoryItem = (typeof STATUS_DATA.history)[number];
+
+function parseStatusDay(value: string) {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatIsoDay(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function buildDailyWorkingRows(startValue: string, endValue: string, title: string): HistoryItem[] {
+  const start = parseStatusDay(startValue).getTime();
+  const end = parseStatusDay(endValue).getTime();
+  const rows: HistoryItem[] = [];
+
+  for (let cursor = end; cursor >= start; cursor -= ONE_DAY_MS) {
+    const date = formatIsoDay(new Date(cursor));
+    rows.push({
+      date,
+      publicStatus: 'maintainer_verified',
+      title,
+      summary: `Maintainer daily status record kept supported Instagram, Messenger, and Facebook controls marked working on ${formatStatusDate(date)}.`,
+    });
+  }
+
+  return rows;
+}
+
+function buildVisibleHistory(): HistoryItem[] {
+  const eventRows = STATUS_DATA.history.filter(
+    (item) => item.title !== 'Fix launched and current working window restarted' && item.title !== 'Previous working window began',
+  );
+  const lastVerifiedDay = formatIsoDay(parseStatusDay(STATUS_DATA.provenWorking.lastVerifiedAt));
+  const currentWindowEnd = formatIsoDay(new Date(parseStatusDay(lastVerifiedDay).getTime() - ONE_DAY_MS));
+  const currentRows = buildDailyWorkingRows(
+    STATUS_DATA.provenWorking.currentWindowStartedAt,
+    currentWindowEnd,
+    'Daily verification recorded',
+  );
+  const previousRows = buildDailyWorkingRows(
+    STATUS_DATA.provenWorking.previousWindowStartedAt,
+    STATUS_DATA.provenWorking.previousWindowEndedAt,
+    'Daily verification recorded',
+  );
+
+  return [...eventRows, ...currentRows, ...previousRows].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+}
+
 function CurrentStatus() {
   return (
     <>
@@ -289,11 +340,11 @@ function HistoryStatus() {
       </div>
       <section className="status-panel" aria-labelledby="history-heading">
         <div className="status-panel-head">
-          <h2 id="history-heading">Recent updates</h2>
+          <h2 id="history-heading">Daily updates</h2>
           <span>Public record</span>
         </div>
         <div className="status-history-list">
-          {STATUS_DATA.history.map((item) => (
+          {buildVisibleHistory().map((item) => (
             <article className="status-history-row" key={`${item.date}-${item.title}`}>
               <StatusIcon status={item.publicStatus} size={16} />
               <time>{formatStatusDate(item.date)}</time>

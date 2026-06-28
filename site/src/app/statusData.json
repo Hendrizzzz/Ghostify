@@ -194,17 +194,17 @@
       "date": "2026-02-28",
       "publicStatus": "maintainer_verified",
       "title": "Previous working window began",
-      "summary": "Ghostify was proven working from February 28, 2026 through May 29, 2026, before the May 29 breakage reports."
+      "summary": "Ghostify was proven working from February 28, 2026 through May 28, 2026, before the May 29 breakage reports."
     }
   ],
   "provenWorking": {
     "previousWindowStartedAt": "2026-02-28",
-    "previousWindowEndedAt": "2026-05-29",
+    "previousWindowEndedAt": "2026-05-28",
     "interruptionReportedAt": "2026-05-29",
     "interruptionVerifiedAt": "2026-06-02",
     "fixReleasedAt": "2026-06-04",
     "currentWindowStartedAt": "2026-06-04",
     "lastVerifiedAt": "2026-06-27T00:00:00Z",
-    "summary": "Verified working from February 28 through May 29, 2026; reports arrived on May 29; breakage was confirmed on June 2; the fix launched June 4; daily working verification resumed from June 4 through June 27, 2026."
+    "summary": "Verified working from February 28 through May 28, 2026; reports arrived on May 29; breakage was confirmed on June 2; the fix launched June 4; daily working verification resumed from June 4 through June 27, 2026."
   }
 }
