@@ -15,7 +15,7 @@ Privacy controls for Instagram, Facebook, and Messenger web.
 
 </div>
 
-Ghostify is a Manifest V3 browser extension that helps reduce social pressure on Meta web apps. It blocks supported read receipts, typing indicators, and story-view signals locally in the browser, without requiring a Ghostify account or asking for social media passwords.
+Ghostify is a Manifest V3 browser extension that helps reduce social pressure on Meta web apps. Its privacy controls block supported read receipts, typing indicators, and story-view signals locally in the browser, without requiring a Ghostify account or asking for social media passwords.
 
 ## Features
 
@@ -56,22 +56,22 @@ release notes when a matching GitHub release has been published.
 
 ## How It Works
 
-Ghostify runs locally through browser extension APIs:
+Ghostify's privacy controls run locally through browser extension APIs:
 
 - `declarativeNetRequest` rules block known privacy-related endpoints where static rules are reliable.
 - Content scripts and page-context patches handle modern Meta web app behavior that cannot be covered by static rules alone.
 - User settings are saved in extension storage and synced to open Instagram, Facebook, and Messenger tabs.
 
-Ghostify does not run a tracking server and does not collect, sell, or share user activity through the extension runtime. The popup may request Ghostify's public `status.json` feed to display verification summaries; that request does not include your messages, tab URLs, settings, or social media activity.
+Ghostify does not run a tracking server for extension activity and does not collect, sell, or share user activity through the extension runtime. The popup may request Ghostify's public `status.json` feed to display verification summaries; that request does not include your messages, tab URLs, settings, or social media activity.
 
 ## Privacy
 
-Ghostify is designed to work entirely inside your browser.
+Ghostify's privacy controls are designed to work inside your browser.
 
 It does not:
 
 - collect your messages through Ghostify's extension runtime
-- require a Ghostify account
+- require a Ghostify account for these privacy controls
 - ask for Instagram, Facebook, or Messenger passwords
 - send your browsing activity, messages, tab URLs, or settings to a Ghostify server
 
