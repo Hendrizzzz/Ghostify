@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: 'Does it store my activity?',
-    a: 'No. Ghostify has no tracking server, no analytics, and no Ghostify cloud sync. Toggle settings and bundled config stay in your browser, and setting changes are broadcast only to open supported tabs.',
+    a: 'No. Ghostify does not use a tracking server or analytics for extension activity. Toggle settings and bundled config stay in your browser, and setting changes are broadcast only to open supported tabs.',
   },
   {
     q: 'Is this ethical?',

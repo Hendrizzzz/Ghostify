@@ -1,16 +1,16 @@
 # Privacy Policy for Ghostify
 
-**Last Updated:** June 20, 2026
+**Last Updated:** July 9, 2026
 
 ## 1. Introduction
 Ghostify ("we," "our," or "the Extension") is a browser extension designed to enhance user privacy on social media platforms by preventing the transmission of "read receipts," "typing indicators," and "story view" telemetry. We are committed to protecting your personal information and your right to privacy.
 
-Ghostify's extension runtime does not collect or transmit messages, credentials, social media content, browsing activity, tab URLs, or settings to Ghostify or to Ghostify-operated services. The popup may request Ghostify's public `status.json` feed to display verification summaries; that request is display-only and does not include extension settings, tab URLs, messages, or social media activity. We are not affiliated with Meta Platforms, Inc.
+For the privacy controls described in this policy, Ghostify's extension runtime does not collect or transmit messages, credentials, social media content, browsing activity, tab URLs, or settings to Ghostify or to Ghostify-operated services. The popup may request Ghostify's public `status.json` feed to display verification summaries; that request is display-only and does not include extension settings, tab URLs, messages, or social media activity. We are not affiliated with Meta Platforms, Inc.
 
 ## 2. Data Collection and Usage
 **Ghostify's extension runtime does not collect, store, share, or sell your personal data.**
 
-The Extension operates entirely locally on your device ("client-side"). Ghostify transiently inspects request URLs, request payloads, and supported page or worker messages inside your browser to identify privacy signals such as read receipts, typing indicators, and story-view writes. Ghostify does not send this inspected data to a Ghostify server and does not store raw messages, credentials, browsing history, or social media content.
+These privacy controls operate locally on your device ("client-side"). Ghostify transiently inspects request URLs, request payloads, and supported page or worker messages inside your browser to identify privacy signals such as read receipts, typing indicators, and story-view writes. Ghostify does not send this inspected data to a Ghostify server and does not store raw messages, credentials, browsing history, or social media content.
 
 The popup can fetch a public verification-status JSON file from Ghostify's website so it can show whether supported features are verified, under review, stale, or unavailable. This status feed is not personalized and is not used to collect your social media activity.
 
