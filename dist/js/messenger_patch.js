@@ -1,4 +1,25 @@
 (() => {
+  // src/settings/defaults.js
+  var FREE_PRIVACY_SETTING_KEYS = Object.freeze([
+    "igTyping",
+    "igSeen",
+    "igStory",
+    "msgTyping",
+    "msgSeen",
+    "msgStory"
+  ]);
+  var DEFAULT_PRIVACY_SETTINGS = Object.freeze({
+    igTyping: true,
+    igSeen: true,
+    igStory: true,
+    msgTyping: true,
+    msgSeen: true,
+    msgStory: true
+  });
+  var DEFAULT_MODULE_FLAGS = Object.freeze({
+    ghostMode: true
+  });
+
   // src/messenger_patch.js
   (function() {
     "use strict";
@@ -29,11 +50,7 @@
     function isHost(host, domain) {
       return host === domain || host.endsWith(`.${domain}`);
     }
-    const DEFAULT_SETTINGS = {
-      igTyping: true,
-      msgTyping: true,
-      msgSeen: true
-    };
+    const DEFAULT_SETTINGS = DEFAULT_PRIVACY_SETTINGS;
     const OBSERVE_TERMS = [
       "sendtypingindicator",
       "lssendtypingindicator",

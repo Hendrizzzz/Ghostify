@@ -1,3 +1,5 @@
+import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
+
 (function () {
     'use strict';
     const hostname = window.location.hostname.toLowerCase();
@@ -31,11 +33,7 @@
         return host === domain || host.endsWith(`.${domain}`);
     }
 
-    const DEFAULT_SETTINGS = {
-        igTyping: true,
-        msgTyping: true,
-        msgSeen: true
-    };
+    const DEFAULT_SETTINGS = DEFAULT_PRIVACY_SETTINGS;
     const OBSERVE_TERMS = [
         'sendtypingindicator',
         'lssendtypingindicator',

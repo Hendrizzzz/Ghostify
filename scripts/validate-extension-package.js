@@ -27,10 +27,51 @@ function stableJson(value) {
     return JSON.stringify(value);
 }
 
+function readConstObjectLiteral(source, constName) {
+    const declaration = `const ${constName}`;
+    const declarationIndex = source.indexOf(declaration);
+    if (declarationIndex < 0) fail(`src/content.js must declare ${constName}`);
+
+    const braceStart = source.indexOf('{', declarationIndex);
+    if (braceStart < 0) fail(`src/content.js ${constName} must be an object literal`);
+
+    let depth = 0;
+    let quote = null;
+    let escaped = false;
+
+    for (let index = braceStart; index < source.length; index += 1) {
+        const char = source[index];
+
+        if (quote) {
+            if (escaped) {
+                escaped = false;
+            } else if (char === '\\') {
+                escaped = true;
+            } else if (char === quote) {
+                quote = null;
+            }
+            continue;
+        }
+
+        if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+            continue;
+        }
+
+        if (char === '{') depth += 1;
+        if (char === '}') {
+            depth -= 1;
+            if (depth === 0) {
+                return source.slice(braceStart, index + 1);
+            }
+        }
+    }
+
+    fail(`src/content.js ${constName} object literal is incomplete`);
+}
+
 function readFallbackConfig(source) {
-    const match = source.match(/const FALLBACK_CONFIG\s*=\s*({[\s\S]*?});\s*const DEFAULT_SETTINGS/);
-    if (!match) fail('src/content.js must declare FALLBACK_CONFIG before DEFAULT_SETTINGS');
-    return vm.runInNewContext(`(${match[1]})`, Object.create(null));
+    return vm.runInNewContext(`(${readConstObjectLiteral(source, 'FALLBACK_CONFIG')})`, Object.create(null));
 }
 
 const pkg = readJson(repoPath('package.json'));

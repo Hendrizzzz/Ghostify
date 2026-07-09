@@ -1,9 +1,4 @@
-const DEFAULT_SETTINGS = {
-    igStory: true,
-    igTyping: true,
-    msgTyping: true,
-    msgSeen: true
-};
+import { GHOSTIFY_SETTINGS_STORAGE_KEY, normalizePrivacySettings } from './settings/storage.js';
 
 const DYNAMIC_RULE_IDS = {
     instagramStorySeen: 1001,
@@ -58,8 +53,8 @@ chrome.runtime.onInstalled.addListener(syncDynamicPrivacyRulesFromStorage);
 chrome.runtime.onStartup.addListener(syncDynamicPrivacyRulesFromStorage);
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== 'local' || !changes.ghostifySettings) return;
-    syncDynamicPrivacyRules(normalizeSettings(changes.ghostifySettings.newValue)).catch(() => { });
+    if (areaName !== 'local' || !changes[GHOSTIFY_SETTINGS_STORAGE_KEY]) return;
+    syncDynamicPrivacyRules(normalizePrivacySettings(changes[GHOSTIFY_SETTINGS_STORAGE_KEY].newValue)).catch(() => { });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -70,13 +65,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function syncDynamicPrivacyRulesFromStorage() {
-    chrome.storage.local.get(['ghostifySettings'], (result) => {
-        syncDynamicPrivacyRules(normalizeSettings(result.ghostifySettings)).catch(() => { });
+    chrome.storage.local.get([GHOSTIFY_SETTINGS_STORAGE_KEY], (result) => {
+        syncDynamicPrivacyRules(normalizePrivacySettings(result[GHOSTIFY_SETTINGS_STORAGE_KEY])).catch(() => { });
     });
-}
-
-function normalizeSettings(settings) {
-    return Object.assign({}, DEFAULT_SETTINGS, settings || {});
 }
 
 async function syncDynamicPrivacyRules(settings) {

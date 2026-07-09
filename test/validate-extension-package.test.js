@@ -94,6 +94,24 @@ withFixture(fixtureRoot => {
 });
 
 withFixture(fixtureRoot => {
+    const contentPath = path.join(fixtureRoot, 'src', 'content.js');
+    const source = fs.readFileSync(contentPath, 'utf8');
+    assert(
+        !source.includes('const DEFAULT_SETTINGS'),
+        'validator fixture should cover the moved DEFAULT_SETTINGS layout'
+    );
+    fs.writeFileSync(contentPath, source.replace('version: "2.0.4"', 'version: "0.0.0"'));
+
+    const result = runValidator(fixtureRoot);
+    assert.notStrictEqual(result.status, 0, 'validator should still parse moved FALLBACK_CONFIG layout');
+    assert.match(
+        result.stderr,
+        /src\/content\.js fallback config version 0\.0\.0 does not match package\.json 2\.0\.4/,
+        result.stderr || result.stdout
+    );
+});
+
+withFixture(fixtureRoot => {
     const result = runValidatorFrom(
         path.dirname(fixtureRoot),
         path.join(fixtureRoot, 'scripts', 'validate-extension-package.js')

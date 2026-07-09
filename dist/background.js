@@ -1,11 +1,41 @@
 (() => {
-  // src/background.js
-  var DEFAULT_SETTINGS = {
-    igStory: true,
+  // src/settings/defaults.js
+  var FREE_PRIVACY_SETTING_KEYS = Object.freeze([
+    "igTyping",
+    "igSeen",
+    "igStory",
+    "msgTyping",
+    "msgSeen",
+    "msgStory"
+  ]);
+  var DEFAULT_PRIVACY_SETTINGS = Object.freeze({
     igTyping: true,
+    igSeen: true,
+    igStory: true,
     msgTyping: true,
-    msgSeen: true
-  };
+    msgSeen: true,
+    msgStory: true
+  });
+  var DEFAULT_MODULE_FLAGS = Object.freeze({
+    ghostMode: true
+  });
+
+  // src/settings/storage.js
+  var GHOSTIFY_SETTINGS_STORAGE_KEY = "ghostifySettings";
+  function normalizePrivacySettings(settings) {
+    const normalized = { ...DEFAULT_PRIVACY_SETTINGS };
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+      return normalized;
+    }
+    for (const key of FREE_PRIVACY_SETTING_KEYS) {
+      if (typeof settings[key] === "boolean") {
+        normalized[key] = settings[key];
+      }
+    }
+    return normalized;
+  }
+
+  // src/background.js
   var DYNAMIC_RULE_IDS = {
     instagramStorySeen: 1001,
     instagramBanzai: 1002,
@@ -53,8 +83,8 @@
   chrome.runtime.onInstalled.addListener(syncDynamicPrivacyRulesFromStorage);
   chrome.runtime.onStartup.addListener(syncDynamicPrivacyRulesFromStorage);
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local" || !changes.ghostifySettings) return;
-    syncDynamicPrivacyRules(normalizeSettings(changes.ghostifySettings.newValue)).catch(() => {
+    if (areaName !== "local" || !changes[GHOSTIFY_SETTINGS_STORAGE_KEY]) return;
+    syncDynamicPrivacyRules(normalizePrivacySettings(changes[GHOSTIFY_SETTINGS_STORAGE_KEY].newValue)).catch(() => {
     });
   });
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -64,13 +94,10 @@
     return true;
   });
   function syncDynamicPrivacyRulesFromStorage() {
-    chrome.storage.local.get(["ghostifySettings"], (result) => {
-      syncDynamicPrivacyRules(normalizeSettings(result.ghostifySettings)).catch(() => {
+    chrome.storage.local.get([GHOSTIFY_SETTINGS_STORAGE_KEY], (result) => {
+      syncDynamicPrivacyRules(normalizePrivacySettings(result[GHOSTIFY_SETTINGS_STORAGE_KEY])).catch(() => {
       });
     });
-  }
-  function normalizeSettings(settings) {
-    return Object.assign({}, DEFAULT_SETTINGS, settings || {});
   }
   async function syncDynamicPrivacyRules(settings) {
     var _a;
