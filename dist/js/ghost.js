@@ -1,13 +1,27 @@
 (() => {
-  // src/config.js
-  var SETTINGS = {
+  // src/settings/defaults.js
+  var FREE_PRIVACY_SETTING_KEYS = Object.freeze([
+    "igTyping",
+    "igSeen",
+    "igStory",
+    "msgTyping",
+    "msgSeen",
+    "msgStory"
+  ]);
+  var DEFAULT_PRIVACY_SETTINGS = Object.freeze({
     igTyping: true,
     igSeen: true,
     igStory: true,
     msgTyping: true,
     msgSeen: true,
     msgStory: true
-  };
+  });
+  var DEFAULT_MODULE_FLAGS = Object.freeze({
+    ghostMode: true
+  });
+
+  // src/config.js
+  var SETTINGS = { ...DEFAULT_PRIVACY_SETTINGS };
   var KILLED_FEATURES = /* @__PURE__ */ new Set();
   var SETTINGS_READY = false;
   var hostname = window.location.hostname.toLowerCase();

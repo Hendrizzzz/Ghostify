@@ -1,11 +1,6 @@
-export const SETTINGS = {
-    igTyping: true,
-    igSeen: true,
-    igStory: true,
-    msgTyping: true,
-    msgSeen: true,
-    msgStory: true
-};
+import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
+
+export const SETTINGS = { ...DEFAULT_PRIVACY_SETTINGS };
 
 export const KILLED_FEATURES = new Set();
 export let SETTINGS_READY = false;

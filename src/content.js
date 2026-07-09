@@ -1,3 +1,5 @@
+import { GHOSTIFY_SETTINGS_STORAGE_KEY, sanitizePrivacySettingsForPage } from './settings/storage.js';
+
 const FALLBACK_CONFIG = {
     version: "2.0.4",
     killSwitch: [],
@@ -9,15 +11,6 @@ const FALLBACK_CONFIG = {
         msgSeen: ['mark_read', 'mark_seen', 'thread_seen', 'DirectMarkAsSeen', 'MarkAsSeen', 'DirectThreadMarkItemsSeen', 'PolarisDirectMarkAsSeenMutation', 'DirectSeenMutation', 'seenByViewer', 'updateLastSeenAt', 'updateLastReadWatermark', 'sendReadReceipt', 'LSSendReadReceipt', 'readReceipt', 'read_receipt', 'readReceiptMutation', 'LSUpdateThreadReadWatermark', 'LSUpdateLastReadWatermark', 'last_read_watermark', 'lastReadWatermark', 'read_watermark', 'readWatermark', 'shouldSendReadReceipt', 'should_send_read_receipt', 'LSMarkThreadRead', 'MWMarkThreadRead', 'markAsRead', 'change_read_status'],
         msgStory: ['StoriesUpdateSeenMutation', 'PolarisStoriesSeenMutation', 'usePolarisStoriesV3SeenMutation', 'reelMediaSeen', 'storiesUpdateSeen', 'SeenStoriesUpdateMutation', 'mark_story_seen', 'update_seen_for_reel', 'reel_seen', 'viewer_seen', 'stories_update_seen', 'mark_story_read']
     }
-};
-
-const DEFAULT_SETTINGS = {
-    igTyping: true,
-    igSeen: true,
-    igStory: true,
-    msgTyping: true,
-    msgSeen: true,
-    msgStory: true
 };
 
 (async function init() {
@@ -70,8 +63,8 @@ function syncUserSettings() {
     }
 
     function loadAndSend() {
-        chrome.storage.local.get(['ghostifySettings'], (result) => {
-            const settings = result.ghostifySettings || DEFAULT_SETTINGS;
+        chrome.storage.local.get([GHOSTIFY_SETTINGS_STORAGE_KEY], (result) => {
+            const settings = sanitizePrivacySettingsForPage(result[GHOSTIFY_SETTINGS_STORAGE_KEY]);
             sendSettingsToPage(settings);
         });
     }
@@ -90,8 +83,8 @@ function syncUserSettings() {
     setTimeout(loadAndSend, 1500);
 
     chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === 'local' && changes.ghostifySettings) {
-            const newSettings = changes.ghostifySettings.newValue;
+        if (areaName === 'local' && changes[GHOSTIFY_SETTINGS_STORAGE_KEY]) {
+            const newSettings = sanitizePrivacySettingsForPage(changes[GHOSTIFY_SETTINGS_STORAGE_KEY].newValue);
             sendSettingsToPage(newSettings);
         }
     });
