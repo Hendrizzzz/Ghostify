@@ -56,8 +56,8 @@
 }
 
 .site-root .brand-lockup-footer .brand-mark {
-  width: 38px;
-  height: 38px;
+  width: 43px;
+  height: 43px;
   border-radius: 12px;
   background: var(--home-cream);
 }
@@ -148,6 +148,7 @@
   max-width: 1280px;
   margin-inline: auto;
   text-align: center;
+  transform: translateY(92px);
 }
 
 .home-hero-copy h1 {
@@ -324,6 +325,13 @@
   overflow: visible;
 }
 
+.hero-detail-stage > img {
+  width: 34px;
+  height: 34px;
+  display: block;
+  object-fit: contain;
+}
+
 .hero-detail-instagram { left: 6%; top: 22%; --detail-rotate: -8deg; }
 .hero-detail-messenger { right: 7%; top: 23%; --detail-rotate: 8deg; }
 .hero-detail-facebook { left: 8%; bottom: 17%; --detail-rotate: 7deg; }
@@ -332,6 +340,9 @@
 .hero-detail-story { right: 14%; top: 13%; --detail-rotate: -6deg; }
 .hero-detail-local { right: 6%; bottom: 17%; --detail-rotate: -7deg; }
 .hero-detail-browser { right: 25%; bottom: 8%; --detail-rotate: 5deg; }
+.hero-detail-chrome { left: 25%; bottom: 8%; --detail-rotate: -5deg; }
+.hero-detail-brave { left: 1.5%; bottom: 3%; --detail-rotate: 7deg; }
+.hero-detail-opera { right: 1.5%; bottom: 3%; --detail-rotate: -7deg; }
 
 .hero-detail:nth-child(2n) .hero-detail-stage { animation-delay: -1.2s; }
 .hero-detail:nth-child(3n) .hero-detail-stage { animation-delay: -2.4s; }
@@ -570,7 +581,7 @@
 .platforms-flat::after {
   content: 'held';
   position: absolute;
-  left: max(18px, calc((100vw - 1380px) / 2));
+  left: -18px;
   bottom: -44px;
   color: rgba(15, 15, 13, 0.045);
   font-family: var(--font-editorial);
@@ -1465,6 +1476,7 @@
     max-width: 720px;
     padding: 0;
     text-align: center;
+    transform: none;
   }
 
   .home-hero-copy h1 {
@@ -1500,7 +1512,8 @@
   }
 
   .hero-detail-seen,
-  .hero-detail-browser {
+  .hero-detail-brave,
+  .hero-detail-opera {
     display: none;
   }
 
@@ -1701,6 +1714,8 @@
 
   .hero-detail-instagram { left: 4%; top: 21%; }
   .hero-detail-messenger { right: 4%; top: 25%; }
+  .hero-detail-chrome { left: 4%; bottom: 7%; }
+  .hero-detail-browser { right: 4%; bottom: 7%; }
 
   .fact-marquee {
     min-height: 106px;
@@ -2004,9 +2019,10 @@
 
 .brand-lockup-footer {
   font-family: var(--font-editorial);
-  font-size: clamp(2.4rem, 4vw, 4.2rem);
+  font-size: 43px;
   font-weight: 430;
   letter-spacing: -0.045em;
+  line-height: 0.9;
 }
 
 .footer-lead p {

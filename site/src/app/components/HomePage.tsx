@@ -6,7 +6,7 @@ import {
   Code2,
   EyeOff,
   Globe2,
-  Image as ImageIcon,
+  CirclePlay,
   LockKeyhole,
   MessageCircle,
   ShieldCheck,
@@ -232,9 +232,12 @@ function HeroDetails() {
       <span className="hero-detail hero-detail-facebook"><i className="hero-detail-stage"><PlatformLogo platform="facebook" size={36} /></i></span>
       <span className="hero-detail hero-detail-seen"><i className="hero-detail-stage"><EyeOff size={27} /></i></span>
       <span className="hero-detail hero-detail-typing"><i className="hero-detail-stage"><MessageCircle size={27} /></i></span>
-      <span className="hero-detail hero-detail-story"><i className="hero-detail-stage"><ImageIcon size={27} /></i></span>
+      <span className="hero-detail hero-detail-story"><i className="hero-detail-stage"><CirclePlay size={28} /></i></span>
       <span className="hero-detail hero-detail-local"><i className="hero-detail-stage"><ShieldCheck size={27} /></i></span>
-      <span className="hero-detail hero-detail-browser"><i className="hero-detail-stage"><Globe2 size={27} /></i></span>
+      <span className="hero-detail hero-detail-browser"><i className="hero-detail-stage"><img src="/edge-current.svg" alt="" /></i></span>
+      <span className="hero-detail hero-detail-chrome"><i className="hero-detail-stage"><img src="/chrome-current.svg" alt="" /></i></span>
+      <span className="hero-detail hero-detail-brave"><i className="hero-detail-stage"><img src="/brave-current.svg?v=2" alt="" /></i></span>
+      <span className="hero-detail hero-detail-opera"><i className="hero-detail-stage"><img src="/opera-current.svg?v=2" alt="" /></i></span>
     </div>
   );
 }
