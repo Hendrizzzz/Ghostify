@@ -16,7 +16,7 @@ function ChromeLogo() {
 export function StoreCta({
   compact = false,
   label = 'Add to Chrome',
-  showFree = true,
+  showFree = false,
 }: {
   compact?: boolean;
   label?: string;
@@ -56,7 +56,7 @@ export function SiteHeader() {
   return (
     <header className={`site-header${isScrolled ? ' is-scrolled' : ''}`}>
       <a className="brand-lockup" href="/" aria-label="Ghostify home">
-        <span className="brand-mark"><GhostMark size={25} /></span>
+        <span className="brand-mark"><GhostMark size={30} /></span>
         <span>Ghostify</span>
       </a>
 
@@ -92,7 +92,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="footer-lead">
         <a className="brand-lockup brand-lockup-footer" href="/" aria-label="Ghostify home">
-          <span className="brand-mark"><GhostMark size={27} /></span>
+          <span className="brand-mark"><GhostMark size={30} /></span>
           <span>Ghostify</span>
         </a>
         <p>Quiet, browser-local privacy controls for Meta web apps.</p>

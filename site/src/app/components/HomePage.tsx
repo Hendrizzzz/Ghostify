@@ -4,7 +4,11 @@ import {
   ArrowUpRight,
   Check,
   Code2,
+  EyeOff,
+  Globe2,
+  Image as ImageIcon,
   LockKeyhole,
+  MessageCircle,
   ShieldCheck,
 } from 'lucide-react';
 import {
@@ -110,29 +114,115 @@ const FAQS = [
   },
 ];
 
+function SignalPill({
+  label,
+  pathId,
+  width,
+  begin,
+  kind,
+}: {
+  label: string;
+  pathId: string;
+  width: number;
+  begin: string;
+  kind: 'input' | 'output';
+}) {
+  return (
+    <g className={`signal-svg-pill signal-svg-pill-${kind}`} opacity="0">
+      <rect x={width / -2} y="-18" width={width} height="36" rx="18" />
+      <text textAnchor="middle" dominantBaseline="middle">{label}</text>
+      <animateMotion dur="5.6s" begin={begin} repeatCount="indefinite" calcMode="linear">
+        <mpath href={`#${pathId}`} />
+      </animateMotion>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.9;1" dur="5.6s" begin={begin} repeatCount="indefinite" />
+    </g>
+  );
+}
+
 function HeroSignalFlow() {
   return (
     <div className="hero-signal-flow" aria-hidden="true">
-      <svg className="signal-paths" viewBox="0 0 1000 440" preserveAspectRatio="none">
-        <path d="M125 12C125 138 500 112 500 214" />
-        <path d="M500 12V214" />
-        <path d="M875 12C875 138 500 112 500 214" />
-        <path d="M500 226C500 328 125 302 125 428" />
-        <path d="M500 226V428" />
-        <path d="M500 226C500 328 875 302 875 428" />
+      <svg className="signal-network" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <path id="signal-in-seen" d="M180 70C232 224 376 152 600 268" />
+          <path id="signal-in-typing" d="M600 34C600 132 600 196 600 268" />
+          <path id="signal-in-story" d="M1020 70C968 224 824 152 600 268" />
+          <path id="signal-out-seen" d="M600 292C480 368 324 346 180 514" />
+          <path id="signal-out-typing" d="M600 292C600 372 600 438 600 532" />
+          <path id="signal-out-story" d="M600 292C720 368 876 346 1020 514" />
+        </defs>
+
+        <g className="signal-network-lines">
+          <use href="#signal-in-seen" /><use href="#signal-in-typing" /><use href="#signal-in-story" />
+          <use href="#signal-out-seen" /><use href="#signal-out-typing" /><use href="#signal-out-story" />
+        </g>
+
+        <g className="signal-motion">
+          <SignalPill label="seen" pathId="signal-in-seen" width={78} begin="0s" kind="input" />
+          <SignalPill label="typing" pathId="signal-in-typing" width={82} begin="0.55s" kind="input" />
+          <SignalPill label="story-view" pathId="signal-in-story" width={104} begin="1.1s" kind="input" />
+          <SignalPill label="seen-receipt blocked" pathId="signal-out-seen" width={174} begin="2.8s" kind="output" />
+          <SignalPill label="typing blocked" pathId="signal-out-typing" width={126} begin="3.35s" kind="output" />
+          <SignalPill label="story-view blocked" pathId="signal-out-story" width={158} begin="3.9s" kind="output" />
+        </g>
+
+        <g className="signal-static-labels">
+          <text x="180" y="64">seen</text><text x="600" y="30">typing</text><text x="1020" y="64">story-view</text>
+          <text x="180" y="530">seen-receipt blocked</text><text x="600" y="548">typing blocked</text><text x="1020" y="530">story-view blocked</text>
+        </g>
       </svg>
 
-      <span className="signal-packet signal-packet-in signal-column-left">seen</span>
-      <span className="signal-packet signal-packet-in signal-column-center">typing</span>
-      <span className="signal-packet signal-packet-in signal-column-right">story-view</span>
-
       <div className="signal-processor">
-        <span><GhostMark size={78} /></span>
+        <GhostMark size={148} bodyColor="#0f0f0d" eyeColor="#ffffff" />
       </div>
+    </div>
+  );
+}
 
-      <span className="signal-packet signal-packet-out signal-column-left">seen-receipt blocked</span>
-      <span className="signal-packet signal-packet-out signal-column-center">typing blocked</span>
-      <span className="signal-packet signal-packet-out signal-column-right">story-view blocked</span>
+function HeroDetails() {
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (window.matchMedia('(pointer: coarse), (prefers-reduced-motion: reduce)').matches) return;
+    const details = detailsRef.current;
+    if (!details) return;
+    const tiles = Array.from(details.querySelectorAll<HTMLElement>('.hero-detail'));
+    let frame = 0;
+    const update = (event: PointerEvent) => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const x = event.clientX / window.innerWidth - 0.5;
+        const y = event.clientY / window.innerHeight - 0.5;
+        tiles.forEach((tile, index) => {
+          const depth = 7 + (index % 4) * 3;
+          tile.style.setProperty('--mouse-x', `${(x * depth).toFixed(2)}px`);
+          tile.style.setProperty('--mouse-y', `${(y * depth).toFixed(2)}px`);
+        });
+      });
+    };
+    const reset = () => tiles.forEach((tile) => {
+      tile.style.setProperty('--mouse-x', '0px');
+      tile.style.setProperty('--mouse-y', '0px');
+    });
+    window.addEventListener('pointermove', update, { passive: true });
+    document.documentElement.addEventListener('mouseleave', reset);
+    return () => {
+      window.removeEventListener('pointermove', update);
+      document.documentElement.removeEventListener('mouseleave', reset);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return (
+    <div className="hero-details" aria-hidden="true" ref={detailsRef}>
+      <span className="hero-detail hero-detail-instagram"><PlatformLogo platform="instagram" size={34} /></span>
+      <span className="hero-detail hero-detail-messenger"><PlatformLogo platform="messenger" size={36} /></span>
+      <span className="hero-detail hero-detail-facebook"><PlatformLogo platform="facebook" size={36} /></span>
+      <span className="hero-detail hero-detail-seen"><EyeOff size={27} /></span>
+      <span className="hero-detail hero-detail-typing"><MessageCircle size={27} /></span>
+      <span className="hero-detail hero-detail-story"><ImageIcon size={27} /></span>
+      <span className="hero-detail hero-detail-local"><ShieldCheck size={27} /></span>
+      <span className="hero-detail hero-detail-browser"><Globe2 size={27} /></span>
     </div>
   );
 }
@@ -164,6 +254,55 @@ function FactMarquee() {
             ))}
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function FootprintSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const hasRun = useRef(false);
+  const [packageSize, setPackageSize] = useState(0);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    let frame = 0;
+    const finish = () => setPackageSize(258.8);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finish();
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || hasRun.current) return;
+      hasRun.current = true;
+      const startedAt = performance.now();
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / 1600);
+        setPackageSize(258.8 * progress);
+        if (progress < 1) frame = window.requestAnimationFrame(tick);
+      };
+      frame = window.requestAnimationFrame(tick);
+      observer.disconnect();
+    }, { threshold: 0.35 });
+    observer.observe(section);
+    return () => {
+      observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return (
+    <section className="footprint-section" ref={sectionRef}>
+      <header>
+        <h2>Small enough to stay out of the way.</h2>
+        <p>Measured from the current 2.0.4 build—not an old marketing number.</p>
+      </header>
+      <div className="footprint-metrics">
+        <article><strong>{packageSize.toFixed(1)}<span>KiB</span></strong><small>installed package</small></article>
+        <article><strong>36.5<span>KiB</span></strong><small>runtime JavaScript, gzip</small></article>
+        <article><strong>0</strong><small>tracking relays</small></article>
+        <article><strong>0</strong><small>Ghostify accounts required</small></article>
       </div>
     </section>
   );
@@ -298,15 +437,16 @@ export function HomePage() {
   return (
     <div className="home-page">
       <section className="home-hero">
+        <HeroDetails />
         <div className="home-hero-inner">
           <div className="home-hero-copy">
-            <h1>Read when you want.<br />Reply when you’re <em>ready.</em></h1>
+            <h1>No <em>seen.</em><br />No pressure.</h1>
             <p>Ghostify gives you control over supported Seen, Typing, and Story View signals on Instagram, Messenger, and Facebook — directly in your browser.</p>
             <div className="home-hero-actions">
               <StoreCta />
               <a href="#features">See it in action <ArrowDown size={16} aria-hidden="true" /></a>
             </div>
-            <p className="home-hero-fineprint">Free privacy controls. No Ghostify account or social password.</p>
+            <p className="home-hero-fineprint">No Ghostify account or social password required.</p>
           </div>
 
           <div className="home-hero-art">
@@ -315,7 +455,6 @@ export function HomePage() {
         </div>
       </section>
 
-      <FactMarquee />
       <FeatureScroll />
 
       <section className="platforms-flat" id="platforms">
@@ -371,6 +510,9 @@ export function HomePage() {
         </div>
       </section>
 
+      <FootprintSection />
+      <FactMarquee />
+
       <section className="faq-flat">
         <header>
           <h2>Before you install.</h2>
@@ -397,6 +539,11 @@ export function HomePage() {
               </a>
             ))}
           </div>
+          <div className="ai-opinion-proof" aria-label="What the prompt asks the AI to review">
+            <span><Code2 size={18} aria-hidden="true" />Public source</span>
+            <span><LockKeyhole size={18} aria-hidden="true" />Permission boundary</span>
+            <span><ShieldCheck size={18} aria-hidden="true" />Dated verification</span>
+          </div>
           <span className="ai-opinion-ghost" aria-hidden="true"><GhostMark size={180} /></span>
         </div>
       </section>
@@ -405,14 +552,19 @@ export function HomePage() {
         <div>
           <div className="home-final-badges">
             <span><span className="chrome-logo" aria-hidden="true"><span /></span>Chrome</span>
-            <span>Edge</span>
-            <span>Free</span>
+            <span><span className="edge-logo" aria-hidden="true" />Edge</span>
+            <span><ShieldCheck size={15} aria-hidden="true" />Free</span>
           </div>
           <h2>Ghostify, wherever you browse.</h2>
           <p>Quiet privacy controls for supported Meta web apps, ready in the browser you already use.</p>
           <div className="home-final-actions">
             <StoreCta />
             <a href={EDGE_STORE_URL} target="_blank" rel="noopener noreferrer">Also available for Edge <ArrowUpRight size={15} aria-hidden="true" /></a>
+          </div>
+          <div className="home-final-details">
+            <span><Globe2 size={19} aria-hidden="true" /><b>Web only</b><small>Chrome &amp; Edge</small></span>
+            <span><ShieldCheck size={19} aria-hidden="true" /><b>Core controls</b><small>No Ghostify account</small></span>
+            <span><Code2 size={19} aria-hidden="true" /><b>Open source</b><small>MIT-licensed Core</small></span>
           </div>
         </div>
       </section>

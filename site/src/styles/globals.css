@@ -181,8 +181,13 @@ svg {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--ink);
+  border-radius: 0;
+  background: transparent;
+}
+
+.brand-lockup-footer .brand-mark {
+  border-radius: 10px;
+  background: var(--paper);
 }
 
 .primary-nav {
