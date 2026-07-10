@@ -168,6 +168,10 @@
   font-weight: 430;
 }
 
+.hero-title-break {
+  display: none;
+}
+
 .home-hero-copy > p:not(.home-hero-fineprint) {
   max-width: 720px;
   margin: 26px auto 0;
@@ -237,6 +241,10 @@
   overflow: visible;
 }
 
+.signal-network-compact {
+  display: none;
+}
+
 .signal-network-lines use {
   fill: none;
   stroke: rgba(15, 15, 13, 0.18);
@@ -255,6 +263,15 @@
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 720;
+}
+
+.signal-svg-pill-compact text {
+  font-size: 12px;
+}
+
+.signal-network-desktop .signal-svg-pill text,
+.signal-network-desktop .signal-static-labels {
+  font-size: 17px;
 }
 
 .signal-typing-dots circle {
@@ -1630,6 +1647,14 @@
     height: 460px;
   }
 
+  .signal-network-desktop {
+    display: none;
+  }
+
+  .signal-network-compact {
+    display: block;
+  }
+
   .hero-detail {
     width: 56px;
     height: 56px;
@@ -1725,6 +1750,10 @@
   .home-hero-copy h1 {
     font-size: clamp(4.4rem, 12vw, 6.8rem);
     white-space: normal;
+  }
+
+  .hero-title-break {
+    display: block;
   }
 
   .home-hero-copy > p:not(.home-hero-fineprint) {
@@ -1953,9 +1982,9 @@
     height: 82px;
   }
 
-  .signal-svg-pill text,
-  .signal-static-labels {
-    font-size: 11px;
+  .signal-svg-pill-compact text,
+  .signal-network-compact .signal-static-labels {
+    font-size: 12px;
   }
 
   .hero-detail {

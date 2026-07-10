@@ -121,67 +121,131 @@ function SignalPill({
   width,
   begin,
   kind,
+  compact = false,
 }: {
   label: string;
   pathId: string;
   width: number;
   begin: string;
   kind: 'input' | 'output';
+  compact?: boolean;
 }) {
   const isTyping = label === 'typing';
+  const height = compact ? 44 : 36;
   return (
-    <g className={`signal-svg-pill signal-svg-pill-${kind}${isTyping ? ' signal-svg-pill-typing' : ''}`} opacity="0">
-      <rect x={width / -2} y="-18" width={width} height="36" rx="18" />
-      <text x={isTyping ? -9 : 0} textAnchor="middle" dominantBaseline="middle">{label}</text>
+    <g className={`signal-svg-pill signal-svg-pill-${kind}${compact ? ' signal-svg-pill-compact' : ''}${isTyping ? ' signal-svg-pill-typing' : ''}`} opacity="0">
+      <rect x={width / -2} y={height / -2} width={width} height={height} rx={height / 2} />
+      <text x={isTyping ? -12 : 0} textAnchor="middle" dominantBaseline="middle">{label}</text>
       {isTyping && (
-        <g className="signal-typing-dots" transform="translate(23 0)">
+        <g className="signal-typing-dots" transform={`translate(${compact ? 25 : 29} 0)`}>
           {[0, 1, 2].map((dot) => (
-            <circle cx={dot * 7} cy="0" r="2" key={dot}>
-              <animate attributeName="opacity" values=".25;1;.25" dur="1.05s" begin={`${dot * 0.16}s`} repeatCount="indefinite" />
+            <circle cx={dot * 6} cy="0" r="1.8" key={dot}>
+              <animate attributeName="opacity" values=".55;1;.55" dur="1.2s" begin={`${dot * 0.14}s`} repeatCount="indefinite" />
+              <animate attributeName="cy" values="0;-1.5;0" dur="1.2s" begin={`${dot * 0.14}s`} repeatCount="indefinite" />
             </circle>
           ))}
         </g>
       )}
-      <animateMotion dur="5.6s" begin={begin} repeatCount="indefinite" calcMode="linear">
+      <animateMotion
+        dur="5.4s"
+        begin={begin}
+        repeatCount="indefinite"
+        calcMode="linear"
+        keyPoints="0;1;1"
+        keyTimes="0;0.3333;1"
+      >
         <mpath href={`#${pathId}`} />
       </animateMotion>
-      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.9;1" dur="5.6s" begin={begin} repeatCount="indefinite" />
+      <animate
+        attributeName="opacity"
+        values="0;1;1;0;0"
+        keyTimes="0;0.015;0.318;0.3333;1"
+        dur="5.4s"
+        begin={begin}
+        repeatCount="indefinite"
+      />
     </g>
   );
 }
 
-function HeroSignalFlow() {
+function SignalDiagram({ compact = false }: { compact?: boolean }) {
+  const prefix = compact ? 'signal-compact' : 'signal-desktop';
+  const paths = compact
+    ? {
+        inSeen: 'M62 54C82 142 138 126 200 202',
+        inTyping: 'M200 28C200 94 200 148 200 202',
+        inStory: 'M338 54C318 142 262 126 200 202',
+        outSeen: 'M200 222C176 276 150 304 140 370',
+        outTyping: 'M200 222C200 284 200 326 200 388',
+        outStory: 'M200 222C224 276 250 304 260 370',
+      }
+    : {
+        inSeen: 'M180 70C232 224 376 152 600 268',
+        inTyping: 'M600 34C600 132 600 196 600 268',
+        inStory: 'M1020 70C968 224 824 152 600 268',
+        outSeen: 'M600 292C480 368 324 346 180 514',
+        outTyping: 'M600 292C600 372 600 438 600 532',
+        outStory: 'M600 292C720 368 876 346 1020 514',
+      };
+
   return (
-    <div className="hero-signal-flow" aria-hidden="true">
-      <svg className="signal-network" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid meet">
+    <svg
+      className={`signal-network signal-network-${compact ? 'compact' : 'desktop'}`}
+      viewBox={compact ? '0 0 400 420' : '0 0 1200 560'}
+      preserveAspectRatio="xMidYMid meet"
+    >
         <defs>
-          <path id="signal-in-seen" d="M180 70C232 224 376 152 600 268" />
-          <path id="signal-in-typing" d="M600 34C600 132 600 196 600 268" />
-          <path id="signal-in-story" d="M1020 70C968 224 824 152 600 268" />
-          <path id="signal-out-seen" d="M600 292C480 368 324 346 180 514" />
-          <path id="signal-out-typing" d="M600 292C600 372 600 438 600 532" />
-          <path id="signal-out-story" d="M600 292C720 368 876 346 1020 514" />
+          <path id={`${prefix}-in-seen`} d={paths.inSeen} />
+          <path id={`${prefix}-in-typing`} d={paths.inTyping} />
+          <path id={`${prefix}-in-story`} d={paths.inStory} />
+          <path id={`${prefix}-out-seen`} d={paths.outSeen} />
+          <path id={`${prefix}-out-typing`} d={paths.outTyping} />
+          <path id={`${prefix}-out-story`} d={paths.outStory} />
         </defs>
 
         <g className="signal-network-lines">
-          <use href="#signal-in-seen" /><use href="#signal-in-typing" /><use href="#signal-in-story" />
-          <use href="#signal-out-seen" /><use href="#signal-out-typing" /><use href="#signal-out-story" />
+          <use href={`#${prefix}-in-seen`} /><use href={`#${prefix}-in-typing`} /><use href={`#${prefix}-in-story`} />
+          <use href={`#${prefix}-out-seen`} /><use href={`#${prefix}-out-typing`} /><use href={`#${prefix}-out-story`} />
         </g>
 
         <g className="signal-motion">
-          <SignalPill label="seen" pathId="signal-in-seen" width={78} begin="0s" kind="input" />
-          <SignalPill label="typing" pathId="signal-in-typing" width={112} begin="0.55s" kind="input" />
-          <SignalPill label="story-view" pathId="signal-in-story" width={104} begin="1.1s" kind="input" />
-          <SignalPill label="seen-receipt blocked" pathId="signal-out-seen" width={174} begin="2.8s" kind="output" />
-          <SignalPill label="typing blocked" pathId="signal-out-typing" width={126} begin="3.35s" kind="output" />
-          <SignalPill label="story-view blocked" pathId="signal-out-story" width={158} begin="3.9s" kind="output" />
+          <SignalPill label="seen" pathId={`${prefix}-in-seen`} width={compact ? 70 : 104} begin="-1.35s" kind="input" compact={compact} />
+          <SignalPill label="typing" pathId={`${prefix}-in-typing`} width={compact ? 108 : 150} begin="0.45s" kind="input" compact={compact} />
+          <SignalPill label="story-view" pathId={`${prefix}-in-story`} width={compact ? 104 : 150} begin="2.25s" kind="input" compact={compact} />
+          <SignalPill label="seen-receipt blocked" pathId={`${prefix}-out-seen`} width={compact ? 164 : 270} begin="-0.45s" kind="output" compact={compact} />
+          <SignalPill label="typing blocked" pathId={`${prefix}-out-typing`} width={compact ? 132 : 195} begin="1.35s" kind="output" compact={compact} />
+          <SignalPill label="story-view blocked" pathId={`${prefix}-out-story`} width={compact ? 158 : 235} begin="3.15s" kind="output" compact={compact} />
         </g>
 
         <g className="signal-static-labels">
-          <text x="180" y="64">seen</text><text x="600" y="30">typing</text><text x="1020" y="64">story-view</text>
-          <text x="180" y="530">seen-receipt blocked</text><text x="600" y="548">typing blocked</text><text x="1020" y="530">story-view blocked</text>
+          {compact ? (
+            <><text x="62" y="50">seen</text><text x="200" y="24">typing</text><text x="338" y="50">story-view</text>
+            <text x="140" y="388">seen-receipt blocked</text><text x="200" y="410">typing blocked</text><text x="260" y="388">story-view blocked</text></>
+          ) : (
+            <><text x="180" y="64">seen</text><text x="600" y="30">typing</text><text x="1020" y="64">story-view</text>
+            <text x="180" y="530">seen-receipt blocked</text><text x="600" y="548">typing blocked</text><text x="1020" y="530">story-view blocked</text></>
+          )}
         </g>
       </svg>
+  );
+}
+
+function HeroSignalFlow() {
+  const [compact, setCompact] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 1080px)').matches
+  ));
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 1080px)');
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  return (
+    <div className="hero-signal-flow" aria-hidden="true">
+      <SignalDiagram compact={compact} />
 
       <div className="signal-processor">
         <GhostMark size={148} bodyColor="#0f0f0d" eyeColor="#ffffff" />
@@ -525,7 +589,7 @@ export function HomePage() {
         <HeroDetails />
         <div className="home-hero-inner">
           <div className="home-hero-copy">
-            <h1>No <em>seen.</em> No pressure.</h1>
+            <h1>No <em>seen.</em><br className="hero-title-break" aria-hidden="true" /> No pressure.</h1>
             <p>Ghostify gives you control over supported Seen, Typing, and Story View signals on Instagram, Messenger, and Facebook — directly in your browser.</p>
             <div className="home-hero-actions">
               <StoreCta />
