@@ -636,7 +636,7 @@
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 76svh;
+  max-height: 760px;
   display: block;
   object-fit: contain;
   border: 1px solid rgba(15, 15, 13, 0.18);
@@ -1652,60 +1652,6 @@
   .platform-card {
     min-height: 420px;
     padding: 24px;
-  }
-}
-
-@media (min-width: 861px) and (max-width: 1800px) {
-  .feature-scroll-sticky {
-    padding-top: 64px;
-    padding-bottom: 48px;
-  }
-
-  .feature-scroll-copy {
-    height: 430px;
-  }
-
-  .feature-copy-changing {
-    padding-top: 0;
-  }
-
-  .feature-copy-changing h2 {
-    margin-top: 16px;
-    font-size: clamp(3.25rem, 3.7vw, 4.2rem);
-    line-height: 0.88;
-  }
-
-  .feature-copy-changing > p {
-    margin-top: 12px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .feature-scroll-tools > a {
-    margin-top: 12px;
-  }
-
-  .feature-scroll-media img {
-    max-height: 340px;
-  }
-
-  .feature-media-meta {
-    min-height: 30px;
-    margin-bottom: 6px;
-  }
-
-  .feature-media-meta span {
-    min-height: 24px;
-    font-size: 8px;
-  }
-
-  .feature-scroll-nav {
-    min-height: 50px;
-    bottom: 6px;
-  }
-
-  .feature-scroll-nav button {
-    min-height: 48px;
   }
 }
 
