@@ -132,6 +132,9 @@ function SignalPill({
 }) {
   const isTyping = label === 'typing';
   const height = compact ? 44 : 36;
+  const opacityKeyTimes = kind === 'input'
+    ? '0;0.02;0.2583;0.2889;1'
+    : '0;0.025;0.25;0.2778;1';
   return (
     <g className={`signal-svg-pill signal-svg-pill-${kind}${compact ? ' signal-svg-pill-compact' : ''}${isTyping ? ' signal-svg-pill-typing' : ''}`} opacity="0">
       <rect x={width / -2} y={height / -2} width={width} height={height} rx={height / 2} />
@@ -147,20 +150,20 @@ function SignalPill({
         </g>
       )}
       <animateMotion
-        dur="6s"
+        dur="7.2s"
         begin={begin}
         repeatCount="indefinite"
         calcMode="linear"
         keyPoints="0;1;1"
-        keyTimes="0;0.3333;1"
+        keyTimes="0;0.2778;1"
       >
         <mpath href={`#${pathId}`} />
       </animateMotion>
       <animate
         attributeName="opacity"
-        values="1;1;0;0"
-        keyTimes="0;0.3332;0.3333;1"
-        dur="6s"
+        values="0;1;1;0;0"
+        keyTimes={opacityKeyTimes}
+        dur="7.2s"
         begin={begin}
         repeatCount="indefinite"
       />
@@ -209,12 +212,12 @@ function SignalDiagram({ compact = false }: { compact?: boolean }) {
         </g>
 
         <g className="signal-motion">
-          <SignalPill label="seen" pathId={`${prefix}-in-seen`} width={compact ? 70 : 104} begin="-6s" kind="input" compact={compact} />
-          <SignalPill label="typing" pathId={`${prefix}-in-typing`} width={compact ? 108 : 150} begin="-4s" kind="input" compact={compact} />
-          <SignalPill label="story-view" pathId={`${prefix}-in-story`} width={compact ? 104 : 150} begin="-2s" kind="input" compact={compact} />
-          <SignalPill label="seen-receipt blocked" pathId={`${prefix}-out-seen`} width={compact ? 164 : 270} begin="-3.5s" kind="output" compact={compact} />
-          <SignalPill label="typing blocked" pathId={`${prefix}-out-typing`} width={compact ? 132 : 195} begin="-1.5s" kind="output" compact={compact} />
-          <SignalPill label="story-view blocked" pathId={`${prefix}-out-story`} width={compact ? 158 : 235} begin="-5.5s" kind="output" compact={compact} />
+          <SignalPill label="seen" pathId={`${prefix}-in-seen`} width={compact ? 70 : 104} begin="-7.2s" kind="input" compact={compact} />
+          <SignalPill label="typing" pathId={`${prefix}-in-typing`} width={compact ? 108 : 150} begin="-4.8s" kind="input" compact={compact} />
+          <SignalPill label="story-view" pathId={`${prefix}-in-story`} width={compact ? 104 : 150} begin="-2.4s" kind="input" compact={compact} />
+          <SignalPill label="seen-receipt blocked" pathId={`${prefix}-out-seen`} width={compact ? 164 : 270} begin="-5.2s" kind="output" compact={compact} />
+          <SignalPill label="typing blocked" pathId={`${prefix}-out-typing`} width={compact ? 132 : 195} begin="-2.8s" kind="output" compact={compact} />
+          <SignalPill label="story-view blocked" pathId={`${prefix}-out-story`} width={compact ? 158 : 235} begin="-0.4s" kind="output" compact={compact} />
         </g>
 
         <g className="signal-static-labels">
