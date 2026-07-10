@@ -58,8 +58,8 @@
 .site-root .brand-lockup-footer .brand-mark {
   width: 43px;
   height: 43px;
-  border-radius: 12px;
-  background: var(--home-cream);
+  border-radius: 0;
+  background: transparent;
 }
 
 .site-root .site-header .primary-nav {

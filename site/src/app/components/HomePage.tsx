@@ -413,6 +413,8 @@ function FootprintSection() {
     };
   }, []);
 
+  const runtimeSize = packageSize * (36.5 / 258.8);
+
   return (
     <section className="footprint-section" ref={sectionRef}>
       <header>
@@ -421,7 +423,7 @@ function FootprintSection() {
       </header>
       <div className="footprint-metrics">
         <article><strong>{packageSize.toFixed(1)}<span>KiB</span></strong><small>installed package</small></article>
-        <article><strong>36.5<span>KiB</span></strong><small>runtime JavaScript, gzip</small></article>
+        <article><strong>{runtimeSize.toFixed(1)}<span>KiB</span></strong><small>runtime JavaScript, gzip</small></article>
         <article><strong>0</strong><small>tracking relays</small></article>
         <article><strong>0</strong><small>Ghostify accounts required</small></article>
       </div>
