@@ -41,6 +41,390 @@
     SETTINGS_READY = true;
   }
 
+  // src/utils/binary-json.js
+  var MAX_STRUCTURED_BINARY_JSON_BYTES = 1024 * 1024;
+  var FACEBOOK_TASK_FRAME_PREFIXES = [
+    "{}\r\0",
+    "g\0\0\0{}\rg\0\0"
+  ];
+  function sanitizeWholeJsonArrayBinary(value, sanitizer) {
+    try {
+      const input = getSupportedBytes(value);
+      const source = input == null ? void 0 : input.bytes;
+      if (!source || source.byteLength === 0 || source.byteLength > MAX_STRUCTURED_BINARY_JSON_BYTES) {
+        return unchanged(value);
+      }
+      const first = firstNonWhitespaceByte(source);
+      if (first !== 91 && first !== 123) return unchanged(value);
+      const decoder = new TextDecoder("utf-8", { fatal: true });
+      const encoder = new TextEncoder();
+      const text = decoder.decode(source);
+      const roundTrip = encoder.encode(text);
+      if (!bytesEqual(source, roundTrip)) return unchanged(value);
+      const sanitized = sanitizeJsonTaskBatchStringSource(text, sanitizer);
+      if (!sanitized.changed || sanitized.blockedAll || typeof sanitized.value !== "string") {
+        return unchanged(value, sanitized.blockedAll);
+      }
+      return changedBinary(input, encoder.encode(sanitized.value));
+    } catch (e) {
+      return unchanged(value);
+    }
+  }
+  function sanitizeJsonTaskBatchStringSource(value, sanitizer) {
+    try {
+      const source = String(value || "");
+      const leadingLength = source.length - source.trimStart().length;
+      const trailingLength = source.length - source.trimEnd().length;
+      const containerEnd = source.length - trailingLength;
+      const containerSource = source.slice(leadingLength, containerEnd);
+      if (!containerSource || containerSource[0] !== "[" && containerSource[0] !== "{") {
+        return unchanged(value);
+      }
+      const sanitized = sanitizeJsonContainerSource(containerSource, sanitizer, 0);
+      if (!(sanitized == null ? void 0 : sanitized.changed)) return unchanged(value, sanitized == null ? void 0 : sanitized.blockedAll);
+      if (sanitized.blockedAll) return { value: void 0, changed: true, blockedAll: true };
+      return {
+        value: `${source.slice(0, leadingLength)}${sanitized.source}${source.slice(containerEnd)}`,
+        changed: true,
+        blockedAll: false
+      };
+    } catch (e) {
+      return unchanged(value);
+    }
+  }
+  function sanitizeJsonContainerSource(source, sanitizer, depth) {
+    if (depth > 8) return null;
+    const parsed = JSON.parse(source);
+    const sanitized = sanitizer(parsed, 0);
+    if (!(sanitized == null ? void 0 : sanitized.changed)) return { source, changed: false, blockedAll: false };
+    if (sanitized.blockedAll) {
+      return { source: void 0, changed: true, blockedAll: true };
+    }
+    const nextSource = rewriteJsonValueSource(source, parsed, sanitized.value, depth + 1);
+    if (typeof nextSource !== "string") return null;
+    return { source: nextSource, changed: true, blockedAll: false };
+  }
+  function rewriteJsonValueSource(source, original, sanitized, depth) {
+    if (depth > 10) return null;
+    if (jsonValuesEqual(original, sanitized)) return source;
+    if (Array.isArray(original) && Array.isArray(sanitized)) {
+      const rawItems = splitJsonArrayElements(source);
+      if (!rawItems || rawItems.length !== original.length) return null;
+      const rewritten = [];
+      let originalIndex = 0;
+      for (const nextItem of sanitized) {
+        let matchingIndex = -1;
+        for (let index = originalIndex; index < original.length; index += 1) {
+          if (jsonValuesEqual(original[index], nextItem)) {
+            matchingIndex = index;
+            break;
+          }
+        }
+        if (matchingIndex >= 0) {
+          rewritten.push(rawItems[matchingIndex]);
+          originalIndex = matchingIndex + 1;
+          continue;
+        }
+        if (originalIndex >= original.length) {
+          rewritten.push(JSON.stringify(nextItem));
+          continue;
+        }
+        const rewrittenItem = rewriteJsonValueSource(
+          rawItems[originalIndex],
+          original[originalIndex],
+          nextItem,
+          depth + 1
+        );
+        if (typeof rewrittenItem !== "string") return null;
+        rewritten.push(rewrittenItem);
+        originalIndex += 1;
+      }
+      return `[${rewritten.join(",")}]`;
+    }
+    if (isPlainJsonObject(original) && isPlainJsonObject(sanitized)) {
+      const properties = splitJsonObjectProperties(source);
+      if (!properties) return null;
+      const originalKeys = new Set(properties.map((property) => property.key));
+      if (originalKeys.size !== properties.length) return null;
+      if (Object.keys(sanitized).some((key) => !originalKeys.has(key))) return null;
+      const rewritten = [];
+      for (const property of properties) {
+        if (!Object.prototype.hasOwnProperty.call(sanitized, property.key)) continue;
+        const rewrittenValue = rewriteJsonValueSource(
+          property.valueSource,
+          original[property.key],
+          sanitized[property.key],
+          depth + 1
+        );
+        if (typeof rewrittenValue !== "string") return null;
+        rewritten.push(`${property.keySource}:${rewrittenValue}`);
+      }
+      return `{${rewritten.join(",")}}`;
+    }
+    const replacement = JSON.stringify(sanitized);
+    return typeof replacement === "string" ? replacement : null;
+  }
+  function splitJsonObjectProperties(source) {
+    let index = skipWhitespace(source, 0);
+    if (source[index] !== "{") return null;
+    index += 1;
+    const properties = [];
+    while (index < source.length) {
+      index = skipWhitespace(source, index);
+      if (source[index] === "}") return properties;
+      if (source[index] !== '"') return null;
+      const keyStart = index;
+      const keyEnd = scanJsonStringEnd(source, keyStart);
+      if (keyEnd < 0) return null;
+      const keySource = source.slice(keyStart, keyEnd);
+      const key = JSON.parse(keySource);
+      index = skipWhitespace(source, keyEnd);
+      if (source[index] !== ":") return null;
+      index = skipWhitespace(source, index + 1);
+      const valueStart = index;
+      const valueEnd = scanJsonValueEnd(source, valueStart);
+      if (valueEnd < 0) return null;
+      properties.push({
+        key,
+        keySource,
+        valueSource: source.slice(valueStart, valueEnd)
+      });
+      index = skipWhitespace(source, valueEnd);
+      if (source[index] === ",") {
+        index += 1;
+        continue;
+      }
+      if (source[index] === "}") return properties;
+      return null;
+    }
+    return null;
+  }
+  function isPlainJsonObject(value) {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+  }
+  function jsonValuesEqual(left, right) {
+    if (left === right) return true;
+    try {
+      return JSON.stringify(left) === JSON.stringify(right);
+    } catch (e) {
+      return false;
+    }
+  }
+  function sanitizeFramedJsonTaskBatchBinary(value, sanitizer) {
+    try {
+      const input = getSupportedBytes(value);
+      const source = input == null ? void 0 : input.bytes;
+      if (!source || source.byteLength === 0 || source.byteLength > MAX_STRUCTURED_BINARY_JSON_BYTES) {
+        return unchanged(value);
+      }
+      const decoder = new TextDecoder("utf-8", { fatal: true });
+      const encoder = new TextEncoder();
+      const text = decoder.decode(source);
+      if (!bytesEqual(source, encoder.encode(text))) return unchanged(value);
+      const framed = findFramedTaskEnvelopeSource(text);
+      if (!framed) return unchanged(value);
+      const retainedTasks = [];
+      let changed = false;
+      for (const rawTask of framed.rawTasks) {
+        const task = JSON.parse(rawTask);
+        const sanitized = sanitizer([task], 1);
+        if (!(sanitized == null ? void 0 : sanitized.changed)) {
+          retainedTasks.push(rawTask);
+          continue;
+        }
+        if (!sanitized.blockedAll || !Array.isArray(sanitized.value) || sanitized.value.length !== 0) {
+          return unchanged(value);
+        }
+        changed = true;
+      }
+      if (!changed || retainedTasks.length === 0) return unchanged(value, changed);
+      const nextTasksSource = `[${retainedTasks.join(",")}]`;
+      const nextInnerSource = replaceSpan(framed.innerSource, framed.tasksSpan, nextTasksSource);
+      const nextOuterSource = replaceSpan(
+        framed.outerSource,
+        framed.payloadSpan,
+        JSON.stringify(nextInnerSource)
+      );
+      const encoded = encoder.encode(`${framed.prefix}${nextOuterSource}${framed.trailingWhitespace}`);
+      return changedBinary(input, encoded);
+    } catch (e) {
+      return unchanged(value);
+    }
+  }
+  function findFramedTaskEnvelopeSource(text) {
+    for (const prefix of FACEBOOK_TASK_FRAME_PREFIXES) {
+      if (!text.startsWith(prefix)) continue;
+      const candidate = text.slice(prefix.length);
+      const outerSource = candidate.trimEnd();
+      const trailingWhitespace = candidate.slice(outerSource.length);
+      JSON.parse(outerSource);
+      const payloadSpan = findTopLevelPropertyValueSpan(outerSource, "payload");
+      if (!payloadSpan || outerSource[payloadSpan.start] !== '"') continue;
+      const rawPayloadToken = outerSource.slice(payloadSpan.start, payloadSpan.end);
+      const innerSource = JSON.parse(rawPayloadToken);
+      if (typeof innerSource !== "string") continue;
+      if (rawPayloadToken !== JSON.stringify(innerSource)) continue;
+      JSON.parse(innerSource);
+      const tasksSpan = findTopLevelPropertyValueSpan(innerSource, "tasks");
+      if (!tasksSpan || innerSource[tasksSpan.start] !== "[") continue;
+      const rawTasks = splitJsonArrayElements(innerSource.slice(tasksSpan.start, tasksSpan.end));
+      if (!rawTasks || rawTasks.length < 2) continue;
+      return {
+        prefix,
+        outerSource,
+        trailingWhitespace,
+        payloadSpan,
+        innerSource,
+        tasksSpan,
+        rawTasks
+      };
+    }
+    return null;
+  }
+  function findTopLevelPropertyValueSpan(source, propertyName) {
+    let index = skipWhitespace(source, 0);
+    if (source[index] !== "{") return null;
+    index += 1;
+    let match = null;
+    while (index < source.length) {
+      index = skipWhitespace(source, index);
+      if (source[index] === "}") return match;
+      if (source[index] !== '"') return null;
+      const keyEnd = scanJsonStringEnd(source, index);
+      if (keyEnd < 0) return null;
+      const key = JSON.parse(source.slice(index, keyEnd));
+      index = skipWhitespace(source, keyEnd);
+      if (source[index] !== ":") return null;
+      index = skipWhitespace(source, index + 1);
+      const valueStart = index;
+      const valueEnd = scanJsonValueEnd(source, valueStart);
+      if (valueEnd < 0) return null;
+      if (key === propertyName) {
+        if (match) return null;
+        match = { start: valueStart, end: valueEnd };
+      }
+      index = skipWhitespace(source, valueEnd);
+      if (source[index] === ",") {
+        index += 1;
+        continue;
+      }
+      if (source[index] === "}") return match;
+      return null;
+    }
+    return null;
+  }
+  function splitJsonArrayElements(source) {
+    let index = skipWhitespace(source, 0);
+    if (source[index] !== "[") return null;
+    index += 1;
+    const items = [];
+    while (index < source.length) {
+      index = skipWhitespace(source, index);
+      if (source[index] === "]") return items;
+      const start = index;
+      const end = scanJsonValueEnd(source, start);
+      if (end < 0) return null;
+      items.push(source.slice(start, end));
+      index = skipWhitespace(source, end);
+      if (source[index] === ",") {
+        index += 1;
+        continue;
+      }
+      if (source[index] === "]") return items;
+      return null;
+    }
+    return null;
+  }
+  function scanJsonValueEnd(source, start) {
+    const first = source[start];
+    if (first === '"') return scanJsonStringEnd(source, start);
+    if (first === "{" || first === "[") {
+      const stack = [first];
+      let inString = false;
+      let escaped = false;
+      for (let index2 = start + 1; index2 < source.length; index2 += 1) {
+        const char = source[index2];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (char === "\\") escaped = true;
+          else if (char === '"') inString = false;
+          continue;
+        }
+        if (char === '"') {
+          inString = true;
+          continue;
+        }
+        if (char === "{" || char === "[") stack.push(char);
+        else if (char === "}" || char === "]") {
+          const open = stack.pop();
+          if (open === "{" && char !== "}" || open === "[" && char !== "]") return -1;
+          if (stack.length === 0) return index2 + 1;
+        }
+      }
+      return -1;
+    }
+    let index = start;
+    while (index < source.length && !/[\s,}\]]/.test(source[index])) index += 1;
+    return index > start ? index : -1;
+  }
+  function scanJsonStringEnd(source, start) {
+    let escaped = false;
+    for (let index = start + 1; index < source.length; index += 1) {
+      const char = source[index];
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') return index + 1;
+    }
+    return -1;
+  }
+  function skipWhitespace(source, start) {
+    let index = start;
+    while (index < source.length && /\s/.test(source[index])) index += 1;
+    return index;
+  }
+  function replaceSpan(source, span, replacement) {
+    return `${source.slice(0, span.start)}${replacement}${source.slice(span.end)}`;
+  }
+  function unchanged(value, blockedAll = false) {
+    return { value, changed: false, blockedAll: !!blockedAll };
+  }
+  function changedBinary(input, encoded) {
+    return {
+      value: input.kind === "array-buffer" ? encoded.buffer : encoded,
+      changed: true,
+      blockedAll: false
+    };
+  }
+  function getSupportedBytes(value) {
+    const tag = Object.prototype.toString.call(value);
+    if (tag === "[object ArrayBuffer]") {
+      return {
+        bytes: new Uint8Array(value),
+        kind: "array-buffer"
+      };
+    }
+    if (tag === "[object Uint8Array]" && ArrayBuffer.isView(value)) {
+      return {
+        bytes: new Uint8Array(value.buffer, value.byteOffset, value.byteLength),
+        kind: "uint8-array"
+      };
+    }
+    return null;
+  }
+  function firstNonWhitespaceByte(bytes) {
+    for (const byte of bytes) {
+      if (byte !== 32 && byte !== 9 && byte !== 10 && byte !== 13) return byte;
+    }
+    return -1;
+  }
+  function bytesEqual(left, right) {
+    if (left.byteLength !== right.byteLength) return false;
+    for (let index = 0; index < left.byteLength; index += 1) {
+      if (left[index] !== right[index]) return false;
+    }
+    return true;
+  }
+
   // src/utils/network.js
   var DEFAULT_PATTERNS = {
     igTyping: [
@@ -127,6 +511,7 @@
       "seenbyviewer",
       "updatelastseenat",
       "updatelastreadwatermark",
+      "update_last_read_watermark",
       "sendreadreceipt",
       "lssendreadreceipt",
       "readreceipt",
@@ -373,6 +758,7 @@
       "change_read_status",
       "updatelastseenat",
       "updatelastreadwatermark",
+      "update_last_read_watermark",
       "sendreadreceipt",
       "lssendreadreceipt",
       "readreceiptmutation",
@@ -383,6 +769,7 @@
       "mwmarkthreadread",
       "lsupdatelastreadwatermark",
       "markasread",
+      "mark_as_read",
       "shouldsendreadreceipt",
       "should_send_read_receipt"
     ]) || hasTruthyField(str, [
@@ -459,38 +846,6 @@
       "should_send_read_receipt"
     ]);
   }
-  function hasFacebookMessengerSeenWriteIntent(str) {
-    const text = stripFalseyPrivacyFields(str);
-    return includesAny(text, [
-      "markthreadasread",
-      "mark_thread_read",
-      "markthreadreadmutation",
-      "markthreadread",
-      "markasread",
-      "lsmarkthreadread",
-      "mwmarkthreadread",
-      "lssendreadreceipt",
-      "sendreadreceipt",
-      "send_read_receipt",
-      "lsupdatethreadreadwatermark",
-      "lsupdatelastreadwatermark",
-      "updatelastreadwatermark",
-      "readreceiptmutation"
-    ]) || hasTruthyField(str, [
-      "shouldsendreadreceipt",
-      "should_send_read_receipt",
-      "sendreadreceipt",
-      "send_read_receipt",
-      "readreceipt",
-      "read_receipt",
-      "markread",
-      "mark_read",
-      "markseen",
-      "mark_seen",
-      "markasread",
-      "mark_as_read"
-    ]);
-  }
   function hasFacebookMessengerTypingWriteIntent(str) {
     return includesAny(str, [
       "sendtypingindicator",
@@ -542,7 +897,22 @@
   }
   function hasExplicitMessengerReadWriteCommand(str) {
     const text = stripFalseyPrivacyFields(str);
-    return includesAny(text, [
+    const hasOperationValuedReadWrite = hasFieldValue(text, [
+      "operation",
+      "procedure",
+      "command",
+      "task_name"
+    ], [
+      "mark_read",
+      "mark_seen",
+      "mark_as_read",
+      "thread_seen",
+      "read_receipt",
+      "updatelastseenat",
+      "updatelastreadwatermark",
+      "update_last_read_watermark"
+    ]);
+    return hasOperationValuedReadWrite || includesAny(text, [
       "markthreadasread",
       "mark_thread_read",
       "markthreadreadmutation",
@@ -649,6 +1019,7 @@
     ]);
   }
   function isMessengerRealtimeReadBridgeWrite(str, urlString) {
+    str = stripFalseyPrivacyFields(str);
     if (!isMessengerRealtimeTransport(urlString)) return false;
     if (str.includes("delivery_receipt") && !hasMessengerReadReceiptWriteSignal(str)) return false;
     if (!hasMessengerReadReceiptWriteSignal(str) && !hasRealtimeReadWatermarkWriteSignal(str)) return false;
@@ -659,6 +1030,7 @@
       "markseen",
       "mark_seen",
       "markasread",
+      "mark_as_read",
       "readreceipt",
       "read_receipt",
       "lastreadwatermark",
@@ -676,11 +1048,14 @@
       "sendreadreceipt",
       "lsmarkthreadread",
       "lsupdatethreadreadwatermark",
+      "updatelastreadwatermark",
+      "update_last_read_watermark",
       "mwmarkthreadread",
       "change_read_status"
     ]);
   }
   function hasRealtimeReadWatermarkWriteSignal(str) {
+    str = stripFalseyPrivacyFields(str);
     if (str.includes("send_type") && !hasMessengerReadReceiptWriteSignal(str)) return false;
     const hasWatermark = includesAny(str, [
       "last_read_watermark",
@@ -709,6 +1084,7 @@
       "lsupdatethreadreadwatermark",
       "lsupdatelastreadwatermark",
       "updatelastreadwatermark",
+      "update_last_read_watermark",
       "shouldsendreadreceipt",
       "should_send_read_receipt",
       "storedprocedure"
@@ -817,8 +1193,28 @@
     if (!isMessenger) return { data, changed: false };
     if (!shouldSanitizeMessengerNetworkPayload()) return { data, changed: false };
     if (shouldBypassNativeMessageRequestTransport(data, url, options)) return { data, changed: false };
+    const urlString = String(url || "").toLowerCase();
+    if ((isFacebookDotCom || isFacebookMessengerProxy) && isMessengerRealtimeTransport(urlString)) {
+      const sanitizer = (value) => sanitizeMessengerNetworkValue(
+        value,
+        urlString,
+        options,
+        0,
+        isMessengerReadReceiptOnlyNetworkWrite
+      );
+      const structuredBinary = sanitizeWholeJsonArrayBinary(data, sanitizer);
+      if (structuredBinary.changed) {
+        recordMessengerNetworkSanitization();
+        return { data: structuredBinary.value, changed: true };
+      }
+      const framedBinary = sanitizeFramedJsonTaskBatchBinary(data, sanitizer);
+      if (framedBinary.changed) {
+        recordMessengerNetworkSanitization();
+        return { data: framedBinary.value, changed: true };
+      }
+    }
     if (typeof URLSearchParams !== "undefined" && data instanceof URLSearchParams) {
-      return sanitizeMessengerUrlSearchParams(data, String(url || "").toLowerCase(), options);
+      return sanitizeMessengerUrlSearchParams(data, urlString, options);
     }
     if (typeof data !== "string") return { data, changed: false };
     const trimmed = data.trim();
@@ -826,11 +1222,22 @@
       return { data, changed: false };
     }
     if (trimmed[0] !== "{" && trimmed[0] !== "[") {
-      return sanitizeMessengerUrlEncodedPayload(data, String(url || "").toLowerCase(), options);
+      return sanitizeMessengerUrlEncodedPayload(data, urlString, options);
     }
     try {
-      const parsed = JSON.parse(trimmed);
-      const sanitized = sanitizeMessengerNetworkValue(parsed, String(url || "").toLowerCase(), options);
+      let sanitized = sanitizeJsonTaskBatchStringSource(
+        data,
+        (value, depth = 0) => sanitizeMessengerNetworkValue(value, urlString, options, depth)
+      );
+      if (!sanitized.changed) {
+        const parsed = JSON.parse(trimmed);
+        const fallback = sanitizeMessengerNetworkValue(parsed, urlString, options);
+        sanitized = fallback.changed ? {
+          value: fallback.blockedAll ? void 0 : JSON.stringify(fallback.value),
+          changed: true,
+          blockedAll: fallback.blockedAll
+        } : fallback;
+      }
       if (!sanitized.changed || sanitized.blockedAll) return { data, changed: false };
       try {
         if (typeof window !== "undefined") {
@@ -838,7 +1245,7 @@
         }
       } catch (e) {
       }
-      return { data: JSON.stringify(sanitized.value), changed: true };
+      return { data: sanitized.value, changed: true };
     } catch (e) {
       return { data, changed: false };
     }
@@ -875,8 +1282,19 @@
         continue;
       }
       try {
-        const parsed = JSON.parse(trimmedValue);
-        const sanitized = sanitizeMessengerNetworkValue(parsed, urlString, options);
+        let sanitized = sanitizeJsonTaskBatchStringSource(
+          value,
+          (candidate, depth = 0) => sanitizeMessengerNetworkValue(candidate, urlString, options, depth)
+        );
+        if (!sanitized.changed) {
+          const parsed = JSON.parse(trimmedValue);
+          const fallback = sanitizeMessengerNetworkValue(parsed, urlString, options);
+          sanitized = fallback.changed ? {
+            value: fallback.blockedAll ? void 0 : JSON.stringify(fallback.value),
+            changed: true,
+            blockedAll: fallback.blockedAll
+          } : fallback;
+        }
         if (!sanitized.changed) {
           nextEntries.push([key, value]);
           continue;
@@ -886,7 +1304,7 @@
           changed = true;
           continue;
         }
-        nextEntries.push([key, JSON.stringify(sanitized.value)]);
+        nextEntries.push([key, sanitized.value]);
         changed = true;
       } catch (e) {
         nextEntries.push([key, value]);
@@ -894,7 +1312,8 @@
     }
     if (removedPrivacyOnlyEntry) {
       const retainedText = nextEntries.map(([, value]) => decode(value)).join(" ").toLowerCase();
-      if (!hasMessengerMessageSendIntent(retainedText) && !hasMessengerDeliveryAckIntent(retainedText)) {
+      const hasSafeRetainedTask = isMessengerNormalThreadListPaginationTask(retainedText) || isMessageRequestHydrationRequest(retainedText, urlString, "");
+      if (!hasMessengerMessageSendIntent(retainedText) && !hasMessengerDeliveryAckIntent(retainedText) && !hasSafeRetainedTask) {
         return false;
       }
     }
@@ -920,20 +1339,67 @@
   function shouldSanitizeMessengerNetworkPayload() {
     return SETTINGS.msgSeen && !isKilled("msgSeen") || SETTINGS.msgTyping && !isKilled("msgTyping");
   }
-  function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0) {
+  function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0, privacyOnlyPredicate = isMessengerPrivacyOnlyNetworkWrite) {
     if (!value || depth > 8) {
       return { value, changed: false, blockedAll: false };
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed[0] !== "{" && trimmed[0] !== "[") {
+        return { value, changed: false, blockedAll: false };
+      }
+      try {
+        let sanitized = sanitizeJsonTaskBatchStringSource(
+          value,
+          (candidate, nestedDepth = 0) => sanitizeMessengerNetworkValue(
+            candidate,
+            urlString,
+            options,
+            depth + 1 + nestedDepth,
+            privacyOnlyPredicate
+          )
+        );
+        if (!sanitized.changed) {
+          const parsed = JSON.parse(trimmed);
+          const fallback = sanitizeMessengerNetworkValue(
+            parsed,
+            urlString,
+            options,
+            depth + 1,
+            privacyOnlyPredicate
+          );
+          sanitized = fallback.changed ? {
+            value: fallback.blockedAll ? void 0 : JSON.stringify(fallback.value),
+            changed: true,
+            blockedAll: fallback.blockedAll
+          } : fallback;
+        }
+        if (!sanitized.changed) return { value, changed: false, blockedAll: false };
+        return {
+          value: sanitized.blockedAll ? void 0 : sanitized.value,
+          changed: true,
+          blockedAll: sanitized.blockedAll
+        };
+      } catch (e) {
+        return { value, changed: false, blockedAll: false };
+      }
     }
     if (Array.isArray(value)) {
       let changed = false;
       const next = [];
       for (const item of value) {
         const itemText = decode(item).toLowerCase();
-        if (isMessengerPrivacyOnlyNetworkWrite(itemText, urlString, options)) {
+        if (privacyOnlyPredicate(itemText, urlString, options)) {
           changed = true;
           continue;
         }
-        const sanitizedItem = sanitizeMessengerNetworkValue(item, urlString, options, depth + 1);
+        const sanitizedItem = sanitizeMessengerNetworkValue(
+          item,
+          urlString,
+          options,
+          depth + 1,
+          privacyOnlyPredicate
+        );
         if (sanitizedItem.blockedAll) {
           changed = true;
           continue;
@@ -949,14 +1415,27 @@
     }
     if (typeof value === "object") {
       const ownText = decode(value).toLowerCase();
-      if (isMessengerPrivacyOnlyNetworkWrite(ownText, urlString, options)) {
+      if (isMessengerNormalThreadListPaginationTask(ownText)) {
+        return { value, changed: false, blockedAll: false };
+      }
+      const structuredBatch = hasMessengerStructuredBatch(value);
+      if (!structuredBatch && (hasMessengerMessageSendIntent(ownText) || hasMessengerDeliveryAckIntent(ownText))) {
+        return { value, changed: false, blockedAll: false };
+      }
+      if (!structuredBatch && privacyOnlyPredicate(ownText, urlString, options)) {
         return { value: void 0, changed: true, blockedAll: true };
       }
       let changed = false;
       const clone = {};
       for (const key of Object.keys(value)) {
         const child = value[key];
-        const sanitizedChild = sanitizeMessengerNetworkValue(child, urlString, options, depth + 1);
+        const sanitizedChild = sanitizeMessengerNetworkValue(
+          child,
+          urlString,
+          options,
+          depth + 1,
+          privacyOnlyPredicate
+        );
         if (sanitizedChild.blockedAll) {
           changed = true;
           continue;
@@ -967,7 +1446,7 @@
       return {
         value: changed ? clone : value,
         changed,
-        blockedAll: changed && Object.keys(clone).length === 0
+        blockedAll: changed && (Object.keys(clone).length === 0 || structuredBatch && !hasMessengerStructuredBatchItems(clone))
       };
     }
     return { value, changed: false, blockedAll: false };
@@ -983,7 +1462,46 @@
     }
     return false;
   }
+  function hasMessengerStructuredBatch(value) {
+    if (!value || Array.isArray(value) || typeof value !== "object") return false;
+    for (const [key, child] of Object.entries(value)) {
+      const normalized = String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (["tasks", "tasklist", "batch"].includes(normalized) && Array.isArray(child)) return true;
+      if (normalized !== "payload" || typeof child !== "string") continue;
+      const trimmed = child.trim();
+      if (trimmed[0] !== "{") continue;
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (hasMessengerStructuredBatch(parsed)) return true;
+      } catch (e) {
+      }
+    }
+    return false;
+  }
+  function hasMessengerStructuredBatchItems(value) {
+    if (!value || Array.isArray(value) || typeof value !== "object") return false;
+    for (const [key, child] of Object.entries(value)) {
+      const normalized = String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (["tasks", "tasklist", "batch"].includes(normalized) && Array.isArray(child)) {
+        if (child.length > 0) return true;
+        continue;
+      }
+      if (normalized !== "payload" || typeof child !== "string") continue;
+      try {
+        const parsed = JSON.parse(child.trim());
+        if (hasMessengerStructuredBatchItems(parsed)) return true;
+      } catch (e) {
+      }
+    }
+    return false;
+  }
+  function isMessengerReadReceiptOnlyNetworkWrite(str, urlString, options) {
+    if (!str || hasMessengerMessageSendIntent(str) || hasMessengerDeliveryAckIntent(str)) return false;
+    if (isMessengerNormalThreadListPaginationTask(str)) return false;
+    return SETTINGS.msgSeen && !isKilled("msgSeen") && isMessengerReadReceiptNetworkTask(str, urlString, options);
+  }
   function isMessengerReadReceiptNetworkTask(str, urlString, options) {
+    if (isMessengerNormalThreadListPaginationTask(str)) return false;
     if (isMessengerReadReceiptWrite(str, urlString)) return true;
     if (!hasMessengerThreadContext(str)) return false;
     const hasTaskEnvelope = includesAny(str, [
@@ -995,6 +1513,76 @@
     ]);
     if (!hasTaskEnvelope && !hasReadReceiptOperationContext(str)) return false;
     return hasMessengerReadReceiptWriteSignal(str);
+  }
+  function isMessengerNormalThreadListPaginationTask(str) {
+    const text = String(str || "").toLowerCase();
+    if (!includesAny(text, [
+      "mwchatthreadlistpaginationquery",
+      "mwchatthreadlistquery",
+      "messengerthreadlistpaginationquery",
+      "messengerthreadlistquery",
+      "threadlistpaginationquery"
+    ])) return false;
+    if (!includesAny(text, [
+      "cursor",
+      "pagination",
+      "mwchat_fetch_thread_list",
+      "fetch_thread_list",
+      "thread_list",
+      "threadlist"
+    ])) return false;
+    if (includesAny(text, [
+      "markthreadasread",
+      "mark_thread_as_read",
+      "markthreadread",
+      "mark_thread_read",
+      "markasread",
+      "mark_as_read",
+      "markseen",
+      "mark_seen",
+      "threadseen",
+      "thread_seen",
+      "change_read_status",
+      "lssendreadreceipt",
+      "readreceiptmutation",
+      "sendreadreceiptmutation",
+      "sendreadreceiptstoredprocedure",
+      "optimisticmarkthreadread",
+      "updatethreadreadwatermark",
+      "updatelastseenat",
+      "updatelastreadwatermark",
+      "update_last_read_watermark"
+    ]) || includesStandaloneTerm(text, ["sendreadreceipt", "send_read_receipt"])) return false;
+    if (hasFieldValue(text, [
+      "operation",
+      "procedure",
+      "command",
+      "task_name"
+    ], [
+      "thread_seen",
+      "threadseen",
+      "read_receipt",
+      "readreceipt",
+      "updatelastseenat",
+      "updatelastreadwatermark",
+      "update_last_read_watermark"
+    ])) return false;
+    return !hasTruthyField(text, [
+      "should_send_read_receipt",
+      "shouldsendreadreceipt",
+      "send_read_receipt",
+      "sendreadreceipt",
+      "read_receipt",
+      "readreceipt",
+      "mark_read",
+      "markread",
+      "mark_seen",
+      "markseen",
+      "thread_seen",
+      "threadseen",
+      "seen_by_viewer",
+      "seenbyviewer"
+    ]);
   }
   function isMessengerTypingNetworkTask(str, urlString) {
     if (isMessengerTypingWrite(str, urlString)) return true;
@@ -1242,21 +1830,7 @@
     if (isMessengerRealtimeReadBridgeWrite(str, urlString)) return true;
     if (isGraphQLRequest(str, urlString)) return false;
     if (!hasStrictFacebookMessengerWriteContext(str) && !isMessengerRealtimeTransport(urlString)) return false;
-    const hasExplicitWrite = includesAny(str, [
-      "markthreadasread",
-      "mark_thread_read",
-      "markthreadreadmutation",
-      "lsmarkthreadread",
-      "mwmarkthreadread",
-      "lssendreadreceipt",
-      "sendreadreceipt",
-      "send_read_receipt",
-      "readreceiptmutation",
-      "lsupdatethreadreadwatermark",
-      "lsupdatelastreadwatermark",
-      "updatelastreadwatermark",
-      "change_read_status"
-    ]);
+    const hasExplicitWrite = hasMessengerReadReceiptWriteSignal(str);
     if (!hasExplicitWrite) return false;
     return includesAny(str, [
       "mutation",
@@ -1355,7 +1929,7 @@
       "markthread"
     ]);
     if (!hasNamedWrite && !hasWatermarkWrite) return false;
-    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerSeenWriteIntent(str)) return false;
+    if (isFacebookGraphQLMessengerQuery(str) && !hasExplicitMessengerReadWriteCommand(str)) return false;
     return hasStrictFacebookMessengerWriteContext(str) || hasMessengerThreadContext(str) || hasReadReceiptWatermarkContext(str);
   }
   function isFacebookGraphQLMessengerTypingWrite(str) {
@@ -1621,6 +2195,7 @@
       if (SETTINGS.msgSeen && !isKilled("msgSeen") && isFacebookExplicitMessengerSeenWrite(str, urlString)) {
         return "MSG_SEEN";
       }
+      if (isMessengerNormalThreadListPaginationTask(str)) return null;
       if (SETTINGS.msgTyping && !isKilled("msgTyping") && isGraphQLRequest(str, urlString) && isFacebookGraphQLMessengerTypingWrite(str)) {
         return "MSG_TYPING";
       }
@@ -2530,8 +3105,8 @@
 
   // src/platforms/facebook.js
   var REQUEST_NATIVE_GRACE_MS = 15e3;
-  var ROOT_NATIVE_GRACE_MS = 3e4;
-  var CHAT_OPEN_NATIVE_GRACE_MS = 4e3;
+  var ROOT_NATIVE_GRACE_MS = 15e3;
+  var POPOVER_LOAD_NATIVE_GRACE_MS = 5e3;
   function startFacebookProtection() {
     if (!isFacebookDotCom) return;
     if (window.__GHOSTIFY_FACEBOOK_PROTECTION__) return;
@@ -2545,28 +3120,28 @@
         activateRequestNativeGrace(until);
       }
     };
-    const markConversationOpenIntent = (event) => {
-      if (isFacebookMessageRequestNavigationTarget(event == null ? void 0 : event.target)) return;
-      if (isFacebookFeedConversationNavigationTarget(event == null ? void 0 : event.target)) {
-        activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS);
+    const markPopoverLoadIntent = (event) => {
+      if (isFacebookMessengerPopoverButton(event == null ? void 0 : event.target)) {
+        window.__GHOSTIFY_FACEBOOK_POPOVER_LOAD_UNTIL__ = Date.now() + POPOVER_LOAD_NATIVE_GRACE_MS;
+        return;
       }
+      window.__GHOSTIFY_FACEBOOK_POPOVER_LOAD_UNTIL__ = 0;
     };
     document.addEventListener("pointerdown", markRequestIntent, true);
-    document.addEventListener("pointerdown", markConversationOpenIntent, true);
+    document.addEventListener("pointerdown", markPopoverLoadIntent, true);
     document.addEventListener("click", markRequestIntent, true);
-    document.addEventListener("click", markConversationOpenIntent, true);
+    document.addEventListener("click", markPopoverLoadIntent, true);
     document.addEventListener("keydown", (event) => {
       if ((event == null ? void 0 : event.key) !== "Enter" && (event == null ? void 0 : event.key) !== " ") return;
       markRequestIntent(event);
-      markConversationOpenIntent(event);
+      markPopoverLoadIntent(event);
     }, true);
   }
   function getFacebookSpoofState() {
     if (hasRecentMessageRequestIntent()) return null;
     if (isFacebookMessageRequestSurface()) return null;
     if (SETTINGS.msgSeen && !isKilled("msgSeen")) {
-      if (isFacebookRestoredMiniChatLoadingSurface()) return null;
-      if (hasRecentChatOpenIntent()) return null;
+      if (hasRecentPopoverLoadIntent() && !isFacebookMessengerPopoverHydrated()) return null;
       if (isFacebookFeedMessengerSurface()) return "unfocused-passive";
       if (isFacebookFeedRootSurface()) return hasRootNativeGrace() ? null : "unfocused-passive";
       if (!isFacebookMessagingSurface()) return null;
@@ -2586,24 +3161,17 @@
     );
     emitNativeFocusSignals();
   }
-  function activateChatOpenNativeGrace(until) {
-    window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Math.max(
-      Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0),
-      until
-    );
-    emitNativeFocusSignals();
-  }
   function hasRecentMessageRequestIntent() {
     return Math.max(
       Number(window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ || 0),
       Number(window.__GHOSTIFY_MESSAGE_REQUEST_NATIVE_UNTIL__ || 0)
     ) > Date.now();
   }
-  function hasRecentChatOpenIntent() {
-    return Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0) > Date.now();
-  }
   function hasRootNativeGrace() {
     return isFacebookFeedRootRoute() && Number(window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ || 0) > Date.now();
+  }
+  function hasRecentPopoverLoadIntent() {
+    return Number(window.__GHOSTIFY_FACEBOOK_POPOVER_LOAD_UNTIL__ || 0) > Date.now();
   }
   function emitNativeFocusSignals() {
     dispatchEventSafe(window, "focus");
@@ -2638,15 +3206,16 @@
     }
     return false;
   }
-  function isFacebookFeedConversationNavigationTarget(target) {
-    if (!isFacebookFeedRootRoute()) return false;
-    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
+  function isFacebookMessengerPopoverButton(target) {
     const element = getClosestRequestElement(target);
     if (!element) return false;
-    const href = getElementAttribute(element, "href");
-    const label = getElementContextText(element).toLowerCase();
-    if (!label && !href) return false;
-    return href.includes("/messages/t/") || href.includes("/messages/e2ee/t/") || label.includes("unread message:") || label.includes("active now") || /\b(?:now|\d+\s*[mhdw])\b/.test(label);
+    const label = [
+      getElementAttribute(element, "aria-label"),
+      getElementAttribute(element, "title"),
+      element.innerText,
+      element.textContent
+    ].filter(Boolean).join(" ").trim().toLowerCase();
+    return /^messenger(?:\s|,|$)/.test(label) && !getElementAttribute(element, "href").includes("/messages/");
   }
   function getClosestRequestElement(target) {
     if (!target || typeof target !== "object") return null;
@@ -2662,21 +3231,6 @@
     } catch (e) {
       return "";
     }
-  }
-  function getElementContextText(element) {
-    const parts = [];
-    let current = element;
-    for (let depth = 0; current && depth < 5; depth += 1) {
-      parts.push(
-        getElementAttribute(current, "aria-label"),
-        getElementAttribute(current, "title"),
-        current.innerText,
-        current.textContent,
-        getElementAttribute(current, "href")
-      );
-      current = current.parentElement;
-    }
-    return parts.filter(Boolean).join(" ");
   }
   function isFacebookMessagingSurface() {
     var _a, _b, _c;
@@ -2705,15 +3259,13 @@
   function isFacebookFeedMessengerSurface() {
     const hasMessengerPopover = hasDomElement('[role="dialog"][aria-label="Messenger"]') && hasDomElement('[role="grid"][aria-label="Chats"]');
     if (hasMessengerPopover) return true;
+    if (hasDomElement('[aria-label^="Messages in conversation"]')) return true;
     const hasMiniChatChrome = hasDomElement('[aria-label="Minimize chat"]') || hasDomElement('[aria-label="Close chat"]');
     if (!hasMiniChatChrome) return false;
     return hasDomElement('[role="textbox"][contenteditable="true"]') || hasDomElement('[aria-label^="Write to"]') || hasDomElement('[aria-label^="Messages in conversation"]') || hasDomElement('[aria-label^="Conversation titled"]');
   }
-  function isFacebookRestoredMiniChatLoadingSurface() {
-    const log = getDomElement('[aria-label^="Messages in conversation"]');
-    if (!log) return false;
-    const text = String(log.innerText || log.textContent || "").replace(/\s+/g, " ").trim();
-    return /^Loading(?:\.{3})?$/i.test(text);
+  function isFacebookMessengerPopoverHydrated() {
+    return hasDomElement('[role="dialog"][aria-label="Messenger"]') && hasDomElement('[role="grid"][aria-label="Chats"]');
   }
   function hasDomElement(selector) {
     return !!getDomElement(selector);

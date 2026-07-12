@@ -1,4 +1,9 @@
-import { isFacebookDotCom, isMessengerDotCom, isMessenger, isInstagram, isKilled, SETTINGS } from '../config.js';
+import { isFacebookDotCom, isFacebookMessengerProxy, isMessengerDotCom, isMessenger, isInstagram, isKilled, SETTINGS } from '../config.js';
+import {
+    sanitizeFramedJsonTaskBatchBinary,
+    sanitizeJsonTaskBatchStringSource,
+    sanitizeWholeJsonArrayBinary
+} from './binary-json.js';
 
 const DEFAULT_PATTERNS = {
     igTyping: [
@@ -85,6 +90,7 @@ const DEFAULT_PATTERNS = {
         'seenbyviewer',
         'updatelastseenat',
         'updatelastreadwatermark',
+        'update_last_read_watermark',
         'sendreadreceipt',
         'lssendreadreceipt',
         'readreceipt',
@@ -362,6 +368,7 @@ function hasMessengerReadReceiptWriteSignal(str) {
         'change_read_status',
         'updatelastseenat',
         'updatelastreadwatermark',
+        'update_last_read_watermark',
         'sendreadreceipt',
         'lssendreadreceipt',
         'readreceiptmutation',
@@ -372,6 +379,7 @@ function hasMessengerReadReceiptWriteSignal(str) {
         'mwmarkthreadread',
         'lsupdatelastreadwatermark',
         'markasread',
+        'mark_as_read',
         'shouldsendreadreceipt',
         'should_send_read_receipt'
     ]) || hasTruthyField(str, [
@@ -558,7 +566,22 @@ function hasMessageRequestContext(str, urlString = '') {
 
 function hasExplicitMessengerReadWriteCommand(str) {
     const text = stripFalseyPrivacyFields(str);
-    return includesAny(text, [
+    const hasOperationValuedReadWrite = hasFieldValue(text, [
+        'operation',
+        'procedure',
+        'command',
+        'task_name'
+    ], [
+        'mark_read',
+        'mark_seen',
+        'mark_as_read',
+        'thread_seen',
+        'read_receipt',
+        'updatelastseenat',
+        'updatelastreadwatermark',
+        'update_last_read_watermark'
+    ]);
+    return hasOperationValuedReadWrite || includesAny(text, [
         'markthreadasread',
         'mark_thread_read',
         'markthreadreadmutation',
@@ -682,6 +705,7 @@ function isLegacyMessengerReadEndpoint(urlString) {
 }
 
 function isMessengerRealtimeReadBridgeWrite(str, urlString) {
+    str = stripFalseyPrivacyFields(str);
     if (!isMessengerRealtimeTransport(urlString)) return false;
     if (str.includes('delivery_receipt') && !hasMessengerReadReceiptWriteSignal(str)) return false;
     if (!hasMessengerReadReceiptWriteSignal(str) && !hasRealtimeReadWatermarkWriteSignal(str)) return false;
@@ -693,6 +717,7 @@ function isMessengerRealtimeReadBridgeWrite(str, urlString) {
         'markseen',
         'mark_seen',
         'markasread',
+        'mark_as_read',
         'readreceipt',
         'read_receipt',
         'lastreadwatermark',
@@ -710,12 +735,15 @@ function isMessengerRealtimeReadBridgeWrite(str, urlString) {
         'sendreadreceipt',
         'lsmarkthreadread',
         'lsupdatethreadreadwatermark',
+        'updatelastreadwatermark',
+        'update_last_read_watermark',
         'mwmarkthreadread',
         'change_read_status'
     ]);
 }
 
 function hasRealtimeReadWatermarkWriteSignal(str) {
+    str = stripFalseyPrivacyFields(str);
     if (str.includes('send_type') && !hasMessengerReadReceiptWriteSignal(str)) return false;
 
     const hasWatermark = includesAny(str, [
@@ -747,6 +775,7 @@ function hasRealtimeReadWatermarkWriteSignal(str) {
         'lsupdatethreadreadwatermark',
         'lsupdatelastreadwatermark',
         'updatelastreadwatermark',
+        'update_last_read_watermark',
         'shouldsendreadreceipt',
         'should_send_read_receipt',
         'storedprocedure'
@@ -872,8 +901,29 @@ export function sanitizeMessengerNetworkPayload(data, url = '', options = {}) {
     if (!isMessenger) return { data, changed: false };
     if (!shouldSanitizeMessengerNetworkPayload()) return { data, changed: false };
     if (shouldBypassNativeMessageRequestTransport(data, url, options)) return { data, changed: false };
+    const urlString = String(url || '').toLowerCase();
+    if ((isFacebookDotCom || isFacebookMessengerProxy) && isMessengerRealtimeTransport(urlString)) {
+        const sanitizer = value => sanitizeMessengerNetworkValue(
+            value,
+            urlString,
+            options,
+            0,
+            isMessengerReadReceiptOnlyNetworkWrite
+        );
+        const structuredBinary = sanitizeWholeJsonArrayBinary(data, sanitizer);
+        if (structuredBinary.changed) {
+            recordMessengerNetworkSanitization();
+            return { data: structuredBinary.value, changed: true };
+        }
+
+        const framedBinary = sanitizeFramedJsonTaskBatchBinary(data, sanitizer);
+        if (framedBinary.changed) {
+            recordMessengerNetworkSanitization();
+            return { data: framedBinary.value, changed: true };
+        }
+    }
     if (typeof URLSearchParams !== 'undefined' && data instanceof URLSearchParams) {
-        return sanitizeMessengerUrlSearchParams(data, String(url || '').toLowerCase(), options);
+        return sanitizeMessengerUrlSearchParams(data, urlString, options);
     }
     if (typeof data !== 'string') return { data, changed: false };
 
@@ -883,12 +933,25 @@ export function sanitizeMessengerNetworkPayload(data, url = '', options = {}) {
     }
 
     if (trimmed[0] !== '{' && trimmed[0] !== '[') {
-        return sanitizeMessengerUrlEncodedPayload(data, String(url || '').toLowerCase(), options);
+        return sanitizeMessengerUrlEncodedPayload(data, urlString, options);
     }
 
     try {
-        const parsed = JSON.parse(trimmed);
-        const sanitized = sanitizeMessengerNetworkValue(parsed, String(url || '').toLowerCase(), options);
+        let sanitized = sanitizeJsonTaskBatchStringSource(
+            data,
+            (value, depth = 0) => sanitizeMessengerNetworkValue(value, urlString, options, depth)
+        );
+        if (!sanitized.changed) {
+            const parsed = JSON.parse(trimmed);
+            const fallback = sanitizeMessengerNetworkValue(parsed, urlString, options);
+            sanitized = fallback.changed
+                ? {
+                    value: fallback.blockedAll ? undefined : JSON.stringify(fallback.value),
+                    changed: true,
+                    blockedAll: fallback.blockedAll
+                }
+                : fallback;
+        }
         if (!sanitized.changed || sanitized.blockedAll) return { data, changed: false };
 
         try {
@@ -897,7 +960,7 @@ export function sanitizeMessengerNetworkPayload(data, url = '', options = {}) {
             }
         } catch (e) { }
 
-        return { data: JSON.stringify(sanitized.value), changed: true };
+        return { data: sanitized.value, changed: true };
     } catch (e) {
         return { data, changed: false };
     }
@@ -942,8 +1005,21 @@ function sanitizeMessengerUrlSearchParamsInPlace(params, urlString, options = {}
         }
 
         try {
-            const parsed = JSON.parse(trimmedValue);
-            const sanitized = sanitizeMessengerNetworkValue(parsed, urlString, options);
+            let sanitized = sanitizeJsonTaskBatchStringSource(
+                value,
+                (candidate, depth = 0) => sanitizeMessengerNetworkValue(candidate, urlString, options, depth)
+            );
+            if (!sanitized.changed) {
+                const parsed = JSON.parse(trimmedValue);
+                const fallback = sanitizeMessengerNetworkValue(parsed, urlString, options);
+                sanitized = fallback.changed
+                    ? {
+                        value: fallback.blockedAll ? undefined : JSON.stringify(fallback.value),
+                        changed: true,
+                        blockedAll: fallback.blockedAll
+                    }
+                    : fallback;
+            }
             if (!sanitized.changed) {
                 nextEntries.push([key, value]);
                 continue;
@@ -955,7 +1031,7 @@ function sanitizeMessengerUrlSearchParamsInPlace(params, urlString, options = {}
                 continue;
             }
 
-            nextEntries.push([key, JSON.stringify(sanitized.value)]);
+            nextEntries.push([key, sanitized.value]);
             changed = true;
         } catch (e) {
             nextEntries.push([key, value]);
@@ -964,7 +1040,11 @@ function sanitizeMessengerUrlSearchParamsInPlace(params, urlString, options = {}
 
     if (removedPrivacyOnlyEntry) {
         const retainedText = nextEntries.map(([, value]) => decode(value)).join(' ').toLowerCase();
-        if (!hasMessengerMessageSendIntent(retainedText) && !hasMessengerDeliveryAckIntent(retainedText)) {
+        const hasSafeRetainedTask = isMessengerNormalThreadListPaginationTask(retainedText) ||
+            isMessageRequestHydrationRequest(retainedText, urlString, '');
+        if (!hasMessengerMessageSendIntent(retainedText) &&
+            !hasMessengerDeliveryAckIntent(retainedText) &&
+            !hasSafeRetainedTask) {
             return false;
         }
     }
@@ -995,9 +1075,59 @@ function shouldSanitizeMessengerNetworkPayload() {
         (SETTINGS.msgTyping && !isKilled('msgTyping'));
 }
 
-function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0) {
+function sanitizeMessengerNetworkValue(
+    value,
+    urlString,
+    options,
+    depth = 0,
+    privacyOnlyPredicate = isMessengerPrivacyOnlyNetworkWrite
+) {
     if (!value || depth > 8) {
         return { value, changed: false, blockedAll: false };
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed[0] !== '{' && trimmed[0] !== '[') {
+            return { value, changed: false, blockedAll: false };
+        }
+        try {
+            let sanitized = sanitizeJsonTaskBatchStringSource(
+                value,
+                (candidate, nestedDepth = 0) => sanitizeMessengerNetworkValue(
+                    candidate,
+                    urlString,
+                    options,
+                    depth + 1 + nestedDepth,
+                    privacyOnlyPredicate
+                )
+            );
+            if (!sanitized.changed) {
+                const parsed = JSON.parse(trimmed);
+                const fallback = sanitizeMessengerNetworkValue(
+                    parsed,
+                    urlString,
+                    options,
+                    depth + 1,
+                    privacyOnlyPredicate
+                );
+                sanitized = fallback.changed
+                    ? {
+                        value: fallback.blockedAll ? undefined : JSON.stringify(fallback.value),
+                        changed: true,
+                        blockedAll: fallback.blockedAll
+                    }
+                    : fallback;
+            }
+            if (!sanitized.changed) return { value, changed: false, blockedAll: false };
+            return {
+                value: sanitized.blockedAll ? undefined : sanitized.value,
+                changed: true,
+                blockedAll: sanitized.blockedAll
+            };
+        } catch (e) {
+            return { value, changed: false, blockedAll: false };
+        }
     }
 
     if (Array.isArray(value)) {
@@ -1006,12 +1136,18 @@ function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0) {
 
         for (const item of value) {
             const itemText = decode(item).toLowerCase();
-            if (isMessengerPrivacyOnlyNetworkWrite(itemText, urlString, options)) {
+            if (privacyOnlyPredicate(itemText, urlString, options)) {
                 changed = true;
                 continue;
             }
 
-            const sanitizedItem = sanitizeMessengerNetworkValue(item, urlString, options, depth + 1);
+            const sanitizedItem = sanitizeMessengerNetworkValue(
+                item,
+                urlString,
+                options,
+                depth + 1,
+                privacyOnlyPredicate
+            );
             if (sanitizedItem.blockedAll) {
                 changed = true;
                 continue;
@@ -1030,7 +1166,17 @@ function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0) {
 
     if (typeof value === 'object') {
         const ownText = decode(value).toLowerCase();
-        if (isMessengerPrivacyOnlyNetworkWrite(ownText, urlString, options)) {
+        if (isMessengerNormalThreadListPaginationTask(ownText)) {
+            return { value, changed: false, blockedAll: false };
+        }
+        const structuredBatch = hasMessengerStructuredBatch(value);
+        if (!structuredBatch && (
+            hasMessengerMessageSendIntent(ownText) ||
+            hasMessengerDeliveryAckIntent(ownText)
+        )) {
+            return { value, changed: false, blockedAll: false };
+        }
+        if (!structuredBatch && privacyOnlyPredicate(ownText, urlString, options)) {
             return { value: undefined, changed: true, blockedAll: true };
         }
 
@@ -1039,7 +1185,13 @@ function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0) {
 
         for (const key of Object.keys(value)) {
             const child = value[key];
-            const sanitizedChild = sanitizeMessengerNetworkValue(child, urlString, options, depth + 1);
+            const sanitizedChild = sanitizeMessengerNetworkValue(
+                child,
+                urlString,
+                options,
+                depth + 1,
+                privacyOnlyPredicate
+            );
             if (sanitizedChild.blockedAll) {
                 changed = true;
                 continue;
@@ -1052,7 +1204,10 @@ function sanitizeMessengerNetworkValue(value, urlString, options, depth = 0) {
         return {
             value: changed ? clone : value,
             changed,
-            blockedAll: changed && Object.keys(clone).length === 0
+            blockedAll: changed && (
+                Object.keys(clone).length === 0 ||
+                (structuredBatch && !hasMessengerStructuredBatchItems(clone))
+            )
         };
     }
 
@@ -1074,7 +1229,54 @@ function isMessengerPrivacyOnlyNetworkWrite(str, urlString, options) {
     return false;
 }
 
+function hasMessengerStructuredBatch(value) {
+    if (!value || Array.isArray(value) || typeof value !== 'object') return false;
+
+    for (const [key, child] of Object.entries(value)) {
+        const normalized = String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (['tasks', 'tasklist', 'batch'].includes(normalized) && Array.isArray(child)) return true;
+        if (normalized !== 'payload' || typeof child !== 'string') continue;
+
+        const trimmed = child.trim();
+        if (trimmed[0] !== '{') continue;
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (hasMessengerStructuredBatch(parsed)) return true;
+        } catch (e) { }
+    }
+
+    return false;
+}
+
+function hasMessengerStructuredBatchItems(value) {
+    if (!value || Array.isArray(value) || typeof value !== 'object') return false;
+
+    for (const [key, child] of Object.entries(value)) {
+        const normalized = String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (['tasks', 'tasklist', 'batch'].includes(normalized) && Array.isArray(child)) {
+            if (child.length > 0) return true;
+            continue;
+        }
+        if (normalized !== 'payload' || typeof child !== 'string') continue;
+        try {
+            const parsed = JSON.parse(child.trim());
+            if (hasMessengerStructuredBatchItems(parsed)) return true;
+        } catch (e) { }
+    }
+
+    return false;
+}
+
+function isMessengerReadReceiptOnlyNetworkWrite(str, urlString, options) {
+    if (!str || hasMessengerMessageSendIntent(str) || hasMessengerDeliveryAckIntent(str)) return false;
+    if (isMessengerNormalThreadListPaginationTask(str)) return false;
+    return SETTINGS.msgSeen &&
+        !isKilled('msgSeen') &&
+        isMessengerReadReceiptNetworkTask(str, urlString, options);
+}
+
 function isMessengerReadReceiptNetworkTask(str, urlString, options) {
+    if (isMessengerNormalThreadListPaginationTask(str)) return false;
     if (isMessengerReadReceiptWrite(str, urlString)) return true;
     if (!hasMessengerThreadContext(str)) return false;
 
@@ -1089,6 +1291,81 @@ function isMessengerReadReceiptNetworkTask(str, urlString, options) {
     if (!hasTaskEnvelope && !hasReadReceiptOperationContext(str)) return false;
 
     return hasMessengerReadReceiptWriteSignal(str);
+}
+
+function isMessengerNormalThreadListPaginationTask(str) {
+    const text = String(str || '').toLowerCase();
+    if (!includesAny(text, [
+        'mwchatthreadlistpaginationquery',
+        'mwchatthreadlistquery',
+        'messengerthreadlistpaginationquery',
+        'messengerthreadlistquery',
+        'threadlistpaginationquery'
+    ])) return false;
+
+    if (!includesAny(text, [
+        'cursor',
+        'pagination',
+        'mwchat_fetch_thread_list',
+        'fetch_thread_list',
+        'thread_list',
+        'threadlist'
+    ])) return false;
+
+    if (includesAny(text, [
+        'markthreadasread',
+        'mark_thread_as_read',
+        'markthreadread',
+        'mark_thread_read',
+        'markasread',
+        'mark_as_read',
+        'markseen',
+        'mark_seen',
+        'threadseen',
+        'thread_seen',
+        'change_read_status',
+        'lssendreadreceipt',
+        'readreceiptmutation',
+        'sendreadreceiptmutation',
+        'sendreadreceiptstoredprocedure',
+        'optimisticmarkthreadread',
+        'updatethreadreadwatermark',
+        'updatelastseenat',
+        'updatelastreadwatermark',
+        'update_last_read_watermark'
+    ]) || includesStandaloneTerm(text, ['sendreadreceipt', 'send_read_receipt'])) return false;
+
+    if (hasFieldValue(text, [
+        'operation',
+        'procedure',
+        'command',
+        'task_name'
+    ], [
+        'thread_seen',
+        'threadseen',
+        'read_receipt',
+        'readreceipt',
+        'updatelastseenat',
+        'updatelastreadwatermark',
+        'update_last_read_watermark'
+    ])) return false;
+
+    return !hasTruthyField(text, [
+        'should_send_read_receipt',
+        'shouldsendreadreceipt',
+        'send_read_receipt',
+        'sendreadreceipt',
+        'read_receipt',
+        'readreceipt',
+        'mark_read',
+        'markread',
+        'mark_seen',
+        'markseen',
+        'thread_seen',
+        'threadseen',
+        'seen_by_viewer',
+        'seenbyviewer'
+    ]);
 }
 
 function isMessengerTypingNetworkTask(str, urlString) {
@@ -1390,21 +1667,7 @@ function isFacebookExplicitMessengerSeenWrite(str, urlString) {
 
     if (!hasStrictFacebookMessengerWriteContext(str) && !isMessengerRealtimeTransport(urlString)) return false;
 
-    const hasExplicitWrite = includesAny(str, [
-        'markthreadasread',
-        'mark_thread_read',
-        'markthreadreadmutation',
-        'lsmarkthreadread',
-        'mwmarkthreadread',
-        'lssendreadreceipt',
-        'sendreadreceipt',
-        'send_read_receipt',
-        'readreceiptmutation',
-        'lsupdatethreadreadwatermark',
-        'lsupdatelastreadwatermark',
-        'updatelastreadwatermark',
-        'change_read_status'
-    ]);
+    const hasExplicitWrite = hasMessengerReadReceiptWriteSignal(str);
 
     if (!hasExplicitWrite) return false;
 
@@ -1523,7 +1786,7 @@ function isFacebookGraphQLMessengerSeenWrite(str) {
     ]);
 
     if (!hasNamedWrite && !hasWatermarkWrite) return false;
-    if (isFacebookGraphQLMessengerQuery(str) && !hasFacebookMessengerSeenWriteIntent(str)) return false;
+    if (isFacebookGraphQLMessengerQuery(str) && !hasExplicitMessengerReadWriteCommand(str)) return false;
 
     return hasStrictFacebookMessengerWriteContext(str) ||
         hasMessengerThreadContext(str) ||
@@ -1846,6 +2109,8 @@ export function shouldBlock(data, url = '', options = {}) {
         if (SETTINGS.msgSeen && !isKilled('msgSeen') && isFacebookExplicitMessengerSeenWrite(str, urlString)) {
             return 'MSG_SEEN';
         }
+
+        if (isMessengerNormalThreadListPaginationTask(str)) return null;
 
         if (
             SETTINGS.msgTyping &&
