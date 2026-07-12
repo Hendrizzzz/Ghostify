@@ -44,7 +44,7 @@ const FEATURES: Array<{
   {
     platform: 'instagram',
     name: 'Instagram',
-    title: 'Watch the story. Stay off the list where supported.',
+    title: 'Watch the story. Stay off the list.',
     body: 'Ghostify keeps the story experience intact while holding the supported viewer signal locally. You choose the control; the rest of Instagram stays familiar.',
     src: '/instagram-hide-story.gif',
     width: 859,

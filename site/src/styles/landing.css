@@ -581,6 +581,7 @@
 
 .feature-scroll-tools {
   min-height: 104px;
+  padding-bottom: 48px;
   align-self: end;
   display: flex;
   flex-direction: column;
@@ -767,7 +768,7 @@
   position: absolute;
   left: max(32px, calc((100vw - 1280px) / 2));
   right: max(32px, calc((100vw - 1280px) / 2));
-  bottom: 28px;
+  bottom: clamp(64px, 8svh, 88px);
   z-index: 5;
   display: flex;
   align-items: stretch;
@@ -1002,6 +1003,7 @@
   justify-content: flex-end;
   border-radius: 999px;
   background: var(--home-ink);
+  animation: platformSwitchTrack 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .platform-card-controls b {
@@ -1009,6 +1011,49 @@
   height: 16px;
   border-radius: 50%;
   background: var(--home-accent);
+  transform: translateX(0);
+  animation: platformSwitchThumb 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.platform-card-controls > div:nth-child(2) i,
+.platform-card-controls > div:nth-child(2) b {
+  animation-delay: -4s;
+}
+
+.platform-card-controls > div:nth-child(3) i,
+.platform-card-controls > div:nth-child(3) b {
+  animation-delay: -8s;
+}
+
+.platform-card-instagram .platform-card-controls i,
+.platform-card-instagram .platform-card-controls b {
+  animation-duration: 13.5s;
+  animation-direction: reverse;
+}
+
+.platform-card-instagram .platform-card-controls > div:nth-child(1) i,
+.platform-card-instagram .platform-card-controls > div:nth-child(1) b {
+  animation-delay: -2.25s;
+}
+
+.platform-card-instagram .platform-card-controls > div:nth-child(2) i,
+.platform-card-instagram .platform-card-controls > div:nth-child(2) b {
+  animation-delay: -6.75s;
+}
+
+.platform-card-instagram .platform-card-controls > div:nth-child(3) i,
+.platform-card-instagram .platform-card-controls > div:nth-child(3) b {
+  animation-delay: -11.25s;
+}
+
+@keyframes platformSwitchTrack {
+  0%, 28%, 72%, 100% { background: var(--home-ink); }
+  36%, 64% { background: rgba(15, 15, 13, 0.24); }
+}
+
+@keyframes platformSwitchThumb {
+  0%, 28%, 72%, 100% { transform: translateX(0); background: var(--home-accent); }
+  36%, 64% { transform: translateX(-16px); background: rgba(15, 15, 13, 0.46); }
 }
 
 .platform-card footer {
@@ -2425,6 +2470,11 @@
 
   .feature-signal-rail::before {
     transition: none;
+  }
+
+  .platform-card-controls i,
+  .platform-card-controls b {
+    animation: none;
   }
 }
 
