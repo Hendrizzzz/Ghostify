@@ -79,7 +79,7 @@ See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 
 ## Known Behavior
 
-On `facebook.com`, Facebook may sometimes make an unread chat look read locally after you open it. That local display state is not proof that the sender received a Seen/read marker. Sender-side Seen state is the authoritative verification; refreshed Facebook/Messenger UI is only supporting context.
+On `facebook.com`, Hide Seen preserves Facebook's native unread state when you open an unread chat, including the bold row and blue unread indicator. Sender-side Seen state remains the authoritative privacy verification.
 
 Meta changes Instagram, Facebook, and Messenger often. If something stops working, update Ghostify to the latest version, reload the affected tab, and report it if the issue continues.
 

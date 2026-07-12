@@ -1,8 +1,8 @@
 import { SETTINGS, isFacebookDotCom, isKilled } from '../config.js';
 
 const REQUEST_NATIVE_GRACE_MS = 15000;
-const ROOT_NATIVE_GRACE_MS = 30000;
-const CHAT_OPEN_NATIVE_GRACE_MS = 4000;
+const ROOT_NATIVE_GRACE_MS = 15000;
+const POPOVER_LOAD_NATIVE_GRACE_MS = 5000;
 
 export function startFacebookProtection() {
     if (!isFacebookDotCom) return;
@@ -19,21 +19,22 @@ export function startFacebookProtection() {
             activateRequestNativeGrace(until);
         }
     };
-    const markConversationOpenIntent = (event) => {
-        if (isFacebookMessageRequestNavigationTarget(event?.target)) return;
-        if (isFacebookFeedConversationNavigationTarget(event?.target)) {
-            activateChatOpenNativeGrace(Date.now() + CHAT_OPEN_NATIVE_GRACE_MS);
+    const markPopoverLoadIntent = (event) => {
+        if (isFacebookMessengerPopoverButton(event?.target)) {
+            window.__GHOSTIFY_FACEBOOK_POPOVER_LOAD_UNTIL__ = Date.now() + POPOVER_LOAD_NATIVE_GRACE_MS;
+            return;
         }
+        window.__GHOSTIFY_FACEBOOK_POPOVER_LOAD_UNTIL__ = 0;
     };
 
     document.addEventListener('pointerdown', markRequestIntent, true);
-    document.addEventListener('pointerdown', markConversationOpenIntent, true);
+    document.addEventListener('pointerdown', markPopoverLoadIntent, true);
     document.addEventListener('click', markRequestIntent, true);
-    document.addEventListener('click', markConversationOpenIntent, true);
+    document.addEventListener('click', markPopoverLoadIntent, true);
     document.addEventListener('keydown', (event) => {
         if (event?.key !== 'Enter' && event?.key !== ' ') return;
         markRequestIntent(event);
-        markConversationOpenIntent(event);
+        markPopoverLoadIntent(event);
     }, true);
 }
 
@@ -42,8 +43,7 @@ export function getFacebookSpoofState() {
     if (isFacebookMessageRequestSurface()) return null;
 
     if (SETTINGS.msgSeen && !isKilled('msgSeen')) {
-        if (isFacebookRestoredMiniChatLoadingSurface()) return null;
-        if (hasRecentChatOpenIntent()) return null;
+        if (hasRecentPopoverLoadIntent() && !isFacebookMessengerPopoverHydrated()) return null;
         if (isFacebookFeedMessengerSurface()) return 'unfocused-passive';
         if (isFacebookFeedRootSurface()) return hasRootNativeGrace() ? null : 'unfocused-passive';
         if (!isFacebookMessagingSurface()) return null;
@@ -67,14 +67,6 @@ function activateRootNativeGrace(until) {
     emitNativeFocusSignals();
 }
 
-function activateChatOpenNativeGrace(until) {
-    window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ = Math.max(
-        Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0),
-        until
-    );
-    emitNativeFocusSignals();
-}
-
 function hasRecentMessageRequestIntent() {
     return Math.max(
         Number(window.__GHOSTIFY_MESSAGE_REQUEST_FOCUS_UNTIL__ || 0),
@@ -82,13 +74,13 @@ function hasRecentMessageRequestIntent() {
     ) > Date.now();
 }
 
-function hasRecentChatOpenIntent() {
-    return Number(window.__GHOSTIFY_FACEBOOK_CHAT_OPEN_FOCUS_UNTIL__ || 0) > Date.now();
-}
-
 function hasRootNativeGrace() {
     return isFacebookFeedRootRoute() &&
         Number(window.__GHOSTIFY_FACEBOOK_ROOT_NATIVE_UNTIL__ || 0) > Date.now();
+}
+
+function hasRecentPopoverLoadIntent() {
+    return Number(window.__GHOSTIFY_FACEBOOK_POPOVER_LOAD_UNTIL__ || 0) > Date.now();
 }
 
 function emitNativeFocusSignals() {
@@ -132,22 +124,18 @@ function isFacebookMessageRequestNavigationTarget(target) {
     return false;
 }
 
-function isFacebookFeedConversationNavigationTarget(target) {
-    if (!isFacebookFeedRootRoute()) return false;
-    if (!hasDomElement('[role="dialog"][aria-label="Messenger"]')) return false;
-
+function isFacebookMessengerPopoverButton(target) {
     const element = getClosestRequestElement(target);
     if (!element) return false;
 
-    const href = getElementAttribute(element, 'href');
-    const label = getElementContextText(element).toLowerCase();
-    if (!label && !href) return false;
-
-    return href.includes('/messages/t/') ||
-        href.includes('/messages/e2ee/t/') ||
-        label.includes('unread message:') ||
-        label.includes('active now') ||
-        /\b(?:now|\d+\s*[mhdw])\b/.test(label);
+    const label = [
+        getElementAttribute(element, 'aria-label'),
+        getElementAttribute(element, 'title'),
+        element.innerText,
+        element.textContent
+    ].filter(Boolean).join(' ').trim().toLowerCase();
+    return /^messenger(?:\s|,|$)/.test(label) &&
+        !getElementAttribute(element, 'href').includes('/messages/');
 }
 
 function getClosestRequestElement(target) {
@@ -164,22 +152,6 @@ function getElementAttribute(element, name) {
     } catch (e) {
         return '';
     }
-}
-
-function getElementContextText(element) {
-    const parts = [];
-    let current = element;
-    for (let depth = 0; current && depth < 5; depth += 1) {
-        parts.push(
-            getElementAttribute(current, 'aria-label'),
-            getElementAttribute(current, 'title'),
-            current.innerText,
-            current.textContent,
-            getElementAttribute(current, 'href')
-        );
-        current = current.parentElement;
-    }
-    return parts.filter(Boolean).join(' ');
 }
 
 function isFacebookMessagingSurface() {
@@ -216,6 +188,8 @@ function isFacebookFeedMessengerSurface() {
         hasDomElement('[role="grid"][aria-label="Chats"]');
     if (hasMessengerPopover) return true;
 
+    if (hasDomElement('[aria-label^="Messages in conversation"]')) return true;
+
     const hasMiniChatChrome =
         hasDomElement('[aria-label="Minimize chat"]') ||
         hasDomElement('[aria-label="Close chat"]');
@@ -227,12 +201,9 @@ function isFacebookFeedMessengerSurface() {
         hasDomElement('[aria-label^="Conversation titled"]');
 }
 
-function isFacebookRestoredMiniChatLoadingSurface() {
-    const log = getDomElement('[aria-label^="Messages in conversation"]');
-    if (!log) return false;
-
-    const text = String(log.innerText || log.textContent || '').replace(/\s+/g, ' ').trim();
-    return /^Loading(?:\.{3})?$/i.test(text);
+function isFacebookMessengerPopoverHydrated() {
+    return hasDomElement('[role="dialog"][aria-label="Messenger"]') &&
+        hasDomElement('[role="grid"][aria-label="Chats"]');
 }
 
 function hasDomElement(selector) {
@@ -276,6 +247,5 @@ function isFacebookMessageRequestRouteText(routeText) {
 
 function isFacebookConversationRouteText(routeText) {
     const route = String(routeText || '').toLowerCase();
-    return route.includes('/messages/t/') ||
-        route.includes('/messages/e2ee/t/');
+    return route.includes('/messages/t/') || route.includes('/messages/e2ee/t/');
 }

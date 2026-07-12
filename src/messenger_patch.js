@@ -1,4 +1,9 @@
 import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
+import {
+    sanitizeFramedJsonTaskBatchBinary,
+    sanitizeJsonTaskBatchStringSource,
+    sanitizeWholeJsonArrayBinary
+} from './utils/binary-json.js';
 
 (function () {
     'use strict';
@@ -24,7 +29,6 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
         isFacebookMessengerProxy,
         readyState: document.readyState
     });
-
     if (isFacebookDotCom && !isMessengerDotCom && window.top !== window) {
         markPatchStatus('facebook.child_frame_reduced', { reason: 'bridge_hooks_only' });
     }
@@ -107,6 +111,10 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     let settingsReady = false;
     let messengerDotComHooksScheduled = false;
     let facebookSafeHooksScheduled = false;
+    const markThreadAsReadCallbackWrappers = new WeakMap();
+    const readReceiptWrapperMetadata = new WeakMap();
+    const readReceiptWrapperCache = new WeakMap();
+    const optimisticMarkThreadReadLeafWrappers = new WeakMap();
 
     window.__GHOSTIFY_SETTINGS__ = Object.assign(
         {},
@@ -351,10 +359,19 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
 
         return includesAnyText(text, [
             'markthreadasread',
+            'mark_thread_as_read',
             'mark_thread_read',
             'markthreadreadmutation',
             'lsmarkthreadread',
             'mwmarkthreadread',
+            'markread',
+            'mark_read',
+            'markseen',
+            'mark_seen',
+            'threadseen',
+            'thread_seen',
+            'markasread',
+            'mark_as_read',
             'lssendreadreceipt',
             'sendreadreceipt',
             'send_read_receipt',
@@ -362,9 +379,21 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
             'lsupdatethreadreadwatermark',
             'lsupdatelastreadwatermark',
             'updatelastreadwatermark',
+            'update_last_read_watermark',
+            'updatelastseenat',
             'shouldsendreadreceipt',
             'should_send_read_receipt',
             'change_read_status'
+        ]) || includesStandaloneBridgeTerm(text, [
+            'readreceipt',
+            'read_receipt'
+        ]) || hasTruthyBridgeField(text, [
+            'readreceipt',
+            'read_receipt',
+            'threadseen',
+            'thread_seen',
+            'seenbyviewer',
+            'seen_by_viewer'
         ]);
     }
 
@@ -505,10 +534,12 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     }
 
     function isFacebookMessengerReadOnlyQueryText(text) {
+        if (hasExplicitBridgeReadWriteCommand(text)) return false;
         const friendlyName = getFacebookGraphQLFriendlyName(text);
         if (friendlyName && friendlyName.includes('query') && !friendlyName.includes('mutation')) return true;
 
         return text.includes('messagehistoryquery') ||
+            text.includes('threadlistpaginationquery') ||
             text.includes('threadlistquery') ||
             text.includes('messagelistquery') ||
             text.includes('searchmessengerquery') ||
@@ -627,7 +658,7 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     function hasTruthyBridgeField(text, fields) {
         return fields.some(field => {
             const escaped = field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            return new RegExp(`(?:^|[&\\s"{,])${escaped}"?\\s*[:=]\\s*(?:"?(?:true|1)"?)`).test(text);
+            return new RegExp(`(?:^|[&\\s"{,])${escaped}"?\\s*(?:(?:[:=]\\s*)|(?:\\s+))(?:"?(?:true|1)"?)`).test(text);
         });
     }
 
@@ -641,7 +672,29 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     function hasExplicitBridgeReadWriteCommand(text) {
         text = stripFalseyPrivacyFields(text);
 
-        return text.includes('markthreadasread') ||
+        const operationFields = [
+            'operation',
+            'procedure',
+            'command',
+            'task_name'
+        ];
+        const operationValues = [
+            'mark_read',
+            'mark_seen',
+            'mark_as_read',
+            'thread_seen',
+            'read_receipt',
+            'updatelastseenat',
+            'updatelastreadwatermark',
+            'update_last_read_watermark'
+        ];
+        const hasOperationValuedReadWrite = operationFields.some(field =>
+            operationValues.some(value => hasSerializedFieldValue(text, field, value))
+        ) || (operationFields.some(field => text.includes(field)) &&
+            includesStandaloneBridgeTerm(text, operationValues));
+
+        return hasOperationValuedReadWrite ||
+            text.includes('markthreadasread') ||
             text.includes('mark_thread_read') ||
             text.includes('markthreadreadmutation') ||
             text.includes('markthreadread') ||
@@ -739,15 +792,18 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
             text.includes('threadseen') ||
             text.includes('thread_seen') ||
             text.includes('markasread') ||
+            text.includes('mark_as_read') ||
             text.includes('change_read_status') ||
             text.includes('updatelastseenat') ||
             text.includes('updatelastreadwatermark') ||
+            text.includes('update_last_read_watermark') ||
             text.includes('lsupdatethreadreadwatermark') ||
             text.includes('lsmarkthreadread') ||
             text.includes('mwmarkthreadread') ||
             text.includes('lsupdatelastreadwatermark') ||
             text.includes('shouldsendreadreceipt') ||
-            text.includes('should_send_read_receipt');
+            text.includes('should_send_read_receipt') ||
+            includesStandaloneBridgeTerm(text, ['readreceipt', 'read_receipt']);
     }
 
     function hasServerReadReceiptCommand(text) {
@@ -906,6 +962,8 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                 window.__GHOSTIFY_BLOCKED_TYPING_EXPORT_CALLS__ = 0;
                 window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ = 0;
                 window.__GHOSTIFY_SANITIZED_READ_EXPORT_CALLS__ = 0;
+                window.__GHOSTIFY_WRAPPED_MARK_THREAD_AS_READ_CALLBACKS__ = 0;
+                window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ = 0;
                 pushPatchObservation(createPatchMarkerEvent(`reset:${window.__GHOSTIFY_CAPTURE_PHASE__}`));
                 return `Ghostify capture reset: ${window.__GHOSTIFY_CAPTURE_PHASE__}`;
             };
@@ -933,6 +991,8 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                     blockedTypingExportCalls: window.__GHOSTIFY_BLOCKED_TYPING_EXPORT_CALLS__ || 0,
                     blockedReadExportCalls: window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0,
                     sanitizedReadExportCalls: window.__GHOSTIFY_SANITIZED_READ_EXPORT_CALLS__ || 0,
+                    wrappedMarkThreadAsReadCallbacks: window.__GHOSTIFY_WRAPPED_MARK_THREAD_AS_READ_CALLBACKS__ || 0,
+                    blockedMarkThreadAsReadCalls: window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ || 0,
                     settings: window.__GHOSTIFY_SETTINGS__
                 }, null, 2);
             };
@@ -1266,6 +1326,11 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                 if (blockType === 'MSG_SEEN' && (isMessengerDotCom || isFacebookDotCom || isFacebookMessengerProxy)) {
                     const sanitizedRealtimeSeen = sanitizeFacebookRealtimeReadReceiptBridgeMessage(message, text);
                     if (sanitizedRealtimeSeen.changed) {
+                        if (sanitizedRealtimeSeen.blockedAll) {
+                            window.__GHOSTIFY_BLOCKED_WORKER_MESSAGES__ = (window.__GHOSTIFY_BLOCKED_WORKER_MESSAGES__ || 0) + 1;
+                            tracePostMessageOutcome(kind, blockType, 'drop_realtime_seen', message, text);
+                            return undefined;
+                        }
                         const transferSafe = filterPostMessageTransfer(transfer, sanitizedRealtimeSeen.value);
                         window.__GHOSTIFY_SANITIZED_SEEN_BRIDGE_MESSAGES__ = (window.__GHOSTIFY_SANITIZED_SEEN_BRIDGE_MESSAGES__ || 0) + 1;
                         tracePostMessageOutcome(kind, blockType, 'sanitize_realtime_seen', message, text);
@@ -1410,9 +1475,20 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     }
 
     function sanitizeFacebookRealtimeReadReceiptBridgeMessage(value, text) {
-        if (!isFacebookDotCom || isMessengerDotCom || !isBinaryPayload(value)) {
+        if ((!isFacebookDotCom && !isFacebookMessengerProxy) || isMessengerDotCom || !isBinaryPayload(value)) {
             return { value, changed: false };
         }
+
+        const structured = sanitizeWholeJsonArrayBinary(value, sanitizeSeenBridgeMessage);
+        if (structured.blockedAll) return { value: undefined, changed: true, blockedAll: true };
+        if (structured.changed) return structured;
+
+        const framed = sanitizeFramedJsonTaskBatchBinary(value, sanitizeSeenBridgeMessage);
+        if (framed.blockedAll) return { value: undefined, changed: true, blockedAll: true };
+        if (framed.changed) return framed;
+
+        if (!isFacebookDotCom) return { value, changed: false };
+
         if (!isFacebookRealtimeReadReceiptTask(text)) {
             return { value, changed: false };
         }
@@ -1550,12 +1626,6 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                 }
 
                 if (child && typeof child === 'object' && !isBinaryPayload(child)) {
-                    const childText = stringifyForMatch(child).toLowerCase();
-                    if (isDedicatedServerReadReceiptCommand(childText)) {
-                        changed = true;
-                        continue;
-                    }
-
                     const sanitizedChild = sanitizeSeenBridgeMessage(child, depth + 1);
                     if (sanitizedChild.blockedAll) {
                         changed = true;
@@ -1900,6 +1970,9 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
         }
 
         try {
+            const sourcePreserved = sanitizeJsonTaskBatchStringSource(value, sanitizer);
+            if (sourcePreserved.changed) return sourcePreserved;
+
             const parsed = JSON.parse(trimmed);
             const sanitized = sanitizer(parsed, 0);
             if (!sanitized.changed) return { value, changed: false, blockedAll: false };
@@ -2028,17 +2101,71 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
 
     function wrapReadReceiptFunction(fn, mode = 'block') {
         if (typeof fn !== 'function') return fn;
-        if (fn.__ghostifySeenWrapped) return fn;
+        const existing = readReceiptWrapperMetadata.get(fn);
+        if (existing?.mode === mode) return fn;
+        if (!existing && fn.__ghostifySeenWrapped) return fn;
 
-        const wrapped = new Proxy(fn, {
+        const original = existing?.original || fn;
+        let modeCache = readReceiptWrapperCache.get(original);
+        if (!modeCache) {
+            modeCache = new Map();
+            readReceiptWrapperCache.set(original, modeCache);
+        }
+        if (modeCache.has(mode)) return modeCache.get(mode);
+
+        const wrapped = new Proxy(original, {
             get(target, prop, receiver) {
                 if (prop === '__ghostifySeenWrapped') return true;
                 return Reflect.get(target, prop, receiver);
             },
             apply(target, thisArg, args) {
-                if (window.__ghostify_shouldBlockMessengerSeen()) {
-                    if (mode === 'sanitize') {
-                        const argsText = stringifyForMatch(args).toLowerCase();
+                const shouldBlockSeen = window.__ghostify_shouldBlockMessengerSeen();
+                if (mode === 'force-disable-mark-read') {
+                    if (!shouldBlockSeen ||
+                        hasNativeMessageRequestBypass() ||
+                        isCurrentMessageRequestSurface()) {
+                        return Reflect.apply(target, thisArg, args);
+                    }
+                    const optionIndex = findDisableMarkReadOptionIndex(args);
+                    if (optionIndex < 0) {
+                        return Reflect.apply(target, thisArg, args);
+                    }
+                    if (args[optionIndex].disableMarkRead === true) {
+                        return Reflect.apply(target, thisArg, args);
+                    }
+                    const nextArgs = args.slice();
+                    nextArgs[optionIndex] = cloneDisableMarkReadOptions(args[optionIndex]);
+                    return Reflect.apply(target, thisArg, nextArgs);
+                }
+                if (mode === 'wrap-local-read-result') {
+                    const result = Reflect.apply(target, thisArg, args);
+                    return wrapMarkThreadAsReadHookResult(result);
+                }
+                if (shouldBlockSeen) {
+                    const argsText = stringifyForMatch(args).toLowerCase();
+                    if (mode === 'block-local-read-promise') {
+                        if (hasNativeMessageRequestBypass() ||
+                            isCurrentMessageRequestSurface() ||
+                            isLocalReadMessageRequestHydrationText(argsText)) {
+                            return Reflect.apply(target, thisArg, args);
+                        }
+                        window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ = (window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0) + 1;
+                        window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ = (window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ || 0) + 1;
+                        return Promise.resolve(undefined);
+                    }
+                    if (mode === 'block-local-read') {
+                        if (hasNativeMessageRequestBypass() ||
+                            isCurrentMessageRequestSurface() ||
+                            isLocalReadMessageRequestHydrationText(argsText) ||
+                            isLocalSendAckStateText(argsText) ||
+                            isLocalSendStateMutationText(argsText)) {
+                            return Reflect.apply(target, thisArg, args);
+                        }
+                        window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ = (window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0) + 1;
+                        window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ = (window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ || 0) + 1;
+                        return noopTypingResult();
+                    }
+                    if (mode === 'sanitize' || mode === 'sanitize-block-positional-local-read') {
                         if (hasNativeMessageRequestBypass() ||
                             isCurrentMessageRequestSurface() ||
                             isLocalReadMessageRequestHydrationText(argsText)) {
@@ -2046,6 +2173,11 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                         }
                         if (isLocalSendAckStateText(argsText)) {
                             return Reflect.apply(target, thisArg, args);
+                        }
+                        if (mode === 'sanitize-block-positional-local-read' && isLocalReadPositionalI64MutationArgs(args)) {
+                            window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ = (window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0) + 1;
+                            window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ = (window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ || 0) + 1;
+                            return noopTypingResult();
                         }
                         const sanitizedArgs = sanitizeSeenBridgeMessage(args);
                         if (sanitizedArgs.changed && Array.isArray(sanitizedArgs.value)) {
@@ -2061,6 +2193,69 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
             }
         });
 
+        readReceiptWrapperMetadata.set(wrapped, { original, mode });
+        modeCache.set(mode, wrapped);
+
+        return wrapped;
+    }
+
+    function isDisableMarkReadOptions(value) {
+        if (!isPlainOpenMessageOptions(value) ||
+            !Object.prototype.hasOwnProperty.call(value, 'disableMarkRead')) return false;
+        return true;
+    }
+
+    function isPlainOpenMessageOptions(value) {
+        if (Object.prototype.toString.call(value) !== '[object Object]') return false;
+        const prototype = Object.getPrototypeOf(value);
+        return prototype === null || Object.getPrototypeOf(prototype) === null;
+    }
+
+    function isThreadOpenMessageOptions(value) {
+        if (!isPlainOpenMessageOptions(value)) return false;
+        if (Object.prototype.hasOwnProperty.call(value, 'threadKey') ||
+            Object.prototype.hasOwnProperty.call(value, 'threadID') ||
+            Object.prototype.hasOwnProperty.call(value, 'threadId') ||
+            Object.prototype.hasOwnProperty.call(value, 'threadFbid')) {
+            return true;
+        }
+        if (!Object.prototype.hasOwnProperty.call(value, 'thread')) return false;
+        const thread = value.thread;
+        return thread != null && (typeof thread === 'object' || typeof thread === 'string');
+    }
+
+    function findDisableMarkReadOptionIndex(args) {
+        const explicitIndex = args.findIndex(isDisableMarkReadOptions);
+        if (explicitIndex >= 0) return explicitIndex;
+        return args.findIndex(isThreadOpenMessageOptions);
+    }
+
+    function cloneDisableMarkReadOptions(value) {
+        try {
+            const descriptors = Object.getOwnPropertyDescriptors(value);
+            const original = descriptors.disableMarkRead || {};
+            descriptors.disableMarkRead = {
+                configurable: original.configurable !== false,
+                enumerable: original.enumerable !== false,
+                value: true,
+                writable: 'writable' in original ? original.writable !== false : true
+            };
+            return Object.defineProperties(Object.create(Object.getPrototypeOf(value)), descriptors);
+        } catch (e) {
+            return Object.assign(Object.create(Object.getPrototypeOf(value)), value, {
+                disableMarkRead: true
+            });
+        }
+    }
+
+    function wrapMarkThreadAsReadHookResult(result) {
+        if (typeof result !== 'function') return result;
+        const cached = markThreadAsReadCallbackWrappers.get(result);
+        if (cached) return cached;
+
+        const wrapped = wrapReadReceiptFunction(result, 'block-local-read-promise');
+        markThreadAsReadCallbackWrappers.set(result, wrapped);
+        window.__GHOSTIFY_WRAPPED_MARK_THREAD_AS_READ_CALLBACKS__ = (window.__GHOSTIFY_WRAPPED_MARK_THREAD_AS_READ_CALLBACKS__ || 0) + 1;
         return wrapped;
     }
 
@@ -2076,10 +2271,22 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                 isLocalReadReceiptExportName(value[key].name, allowDefault)
             )) {
                 try {
-                    const exportMode = isLocalReadReceiptExportName(key, allowDefault) ||
-                        isLocalReadReceiptExportName(value[key].name, allowDefault)
-                        ? 'sanitize'
-                        : mode;
+                    let exportMode = mode;
+                    if (mode !== 'block-local-read' &&
+                        mode !== 'block-local-read-promise' &&
+                        mode !== 'wrap-local-read-result' &&
+                        mode !== 'force-disable-mark-read' &&
+                        mode !== 'sanitize-block-positional-local-read') {
+                        exportMode = isLocalReadReceiptExportName(key, allowDefault) ||
+                            isLocalReadReceiptExportName(value[key].name, allowDefault)
+                            ? 'sanitize'
+                            : mode;
+                    } else if (mode === 'wrap-local-read-result' && (
+                        isExactMarkThreadAsReadIdentity(key) ||
+                        isExactMarkThreadAsReadIdentity(value[key].name)
+                    )) {
+                        exportMode = 'block-local-read';
+                    }
                     value[key] = wrapReadReceiptFunction(value[key], exportMode);
                 } catch (e) { }
             }
@@ -2196,6 +2403,50 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
         ]);
     }
 
+    function isLocalSendStateMutationText(text) {
+        if (!isFacebookDotCom && !isFacebookMessengerProxy) return false;
+        if (!hasMessengerThreadTarget(text)) return false;
+        const hasClientMessageId = includesAnyText(text, [
+            'offline_threading_id',
+            'offlinethreadingid',
+            'client_message_id',
+            'clientmessageid',
+            'client_mutation_id',
+            'clientmutationid',
+            'message_id',
+            'messageid',
+            'otid'
+        ]);
+        const hasSendState = includesAnyText(text, [
+            'send_state',
+            'sendstate',
+            'send_type',
+            'sendtype',
+            'sending',
+            'pending',
+            'sent',
+            'delivered',
+            'delivery_receipt',
+            'deliveryreceipt'
+        ]);
+        return hasClientMessageId && hasSendState;
+    }
+
+    function isLocalReadPositionalI64MutationArgs(args) {
+        if (!isFacebookDotCom || isFacebookMessengerProxy || isMessengerDotCom) return false;
+        if (!Array.isArray(args) || args.length < 2 || args.length > 4) return false;
+        if (!isI64Pair(args[0]) || !isI64Pair(args[1])) return false;
+        return args.slice(2).every(value => value == null ||
+            typeof value === 'number' ||
+            typeof value === 'boolean');
+    }
+
+    function isI64Pair(value) {
+        return Array.isArray(value) &&
+            value.length === 2 &&
+            value.every(part => Number.isInteger(part) && part >= -2147483648 && part <= 4294967295);
+    }
+
     function isTypingExportName(exportName, allowDefault = false) {
         const name = String(exportName || '').toLowerCase();
         return (
@@ -2241,6 +2492,8 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
         const name = String(exportName || '').toLowerCase();
         return (
             (allowDefault && name === 'default') ||
+            name.includes('markthreadasread') ||
+            name.includes('mark_thread_as_read') ||
             name.includes('markthreadread') ||
             name.includes('markread') ||
             name.includes('mark_read') ||
@@ -2261,35 +2514,170 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     function isReadReceiptDependency(moduleName) {
         if (!isMessenger) return false;
 
-        const name = String(moduleName || '').toLowerCase();
-        return (
-            name.includes('sendreadreceipt') ||
-            name.includes('lssendreadreceipt') ||
-            name.includes('readreceiptmutation') ||
-            name.includes('send_read_receipt')
-        );
+        return [
+            'sendreadreceipt',
+            'lssendreadreceipt',
+            'lssendreadreceiptstoredprocedure',
+            'readreceiptmutation',
+            'sendreadreceiptmutation'
+        ].includes(normalizeReadOperationIdentity(moduleName));
     }
 
     function isLocalReadReceiptDependency(moduleName) {
         if (!isMessenger) return false;
+        if (isPreservedMawReadInfrastructure(moduleName)) return false;
 
-        const name = String(moduleName || '').toLowerCase();
-        return (
-            name.includes('markthreadread') ||
-            name.includes('markread') ||
-            name.includes('mark_read') ||
-            name.includes('markseen') ||
-            name.includes('mark_seen') ||
-            name.includes('markasread') ||
-            name.includes('readwatermark') ||
-            name.includes('read_watermark') ||
-            name.includes('lastreadwatermark') ||
-            name.includes('updatelastseenat') ||
-            name.includes('lsupdatethreadreadwatermark') ||
-            name.includes('lsmarkthreadread') ||
-            name.includes('mwmarkthreadread') ||
-            name.includes('lsupdatelastreadwatermark')
-        );
+        return [
+            'markthreadasread',
+            'lsmarkthreadasread',
+            'mwmarkthreadasread',
+            'usemwlsmarkthreadasread',
+            'usemawmarkthreadasread',
+            'usemwpsafelymarkthreadasread',
+            'usemwmarkthreadasreadwhennewmessagesarrive',
+            'mawmarkthreadasread',
+            'lsupdatethreadreadwatermark',
+            'lsmarkthreadreadv2',
+            'mwmarkthreadread',
+            'lsupdatelastreadwatermark',
+            'markthreadread',
+            'updatelastreadwatermark',
+            'updatethreadreadwatermark'
+        ].includes(normalizeReadOperationIdentity(moduleName));
+    }
+
+    function normalizeReadOperationIdentity(value) {
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function isSendOpenMessageHookIdentity(value) {
+        return [
+            'usemwv2sendopenmessage',
+            'usemwv2sendopenmessageimpl',
+            'usemwv2sendopenmessageimplshared'
+        ].includes(normalizeReadOperationIdentity(value));
+    }
+
+    function shouldPatchSendOpenMessageHook(moduleName) {
+        const isTopFrame = window.top == null || window.top === window;
+        return isFacebookDotCom && !isMessengerDotCom && !isFacebookMessengerProxy && isTopFrame &&
+            isSendOpenMessageHookIdentity(moduleName);
+    }
+
+    function shouldPatchOptimisticMarkThreadReadConsumer(moduleName) {
+        const isTopFrame = window.top == null || window.top === window;
+        return isFacebookDotCom && !isMessengerDotCom && !isFacebookMessengerProxy && isTopFrame &&
+            normalizeReadOperationIdentity(moduleName) === 'lsoptimisticmarkthreadreadv2';
+    }
+
+    function isOptimisticMarkThreadReadLeafIdentity(value) {
+        return normalizeReadOperationIdentity(value) === 'lsmarkthreadread';
+    }
+
+    function wrapOptimisticMarkThreadReadLeaf(fn) {
+        if (typeof fn !== 'function') return fn;
+        const cached = optimisticMarkThreadReadLeafWrappers.get(fn);
+        if (cached) return cached;
+
+        const wrapped = new Proxy(fn, {
+            apply(target, thisArg, args) {
+                if (!window.__ghostify_shouldBlockMessengerSeen() ||
+                    hasNativeMessageRequestBypass() ||
+                    isCurrentMessageRequestSurface()) {
+                    return Reflect.apply(target, thisArg, args);
+                }
+
+                const runtime = args[args.length - 1];
+                if (!runtime || typeof runtime.resolve !== 'function') {
+                    return Reflect.apply(target, thisArg, args);
+                }
+
+                window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ = (window.__GHOSTIFY_BLOCKED_READ_EXPORT_CALLS__ || 0) + 1;
+                window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ = (window.__GHOSTIFY_BLOCKED_MARK_THREAD_AS_READ_CALLS__ || 0) + 1;
+                return Reflect.apply(runtime.resolve, runtime, [[]]);
+            }
+        });
+        optimisticMarkThreadReadLeafWrappers.set(fn, wrapped);
+        return wrapped;
+    }
+
+    function wrapOptimisticMarkThreadReadRequire(factoryArgs, moduleName) {
+        if (!shouldPatchOptimisticMarkThreadReadConsumer(moduleName)) return;
+        const originalRequire = factoryArgs[1];
+        if (typeof originalRequire !== 'function' || originalRequire.__ghostifyOptimisticReadRequireWrapped) return;
+
+        const wrappedRequire = function (requestedName) {
+            const required = originalRequire.apply(this, arguments);
+            return isOptimisticMarkThreadReadLeafIdentity(requestedName) && typeof required === 'function'
+                ? wrapOptimisticMarkThreadReadLeaf(required)
+                : required;
+        };
+        try {
+            Object.defineProperty(wrappedRequire, '__ghostifyOptimisticReadRequireWrapped', {
+                value: true,
+                configurable: true
+            });
+        } catch (e) { }
+        factoryArgs[1] = wrappedRequire;
+    }
+
+    function isExactMarkThreadAsReadIdentity(value) {
+        return [
+            'markthreadasread',
+            'lsmarkthreadasread',
+            'mwmarkthreadasread'
+        ].includes(normalizeReadOperationIdentity(value));
+    }
+
+    function isMarkThreadAsReadHookIdentity(value) {
+        const name = normalizeReadOperationIdentity(value);
+        return [
+            'usemwlsmarkthreadasread',
+            'usemawmarkthreadasread',
+            'usemwpsafelymarkthreadasread',
+            'usemwmarkthreadasreadwhennewmessagesarrive'
+        ].includes(name);
+    }
+
+    function isPromiseMarkThreadAsReadIdentity(value) {
+        return [
+            'mawmarkthreadasread'
+        ].includes(normalizeReadOperationIdentity(value));
+    }
+
+    function isObservedGroupLocalReadMutationIdentity(value) {
+        return false;
+    }
+
+    function isPositionalLocalReadMutationIdentity(value) {
+        return [
+            'lsupdatethreadreadwatermark',
+            'lsmarkthreadreadv2',
+            'mwmarkthreadread'
+        ].includes(normalizeReadOperationIdentity(value));
+    }
+
+    function isPreservedMawReadInfrastructure(value) {
+        return [
+            'mawmarkthreadasreadscheduler',
+            'mawmarkthreadasreadtxns',
+            'mawmarkthreadasreaduptoapi'
+        ].includes(normalizeReadOperationIdentity(value));
+    }
+
+    function getLocalReadReceiptMode(moduleName) {
+        const isFacebookLocalSurface = (isFacebookDotCom || isFacebookMessengerProxy) && !isMessengerDotCom;
+        if (!isFacebookLocalSurface) return 'sanitize';
+        if (isMarkThreadAsReadHookIdentity(moduleName)) return 'wrap-local-read-result';
+        if (isPromiseMarkThreadAsReadIdentity(moduleName)) return 'block-local-read-promise';
+        if (isFacebookDotCom && (
+            isExactMarkThreadAsReadIdentity(moduleName) ||
+            isObservedGroupLocalReadMutationIdentity(moduleName)
+        )) return 'block-local-read';
+        if (isFacebookDotCom && isPositionalLocalReadMutationIdentity(moduleName)) {
+            return 'sanitize-block-positional-local-read';
+        }
+        return 'sanitize';
     }
 
     function moduleNameMatches(moduleName, pattern) {
@@ -2298,7 +2686,6 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
 
     const exportCallbacks = {};
     const factoryCallbacks = {};
-    const processedModules = new Set();
 
     function registerExportCallback(moduleName, callback) {
         exportCallbacks[moduleName] = exportCallbacks[moduleName] || [];
@@ -2331,8 +2718,11 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                     protectedExport = wrapReadReceiptExport(
                         protectedExport,
                         isReadReceiptDependency(moduleName) || isLocalReadReceiptDependency(moduleName),
-                        isLocalReadReceiptDependency(moduleName) ? 'sanitize' : 'block'
+                        isLocalReadReceiptDependency(moduleName) ? getLocalReadReceiptMode(moduleName) : 'block'
                     );
+                }
+                if (shouldPatchSendOpenMessageHook(moduleName)) {
+                    protectedExport = wrapSendOpenMessageExport(protectedExport, moduleName);
                 }
                 return protectedExport;
             };
@@ -2386,6 +2776,38 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
         }
     }
 
+    function patchSendOpenMessageExports(factoryArgs, moduleName) {
+        for (const candidate of factoryArgs) {
+            if (!isPatchableExportContainer(candidate)) continue;
+            if ('exports' in candidate) {
+                try {
+                    candidate.exports = wrapSendOpenMessageExport(candidate.exports, moduleName);
+                } catch (e) { }
+            }
+            wrapSendOpenMessageExport(candidate, moduleName);
+        }
+    }
+
+    function wrapSendOpenMessageExport(value, moduleName) {
+        if (typeof value === 'function') {
+            return wrapReadReceiptFunction(value, 'force-disable-mark-read');
+        }
+        if (!value || typeof value !== 'object') return value;
+        const moduleIdentity = normalizeReadOperationIdentity(moduleName);
+        for (const key of Object.getOwnPropertyNames(value)) {
+            let candidate;
+            try { candidate = value[key]; } catch (e) { continue; }
+            if (typeof candidate !== 'function') continue;
+            const keyIdentity = normalizeReadOperationIdentity(key);
+            const functionIdentity = normalizeReadOperationIdentity(candidate.name);
+            if (keyIdentity !== 'default' && keyIdentity !== moduleIdentity && functionIdentity !== moduleIdentity) continue;
+            try {
+                value[key] = wrapReadReceiptFunction(candidate, 'force-disable-mark-read');
+            } catch (e) { }
+        }
+        return value;
+    }
+
     function isPatchableExportContainer(candidate) {
         if (!candidate || typeof candidate !== 'object') return false;
         if (candidate === window || candidate === document || candidate === globalThis) return false;
@@ -2405,7 +2827,6 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
 
     [
         'LSUpdateThreadReadWatermark',
-        'LSMarkThreadRead',
         'MWMarkThreadRead',
         'LSUpdateLastReadWatermark',
         'MarkThreadRead',
@@ -2415,10 +2836,19 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
 
     function applyExportCallbacks(factoryArgs, moduleName) {
         for (const [pattern, callbacks] of Object.entries(exportCallbacks)) {
-            if (moduleNameMatches(moduleName, pattern)) {
+            const containsExactReadCallback = callbacks.includes(sanitizeReadReceiptExports) ||
+                callbacks.includes(blockReadReceiptExports);
+            const matches = containsExactReadCallback
+                ? normalizeReadOperationIdentity(moduleName) === normalizeReadOperationIdentity(pattern)
+                : moduleNameMatches(moduleName, pattern);
+            if (matches) {
                 for (const callback of callbacks) {
                     try {
-                        callback(factoryArgs);
+                        if (callback === sanitizeReadReceiptExports) {
+                            patchReadReceiptExports(factoryArgs, getLocalReadReceiptMode(moduleName));
+                        } else {
+                            callback(factoryArgs);
+                        }
                     } catch (e) {
                     }
                 }
@@ -2440,7 +2870,12 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     }
 
     function hasExportCallback(moduleName) {
-        return Object.keys(exportCallbacks).some(pattern => moduleNameMatches(moduleName, pattern));
+        return Object.entries(exportCallbacks).some(([pattern, callbacks]) => {
+            if (callbacks.includes(sanitizeReadReceiptExports) || callbacks.includes(blockReadReceiptExports)) {
+                return normalizeReadOperationIdentity(moduleName) === normalizeReadOperationIdentity(pattern);
+            }
+            return moduleNameMatches(moduleName, pattern);
+        });
     }
 
     function hasFactoryCallback(moduleName) {
@@ -2454,22 +2889,21 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
 
     function hasLocalReadReceiptExportCallback(moduleName) {
         return [
-            'LSUpdateThreadReadWatermark',
-            'LSMarkThreadRead',
-            'MWMarkThreadRead',
-            'LSUpdateLastReadWatermark',
-            'MarkThreadRead',
-            'UpdateLastReadWatermark',
-            'UpdateThreadReadWatermark'
-        ].some(pattern => moduleNameMatches(moduleName, pattern));
+            'lsupdatethreadreadwatermark',
+            'mwmarkthreadread',
+            'lsupdatelastreadwatermark',
+            'markthreadread',
+            'updatelastreadwatermark',
+            'updatethreadreadwatermark'
+        ].includes(normalizeReadOperationIdentity(moduleName));
     }
 
     function hasBlockingReadReceiptExportCallback(moduleName) {
         return [
-            'LSSendReadReceipt',
-            'SendReadReceipt',
-            'ReadReceiptMutation'
-        ].some(pattern => moduleNameMatches(moduleName, pattern));
+            'lssendreadreceipt',
+            'sendreadreceipt',
+            'readreceiptmutation'
+        ].includes(normalizeReadOperationIdentity(moduleName));
     }
 
     function shouldPatchReadReceiptModules() {
@@ -2520,6 +2954,15 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
     }
 
     function shouldProcessModule(moduleName, dependencies) {
+        const hasSendOpenMessageHook = shouldPatchSendOpenMessageHook(moduleName);
+        const hasOptimisticMarkThreadReadConsumer = shouldPatchOptimisticMarkThreadReadConsumer(moduleName);
+        if (isFacebookDotCom && !isMessengerDotCom && !isFacebookMessengerProxy) {
+            // Facebook's thread-list hydration modules share broad read-watermark
+            // dependencies. Wrapping those factories breaks the native chat loader.
+            // Keep the top-frame patch limited to the two confirmed open/read leaves.
+            return hasSendOpenMessageHook || hasOptimisticMarkThreadReadConsumer;
+        }
+        if (shouldPatchOptimisticMarkThreadReadConsumer(moduleName)) return false;
         const hasTypingModule = isTypingDependency(moduleName) ||
             (Array.isArray(dependencies) && dependencies.some(isTypingDependency)) ||
             hasFactoryCallback(moduleName) ||
@@ -2530,7 +2973,8 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
             (Array.isArray(dependencies) && dependencies.some(isLocalReadReceiptDependency));
 
         if (shouldLeaveLocalReadReceiptModuleUnpatched(hasLocalReadReceiptModule)) {
-            return hasTypingModule ||
+            return hasSendOpenMessageHook ||
+                hasTypingModule ||
                 isReadReceiptDependency(moduleName) ||
                 hasBlockingReadReceiptExportCallback(moduleName) ||
                 (Array.isArray(dependencies) && dependencies.some(isReadReceiptDependency));
@@ -2540,13 +2984,16 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
             hasBlockingReadReceiptExportCallback(moduleName) ||
             (Array.isArray(dependencies) && dependencies.some(isReadReceiptDependency));
 
-        if (!shouldPatchReadReceiptModules()) return hasTypingModule;
-
-        if (!shouldPatchLocalReadReceiptModules()) {
-            return hasTypingModule || hasBlockingReadReceiptModule;
+        if (!shouldPatchReadReceiptModules()) {
+            return hasSendOpenMessageHook || hasTypingModule;
         }
 
-        return hasTypingModule ||
+        if (!shouldPatchLocalReadReceiptModules()) {
+            return hasSendOpenMessageHook || hasTypingModule || hasBlockingReadReceiptModule;
+        }
+
+        return hasSendOpenMessageHook ||
+            hasTypingModule ||
             isReadReceiptDependency(moduleName) ||
             isLocalReadReceiptDependency(moduleName) ||
             (Array.isArray(dependencies) && (dependencies.some(isReadReceiptDependency) || dependencies.some(isLocalReadReceiptDependency))) ||
@@ -2564,10 +3011,14 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                 apply: (fn, thisArg, args) => {
                     const moduleName = args[0];
                     const dependencies = Array.isArray(args[1]) ? args[1] : [];
-                    if (typeof moduleName === 'string' && !processedModules.has(moduleName)) {
-                        if (shouldProcessModule(moduleName, dependencies)) {
+                    if (typeof moduleName === 'string') {
+                        const shouldProcess = shouldProcessModule(moduleName, dependencies);
+                        if (shouldProcess) {
                             const originalFactory = args[2];
                             if (typeof originalFactory !== 'function') {
+                                return fn.apply(thisArg, args);
+                            }
+                            if (originalFactory.__ghostifyMessengerFactoryWrapped) {
                                 return fn.apply(thisArg, args);
                             }
                             const localReadReceiptModule = isLocalReadReceiptDependency(moduleName) ||
@@ -2575,25 +3026,44 @@ import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
                                 (Array.isArray(dependencies) && dependencies.some(isLocalReadReceiptDependency));
                             const avoidFactoryMutation = shouldLeaveLocalReadReceiptModuleUnpatched(localReadReceiptModule);
                             const needsTypingExportWrap = isTypingDependency(moduleName);
-                            const readReceiptMode = isLocalReadReceiptDependency(moduleName) ? 'sanitize' : 'block';
+                            const sendOpenMessageHook = shouldPatchSendOpenMessageHook(moduleName);
+                            const optimisticMarkThreadReadConsumer = shouldPatchOptimisticMarkThreadReadConsumer(moduleName);
+                            const readReceiptMode = sendOpenMessageHook
+                                ? 'force-disable-mark-read'
+                                : (isLocalReadReceiptDependency(moduleName)
+                                    ? getLocalReadReceiptMode(moduleName)
+                                    : 'block');
                             const needsReadReceiptExportWrap = shouldPatchReadReceiptModules() && (
+                                sendOpenMessageHook ||
                                 isReadReceiptDependency(moduleName) ||
                                 (shouldPatchLocalReadReceiptModules() && isLocalReadReceiptDependency(moduleName))
                             );
                             const patchedFactory = originalFactory;
                             const factory = function (...factoryArgs) {
                                 if (!avoidFactoryMutation && !isSecureTypingStateDependency(moduleName)) {
-                                    wrapTypingRequire(factoryArgs);
-                                    applyFactoryCallbacks(factoryArgs, moduleName);
+                                    if (optimisticMarkThreadReadConsumer) {
+                                        wrapOptimisticMarkThreadReadRequire(factoryArgs, moduleName);
+                                    } else {
+                                        wrapTypingRequire(factoryArgs);
+                                        applyFactoryCallbacks(factoryArgs, moduleName);
+                                    }
                                 }
                                 const result = patchedFactory.apply(this, factoryArgs);
                                 if (needsTypingExportWrap) blockTypingExports(factoryArgs);
-                                if (needsReadReceiptExportWrap) patchReadReceiptExports(factoryArgs, readReceiptMode);
+                                if (needsReadReceiptExportWrap) {
+                                    if (sendOpenMessageHook) patchSendOpenMessageExports(factoryArgs, moduleName);
+                                    else patchReadReceiptExports(factoryArgs, readReceiptMode);
+                                }
                                 applyExportCallbacks(factoryArgs, moduleName);
                                 return result;
                             };
+                            try {
+                                Object.defineProperty(factory, '__ghostifyMessengerFactoryWrapped', {
+                                    value: true,
+                                    configurable: true
+                                });
+                            } catch (e) { }
                             args[2] = factory;
-                            processedModules.add(moduleName);
                         }
                     }
                     return fn.apply(thisArg, args);
