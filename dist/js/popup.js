@@ -148,7 +148,7 @@ function summarizePublicStatus(data) {
 
 function getPublicStatusDescription(data) {
     const latestRecord = latestPublicStatusRecord(data.history || []);
-    return latestRecord?.summary || latestRecord?.title || 'Open the public status page for the latest review.';
+    return latestRecord?.title || latestRecord?.summary || 'Open the public status page for the latest review.';
 }
 
 function getPublicStatusTone(data) {

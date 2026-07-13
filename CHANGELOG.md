@@ -38,7 +38,7 @@ grouped by version, with the most recent changes first.
 - Removed the outdated Facebook Hide Seen information tooltip so the control
   remains focused and uncluttered.
 - Added a delayed status-pill description sourced from the latest public status
-  record, without repeating the compact verification date.
+  title, without repeating the compact verification date.
 
 ## [2.0.4] - 2026-06-20
 

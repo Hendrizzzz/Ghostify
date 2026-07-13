@@ -8270,8 +8270,8 @@ function testPopupPublicStatusSummaryUsesWorkingProofDate() {
     );
     assert.strictEqual(
         context.getPublicStatusDescription(currentStatus),
-        currentStatus.history[0].summary,
-        'Popup status tooltip should use the latest public JSON summary'
+        currentStatus.history[0].title,
+        'Popup status tooltip should use the latest public JSON title'
     );
     assert(
         !context.getPublicStatusDescription(currentStatus).includes('Jul 12') &&
