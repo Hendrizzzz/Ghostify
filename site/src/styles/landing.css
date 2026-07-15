@@ -2363,6 +2363,36 @@
 .platform-card-grid [data-reveal]:nth-child(2) { transition-delay: 90ms; }
 .platform-card-grid [data-reveal]:nth-child(3) { transition-delay: 180ms; }
 
+@media (min-width: 1081px) and (max-height: 1000px) {
+  .feature-scroll-sticky {
+    height: 100svh;
+    min-height: 0;
+    padding-top: 88px;
+    padding-bottom: 56px;
+  }
+
+  .feature-scroll-copy {
+    height: calc(100svh - 144px);
+  }
+
+  .feature-scroll-tools {
+    min-height: 94px;
+    padding-bottom: 0;
+  }
+
+  .feature-media-frame {
+    padding-top: 86px;
+  }
+
+  .feature-scroll-media img {
+    max-height: min(760px, calc(100svh - 238px));
+  }
+
+  .feature-scroll-nav {
+    display: none;
+  }
+}
+
 @media (max-width: 1080px) {
   .install-rhythm {
     grid-template-columns: minmax(280px, 0.8fr) minmax(460px, 1.2fr);
@@ -2425,13 +2455,56 @@
     grid-template-columns: minmax(430px, 1fr) minmax(370px, 0.85fr);
   }
 
-  .feature-scroll-sticky {
-    grid-template-columns: minmax(310px, 0.9fr) minmax(450px, 1.1fr);
-    gap: 52px;
+  .feature-scroll {
+    height: auto;
   }
 
-  .feature-scroll-copy h2 {
-    font-size: clamp(4rem, 6.5vw, 6.2rem);
+  .feature-scroll-sticky {
+    display: none;
+  }
+
+  .mobile-feature-list {
+    display: block;
+  }
+
+  .mobile-feature-list article {
+    padding: 96px max(32px, calc((100vw - 920px) / 2));
+    border-bottom: 1px solid rgba(15, 15, 13, 0.17);
+  }
+
+  .mobile-feature-list h2 {
+    max-width: 780px;
+    font-size: clamp(3.7rem, 8vw, 5.2rem);
+  }
+
+  .mobile-feature-list article > p {
+    max-width: 620px;
+  }
+
+  .mobile-feature-list .feature-signal-rail {
+    width: min(100%, 480px);
+    min-height: 50px;
+  }
+
+  .mobile-feature-list .feature-signal-rail span {
+    min-height: 40px;
+    font-size: 13.5px;
+  }
+
+  .mobile-feature-list .feature-signal-rail svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .mobile-feature-list img {
+    width: auto;
+    max-width: min(100%, 640px);
+    height: auto;
+    margin: 46px auto 0;
+    display: block;
+    border: 1px solid rgba(15, 15, 13, 0.18);
+    border-radius: 12px;
+    box-shadow: 0 26px 64px rgba(15, 15, 13, 0.18);
   }
 
   .feature-signal-rail {
@@ -2600,14 +2673,12 @@
   }
 
   .mobile-feature-list article {
-    min-height: 100svh;
-    padding: 100px 32px;
-    border-bottom: 1px solid rgba(15, 15, 13, 0.17);
+    padding: 88px 28px;
   }
 
   .mobile-feature-list h2 {
-    max-width: 720px;
-    font-size: clamp(4rem, 12vw, 6.6rem);
+    max-width: 680px;
+    font-size: clamp(3.5rem, 9.5vw, 4.9rem);
   }
 
   .mobile-feature-list article > p {
@@ -2615,13 +2686,13 @@
   }
 
   .mobile-feature-list .feature-signal-rail {
-    width: min(100%, 560px);
-    min-height: 54px;
+    width: min(100%, 500px);
+    min-height: 50px;
   }
 
   .mobile-feature-list .feature-signal-rail span {
-    min-height: 44px;
-    font-size: 14px;
+    min-height: 40px;
+    font-size: 13.5px;
   }
 
   .mobile-feature-list .feature-signal-rail svg {
@@ -2631,9 +2702,9 @@
 
   .mobile-feature-list img {
     width: auto;
-    max-width: min(100%, 720px);
+    max-width: min(100%, 600px);
     height: auto;
-    margin: 54px auto 0;
+    margin: 44px auto 0;
     display: block;
     border: 1px solid rgba(15, 15, 13, 0.18);
     border-radius: 12px;
@@ -2862,13 +2933,13 @@
 
   .mobile-feature-list article {
     min-height: auto;
-    padding-top: 94px;
-    padding-bottom: 100px;
+    padding-top: 76px;
+    padding-bottom: 84px;
   }
 
   .mobile-feature-list h2 {
     margin-top: 30px;
-    font-size: clamp(3.6rem, 16vw, 5.3rem);
+    font-size: clamp(3.25rem, 12vw, 4.25rem);
   }
 
   .mobile-feature-list article > p {
@@ -2897,18 +2968,18 @@
   .platforms-flat,
   .privacy-flat,
   .faq-flat {
-    padding-top: 105px;
-    padding-bottom: 110px;
+    padding-top: 78px;
+    padding-bottom: 84px;
   }
 
   .platforms-flat h2,
   .privacy-flat h2,
   .faq-flat h2 {
-    font-size: clamp(3.8rem, 17vw, 5.6rem);
+    font-size: clamp(3.15rem, 13vw, 3.75rem);
   }
 
   .platform-card-grid {
-    margin-top: 54px;
+    margin-top: 42px;
   }
 
   .platform-control-map {
@@ -2921,14 +2992,16 @@
   }
 
   .platform-card {
-    min-height: 340px;
-    padding: 24px;
+    min-height: 304px;
+    padding: 22px;
     border-radius: 22px;
   }
 
   .platform-card-controls > div {
-    min-height: 52px;
+    min-height: 48px;
   }
+
+  .platform-card-controls { margin-top: 30px; }
 
   .platforms-status {
     justify-content: flex-start;
@@ -2936,8 +3009,11 @@
   }
 
   .privacy-flat-points {
-    margin-top: 54px;
+    margin-top: 44px;
   }
+
+  .privacy-flat-points article,
+  .privacy-flat-points article:not(:first-child) { padding-block: 32px; }
 
   .privacy-flat-links a {
     min-height: 82px;
@@ -3010,11 +3086,11 @@
 
   .footprint-section {
     width: 100%;
-    padding: 72px 22px;
+    padding: 68px 22px;
   }
 
   .footprint-section h2 {
-    font-size: clamp(3.5rem, 15vw, 5rem);
+    font-size: clamp(3.15rem, 13vw, 3.75rem);
   }
 
   .footprint-metrics {
@@ -3023,8 +3099,8 @@
 
   .footprint-metrics article,
   .footprint-metrics article:first-child {
-    min-height: 132px;
-    padding: 24px 0;
+    min-height: 112px;
+    padding: 20px 0;
     border-right: 0;
     border-bottom: 1px solid rgba(15, 15, 13, 0.17);
   }
@@ -3034,11 +3110,11 @@
   }
 
   .faq-flat {
-    gap: 60px;
+    gap: 44px;
   }
 
   .faq-flat summary {
-    min-height: 82px;
+    min-height: 76px;
     grid-template-columns: 34px minmax(0, 1fr) 34px;
     gap: 10px;
     font-size: 14px;
@@ -3051,28 +3127,28 @@
 
   .install-rhythm {
     min-height: 0;
-    padding-top: 84px;
-    padding-bottom: 92px;
+    padding-top: 76px;
+    padding-bottom: 82px;
   }
 
-  .install-rhythm h2 { font-size: clamp(3.6rem, 16vw, 5.3rem); }
-  .install-rhythm-path { min-height: 440px; padding: 26px 18px 26px 28px; border-radius: 26px; }
-  .install-rhythm li { min-height: 120px; padding-left: 40px; grid-template-columns: 44px 1fr; gap: 10px; }
+  .install-rhythm h2 { font-size: clamp(3.15rem, 13vw, 3.75rem); }
+  .install-rhythm-path { min-height: 390px; padding: 24px 18px 24px 28px; border-radius: 26px; }
+  .install-rhythm li { min-height: 105px; padding-left: 40px; grid-template-columns: 44px 1fr; gap: 10px; }
   .install-path-line { left: 42px; top: 38px; height: calc(100% - 76px); }
-  .install-path-ghost { left: 16px; top: 25px; transform: translateY(calc(var(--scene-progress, 0) * 335px)); }
+  .install-path-ghost { left: 16px; top: 25px; transform: translateY(calc(var(--scene-progress, 0) * 285px)); }
 
   .evidence-section {
-    padding-top: 128px;
+    padding-top: 84px;
     padding-bottom: 42px;
   }
 
   .evidence-card {
     min-height: 0;
-    padding: 56px 20px 40px;
+    padding: 48px 20px 36px;
     border-radius: 24px;
   }
 
-  .evidence-lead h2 { font-size: clamp(3.7rem, 16vw, 5.4rem); }
+  .evidence-lead h2 { font-size: clamp(3.15rem, 13vw, 3.75rem); }
   .evidence-actions { width: 100%; display: grid; }
   .evidence-actions a { width: 100%; }
   .evidence-proof { grid-template-columns: 1fr; }
@@ -3100,13 +3176,13 @@
   }
 
   .home-final > div {
-    min-height: 520px;
-    padding: 54px 22px;
+    min-height: 0;
+    padding: 48px 22px;
     border-radius: 24px;
   }
 
   .home-final h2 {
-    font-size: clamp(3.8rem, 17vw, 5.8rem);
+    font-size: clamp(3.15rem, 13vw, 3.75rem);
   }
 
   .home-final-actions {
