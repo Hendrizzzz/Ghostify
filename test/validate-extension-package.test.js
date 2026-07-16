@@ -74,6 +74,16 @@ function writeStatusJsonPair(fixtureRoot, statusJson) {
     writeStatusJson(path.join(fixtureRoot, 'site', 'src', 'app', 'statusData.json'), statusJson);
 }
 
+function proposalTiming(statusJson, hoursAfterStoreCheck = 1) {
+    const generatedAt = new Date(Date.parse(statusJson.release.checkedAt) + hoursAfterStoreCheck * 60 * 60 * 1000)
+        .toISOString()
+        .replace('.000Z', 'Z');
+    return {
+        date: generatedAt.slice(0, 10),
+        generatedAt
+    };
+}
+
 function withFixture(testFn) {
     const fixtureRoot = copyFixture();
     try {
@@ -106,8 +116,7 @@ withFixture(fixtureRoot => {
     statusJson.release.matchesVerificationBuild = true;
     const proposal = prepareStatusUpdate(statusJson, {
         mode: 'verified',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:15:00Z'
+        ...proposalTiming(statusJson)
     });
     writeStatusJsonPair(fixtureRoot, proposal);
 
@@ -117,6 +126,8 @@ withFixture(fixtureRoot => {
 
 withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
+    statusJson.release.publishedVersion = '2.0.3';
+    statusJson.release.matchesVerificationBuild = false;
     statusJson.summary.publicStatus = 'maintainer_verified';
     statusJson.history[0].publicStatus = 'maintainer_verified';
     writeStatusJsonPair(fixtureRoot, statusJson);
@@ -127,6 +138,8 @@ withFixture(fixtureRoot => {
 
 withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
+    statusJson.release.publishedVersion = '2.0.3';
+    statusJson.release.matchesVerificationBuild = false;
     statusJson.entries[0].publicStatus = 'maintainer_verified';
     writeStatusJsonPair(fixtureRoot, statusJson);
     const result = runValidator(fixtureRoot);
@@ -138,8 +151,7 @@ withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
     const proposal = prepareStatusUpdate(statusJson, {
         mode: 'known-issue',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:30:00Z',
+        ...proposalTiming(statusJson),
         featureIds: ['messenger-hide-typing'],
         note: 'Messenger Hide Typing has a confirmed issue.'
     });
@@ -151,7 +163,9 @@ withFixture(fixtureRoot => {
 
 withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
-    statusJson.generatedAt = '2026-07-09T20:00:00Z';
+    statusJson.generatedAt = new Date(Date.parse(statusJson.release.checkedAt) - 60 * 60 * 1000)
+        .toISOString()
+        .replace('.000Z', 'Z');
     writeStatusJsonPair(fixtureRoot, statusJson);
 
     const result = runValidator(fixtureRoot);

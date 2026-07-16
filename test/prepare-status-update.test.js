@@ -7,6 +7,10 @@ const { QA_IDS, isGreenProposalEligible, parseArgs, prepareStatusUpdate } = requ
 
 const repoRoot = path.resolve(__dirname, '..');
 const source = JSON.parse(fs.readFileSync(path.join(repoRoot, 'site', 'src', 'app', 'statusData.json'), 'utf8'));
+const proposalDate = source.release.checkedAt.slice(0, 10);
+const proposalGeneratedAt = new Date(Date.parse(source.release.checkedAt) + 60 * 60 * 1000)
+    .toISOString()
+    .replace('.000Z', 'Z');
 
 function matchingReleaseStatus() {
     const status = structuredClone(source);
@@ -18,33 +22,36 @@ function matchingReleaseStatus() {
 function testVerifiedProposalUpdatesEverySupportedControlWithoutExpiry() {
     const status = prepareStatusUpdate(matchingReleaseStatus(), {
         mode: 'verified',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:15:00Z'
+        date: proposalDate,
+        generatedAt: proposalGeneratedAt
     });
 
     assert.strictEqual(status.summary.publicStatus, 'maintainer_verified');
-    assert.strictEqual(status.history[0].date, '2026-07-12');
+    assert.strictEqual(status.history[0].date, proposalDate);
     assert.strictEqual(status.history[0].publicStatus, 'maintainer_verified');
     assert.strictEqual(status.entries.length, Object.keys(QA_IDS).length);
 
     for (const entry of status.entries) {
         assert.strictEqual(entry.publicStatus, 'maintainer_verified');
         assert.strictEqual(entry.localEvidenceStatus, 'verified');
-        assert.strictEqual(entry.verifiedAt, '2026-07-12T00:00:00Z');
+        assert.strictEqual(entry.verifiedAt, `${proposalDate}T00:00:00Z`);
         assert(!Object.hasOwn(entry, 'expiresAt'));
         assert(entry.reviewRecord.includes(QA_IDS[entry.id]));
     }
 }
 
 function testVerifiedProposalRejectsStoreBuildMismatch() {
+    const mismatchingStatus = structuredClone(source);
+    mismatchingStatus.release.publishedVersion = '2.0.3';
+    mismatchingStatus.release.matchesVerificationBuild = false;
     assert.throws(
-        () => prepareStatusUpdate(source, {
+        () => prepareStatusUpdate(mismatchingStatus, {
             mode: 'verified',
-            date: '2026-07-12',
-            generatedAt: '2026-07-12T10:15:00Z'
+            date: proposalDate,
+            generatedAt: proposalGeneratedAt
         }),
         error => error.message.includes(
-            `Store v${source.release.publishedVersion} does not match build v${source.productVersion}`
+            `Store v${mismatchingStatus.release.publishedVersion} does not match build v${mismatchingStatus.productVersion}`
         )
     );
 }
@@ -52,8 +59,8 @@ function testVerifiedProposalRejectsStoreBuildMismatch() {
 function testReportedProposalTurnsSelectedControlAndOverallStatusYellow() {
     const status = prepareStatusUpdate(source, {
         mode: 'reported',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:15:00Z',
+        date: proposalDate,
+        generatedAt: proposalGeneratedAt,
         featureIds: ['messenger-hide-typing'],
         note: 'Users report that Messenger Hide Typing may not be working.'
     });
@@ -70,14 +77,16 @@ function testReportedProposalTurnsSelectedControlAndOverallStatusYellow() {
 function testInProgressProposalStaysYellowAndPreservesHistory() {
     const reported = prepareStatusUpdate(source, {
         mode: 'reported',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:15:00Z',
+        date: proposalDate,
+        generatedAt: proposalGeneratedAt,
         featureIds: ['messenger-hide-typing']
     });
     const working = prepareStatusUpdate(reported, {
         mode: 'in-progress',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T11:00:00Z',
+        date: proposalDate,
+        generatedAt: new Date(Date.parse(proposalGeneratedAt) + 60 * 60 * 1000)
+            .toISOString()
+            .replace('.000Z', 'Z'),
         featureIds: ['messenger-hide-typing'],
         note: 'A fix for Messenger Hide Typing is in progress.'
     });
@@ -91,8 +100,8 @@ function testInProgressProposalStaysYellowAndPreservesHistory() {
 function testKnownIssueProposalUpdatesOnlySelectedControls() {
     const status = prepareStatusUpdate(source, {
         mode: 'known-issue',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:15:00Z',
+        date: proposalDate,
+        generatedAt: proposalGeneratedAt,
         featureIds: ['facebook-hide-seen'],
         issueUrl: 'https://github.com/Hendrizzzz/Ghostify/issues/123',
         note: 'Facebook Hide Seen has a confirmed issue.'
@@ -108,8 +117,8 @@ function testYellowProposalRejectsUnknownControl() {
     assert.throws(
         () => prepareStatusUpdate(source, {
             mode: 'reported',
-            date: '2026-07-12',
-            generatedAt: '2026-07-12T10:15:00Z',
+            date: proposalDate,
+            generatedAt: proposalGeneratedAt,
             featureIds: ['unknown-feature']
         }),
         /Unknown feature id/
@@ -132,14 +141,17 @@ function testStatusInputsRejectImpossibleDatesAndDuplicateFeatures() {
     }), /Invalid UTC date/);
     assert.throws(() => prepareStatusUpdate(source, {
         mode: 'reported',
-        date: '2026-07-12',
-        generatedAt: '2026-07-12T10:15:00Z',
+        date: proposalDate,
+        generatedAt: proposalGeneratedAt,
         featureIds: ['messenger-hide-typing', 'messenger-hide-typing']
     }), /must not contain duplicates/);
 }
 
 function testGreenEligibilityRequiresMatchingBuildAndProtectsYellowSchedule() {
-    assert.deepStrictEqual(isGreenProposalEligible(source, { scheduled: true }), {
+    const mismatchingYellow = structuredClone(source);
+    mismatchingYellow.release.publishedVersion = '2.0.3';
+    mismatchingYellow.release.matchesVerificationBuild = false;
+    assert.deepStrictEqual(isGreenProposalEligible(mismatchingYellow, { scheduled: true }), {
         latestStatusIsGreen: false,
         storeBuildMatches: false,
         ready: false

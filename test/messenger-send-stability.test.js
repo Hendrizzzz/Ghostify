@@ -8258,15 +8258,26 @@ function testPopupPublicStatusSummaryUsesWorkingProofDate() {
     vm.runInNewContext(popupSource, context, { filename: 'popup.js' });
 
     const currentStatus = JSON.parse(fs.readFileSync('site/src/app/statusData.json', 'utf8'));
+    const latestHistoryDate = new Date(`${currentStatus.history[0].date}T00:00:00Z`);
+    const compactHistoryDate = new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+    }).format(latestHistoryDate);
+    const longHistoryDate = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC'
+    }).format(latestHistoryDate);
     assert.strictEqual(
         context.summarizePublicStatus(currentStatus),
-        'Jul 12',
+        compactHistoryDate,
         'Popup should show the date from the latest committed status record'
     );
     assert.strictEqual(
         context.getPublicStatusTone(currentStatus),
         'review',
-        'A pending Store build should remain yellow until the status-enabled build is published and verified'
+        'An under-review status should remain yellow until the supported controls are verified'
     );
     assert.strictEqual(
         context.getPublicStatusDescription(currentStatus),
@@ -8274,8 +8285,8 @@ function testPopupPublicStatusSummaryUsesWorkingProofDate() {
         'Popup status tooltip should use the latest public JSON title'
     );
     assert(
-        !context.getPublicStatusDescription(currentStatus).includes('Jul 12') &&
-        !context.getPublicStatusDescription(currentStatus).includes('July 12'),
+        !context.getPublicStatusDescription(currentStatus).includes(compactHistoryDate) &&
+        !context.getPublicStatusDescription(currentStatus).includes(longHistoryDate),
         'Popup status tooltip should not repeat the compact status date'
     );
 

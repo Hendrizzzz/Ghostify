@@ -2,21 +2,21 @@
   "schemaVersion": 1,
   "product": "Ghostify",
   "productVersion": "2.0.4",
-  "generatedAt": "2026-07-12T09:20:13Z",
+  "generatedAt": "2026-07-16T04:46:21Z",
   "release": {
     "channel": "Chrome Web Store",
     "publishedAt": "2026-02-06",
-    "publishedVersion": "2.0.3",
-    "checkedAt": "2026-07-12T09:20:13Z",
-    "matchesVerificationBuild": false,
+    "publishedVersion": "2.0.4",
+    "checkedAt": "2026-07-16T04:46:21Z",
+    "matchesVerificationBuild": true,
     "storeUrl": "https://chromewebstore.google.com/detail/ghostify-hide-seen-typing/flpnibonbhdmnpgflnbemgghghhblmpm"
   },
   "statusUrl": "https://ghostify-extension.vercel.app/status",
   "historyUrl": "https://ghostify-extension.vercel.app/status/history",
   "summary": {
     "publicStatus": "under_review",
-    "label": "Live status rollout in progress",
-    "message": "Some users may not see live status in the extension popup yet. We’re rolling out an update and will share another update when it’s available."
+    "label": "Live verification pending",
+    "message": "Ghostify 2.0.4 is live on the Chrome Web Store. The current verification pass for the supported controls is pending."
   },
   "policy": {
     "verificationCadence": "Updated when we receive reports, make progress, or complete new checks.",
@@ -165,6 +165,13 @@
     }
   ],
   "history": [
+    {
+      "date": "2026-07-16",
+      "publicStatus": "under_review",
+      "eventType": "release",
+      "title": "Ghostify 2.0.4 published",
+      "summary": "Ghostify 2.0.4 became available on the Chrome Web Store. Live verification of the supported controls is pending."
+    },
     {
       "date": "2026-07-12",
       "publicStatus": "under_review",
