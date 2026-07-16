@@ -8,7 +8,6 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@fontsource-variable/figtree": "5.2.10",
     "@fontsource-variable/newsreader": "5.2.10",
     "lucide-react": "0.487.0",
     "react": "18.3.1",

@@ -163,7 +163,7 @@ function CurrentNotice() {
           <span className="status-version-pill">Verification build v{STATUS_DATA.productVersion}</span>
           <span className="status-version-pill">Store v{STATUS_DATA.release.publishedVersion}</span>
         </div>
-        <h2>{heading}</h2>
+        <h1>{heading}</h1>
         <p>{message}</p>
         {releaseMismatch && (
           <p className="status-secondary-warning">
@@ -505,10 +505,9 @@ function buildHistoryGroups() {
 function CurrentStatus() {
   return (
     <>
-      <a className="status-home-link" href="/"><ArrowLeft size={15} /> Back to Ghostify</a>
-      <div className="status-topbar">
-        <h1>Ghostify Status</h1>
-        <a href="/status/history">View history</a>
+      <div className="status-utility-row">
+        <a className="status-home-link" href="/"><ArrowLeft size={15} /> Back to Ghostify</a>
+        <a className="status-history-link" href="/status/history">View history</a>
       </div>
       <CurrentNotice />
       <SystemStatus />
@@ -522,12 +521,9 @@ function HistoryStatus() {
   return (
     <>
       <a className="status-home-link" href="/status"><ArrowLeft size={15} /> Current status</a>
-      <div className="status-topbar">
-        <h1>Status history</h1>
-      </div>
       <section className="status-panel" aria-labelledby="history-heading">
         <div className="status-panel-head">
-          <h2 id="history-heading">Verification history</h2>
+          <h1 id="history-heading">Verification history</h1>
           <span>Public record</span>
         </div>
         <div className="status-history-list">
@@ -582,23 +578,14 @@ export function StatusPage({ view }: StatusPageProps) {
           width: min(100%, 720px);
           margin: 0 auto;
         }
-        .status-topbar {
+        .status-utility-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 18px;
           margin-bottom: 24px;
         }
-        .status-topbar h1 {
-          margin: 0;
-          font-family: var(--g-sans);
-          font-size: 1.7rem;
-          font-weight: 700;
-          line-height: 1.15;
-          letter-spacing: 0;
-          color: var(--g-white);
-        }
-        .status-topbar a,
+        .status-history-link,
         .status-actions a {
           min-height: 38px;
           display: inline-flex;
@@ -615,7 +602,7 @@ export function StatusPage({ view }: StatusPageProps) {
           font-weight: 650;
           text-decoration: none;
         }
-        .status-topbar a:hover,
+        .status-history-link:hover,
         .status-actions a:hover {
           border-color: var(--status-red-border);
           color: var(--g-white);
@@ -691,7 +678,7 @@ export function StatusPage({ view }: StatusPageProps) {
           background: var(--status-red-soft);
           color: var(--status-text) !important;
         }
-        .status-notice h2 {
+        .status-notice h1 {
           margin: 18px 0 0;
           color: var(--g-white);
           font-family: var(--g-sans);
@@ -906,15 +893,6 @@ export function StatusPage({ view }: StatusPageProps) {
           .status-page {
             padding: 82px 14px 56px;
           }
-          .status-topbar {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 12px;
-          }
-          .status-topbar h1 {
-            font-size: 1.5rem;
-          }
-          .status-topbar a,
           .status-actions a {
             width: 100%;
           }

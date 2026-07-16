@@ -866,7 +866,6 @@ export function HomePage() {
           <h2>Local by default.<br />Open to inspection.</h2>
           <div className="privacy-flat-aside">
             <PrivacyIllustration />
-            <p>Ghostify checks supported signal traffic inside the browser tab. Conversations are not sent to Ghostify, and the free controls need no Ghostify account.</p>
           </div>
         </div>
         <div className="privacy-flat-points" data-reveal>

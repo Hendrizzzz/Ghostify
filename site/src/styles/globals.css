@@ -14,7 +14,9 @@
   --success: #287a50;
   --warning: #8873cf;
   --danger: #a84747;
-  --font-sans: 'Figtree Variable', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --font-sans: 'Uncut Sans Variable', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: 'Commit Mono Variable', 'SFMono-Regular', Consolas, monospace;
   --font-editorial: 'Newsreader Variable', Georgia, serif;
   --radius-sm: 10px;
   --radius-md: 18px;
@@ -36,9 +38,9 @@
   --g-white-dim: rgba(243, 238, 226, 0.78);
   --g-body: rgba(243, 238, 226, 0.68);
   --g-dim: rgba(243, 238, 226, 0.52);
-  --g-display: var(--font-editorial);
+  --g-display: var(--font-display);
   --g-sans: var(--font-sans);
-  --g-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --g-mono: var(--font-mono);
 }
 
 *,
@@ -400,7 +402,7 @@ svg {
 
 .hero-copy h1 em {
   color: var(--coral-dark);
-  font-family: var(--font-editorial);
+  font-family: var(--font-display);
   font-size: 1.07em;
   font-weight: 500;
   letter-spacing: -0.04em;
@@ -915,7 +917,7 @@ svg {
 .control-index {
   align-self: start;
   color: #878278;
-  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
@@ -1091,7 +1093,7 @@ svg {
 
 .signal-node > span {
   color: var(--coral-dark);
-  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
 }
 
@@ -1144,6 +1146,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: 50%;
   color: var(--coral-dark);
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
 }
