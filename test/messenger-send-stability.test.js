@@ -8269,6 +8269,10 @@ function testPopupPublicStatusSummaryUsesWorkingProofDate() {
         day: 'numeric',
         timeZone: 'UTC'
     }).format(latestHistoryDate);
+    const expectedTone = currentStatus.release.matchesVerificationBuild &&
+        ['maintainer_verified', 'community_verified_reviewed'].includes(currentStatus.history[0].publicStatus)
+        ? 'verified'
+        : 'review';
     assert.strictEqual(
         context.summarizePublicStatus(currentStatus),
         compactHistoryDate,
@@ -8276,8 +8280,8 @@ function testPopupPublicStatusSummaryUsesWorkingProofDate() {
     );
     assert.strictEqual(
         context.getPublicStatusTone(currentStatus),
-        'review',
-        'An under-review status should remain yellow until the supported controls are verified'
+        expectedTone,
+        'Popup tone should follow the latest status record for the published Store build'
     );
     assert.strictEqual(
         context.getPublicStatusDescription(currentStatus),
