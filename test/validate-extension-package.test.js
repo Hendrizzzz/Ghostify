@@ -140,6 +140,9 @@ withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
     statusJson.release.publishedVersion = '2.0.3';
     statusJson.release.matchesVerificationBuild = false;
+    statusJson.summary.publicStatus = 'under_review';
+    statusJson.history[0].publicStatus = 'under_review';
+    for (const entry of statusJson.entries) entry.publicStatus = 'under_review';
     statusJson.entries[0].publicStatus = 'maintainer_verified';
     writeStatusJsonPair(fixtureRoot, statusJson);
     const result = runValidator(fixtureRoot);
@@ -471,7 +474,12 @@ withFixture(fixtureRoot => {
 
 withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
-    statusJson.history[0].date = '2026-06-26';
+    statusJson.summary.publicStatus = 'under_review';
+    statusJson.history[0].publicStatus = 'under_review';
+    for (const entry of statusJson.entries) entry.publicStatus = 'under_review';
+    statusJson.history[0].date = new Date(Date.parse(`${statusJson.history[1].date}T00:00:00Z`) - 86_400_000)
+        .toISOString()
+        .slice(0, 10);
     writeStatusJsonPair(fixtureRoot, statusJson);
 
     const result = runValidator(fixtureRoot);
@@ -481,6 +489,9 @@ withFixture(fixtureRoot => {
 
 withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
+    statusJson.summary.publicStatus = 'under_review';
+    statusJson.history[0].publicStatus = 'under_review';
+    for (const entry of statusJson.entries) entry.publicStatus = 'under_review';
     statusJson.history[0].date = '2026-02-31';
     writeStatusJsonPair(fixtureRoot, statusJson);
 
