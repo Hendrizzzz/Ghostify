@@ -1409,6 +1409,7 @@
   width: calc(100% - 32px);
   margin: 48px 16px;
   padding: clamp(64px, 5vw, 84px) max(32px, calc((100vw - 1420px) / 2));
+  scroll-margin-top: 24px;
   overflow: hidden;
   border: 1px solid rgba(243, 238, 226, 0.12);
   border-radius: 44px;
@@ -2631,7 +2632,7 @@
   }
 
   .home-hero-copy h1 {
-    font-size: clamp(3.7rem, 10.1vw, 5.7rem);
+    font-size: clamp(3.85rem, 7.4vw, 4rem);
     white-space: normal;
   }
 
@@ -2690,6 +2691,9 @@
   .hero-detail-whale {
     display: none;
   }
+
+  .hero-detail-instagram { left: 4%; top: auto; bottom: 22%; }
+  .hero-detail-messenger { right: 4%; top: auto; bottom: 22%; }
 
   .feature-scroll {
     height: auto;
@@ -2837,7 +2841,7 @@
   }
 
   .home-hero-copy h1 {
-    font-size: clamp(3.3rem, 14.9vw, 5rem);
+    font-size: clamp(3.55rem, 10vw, 3.85rem);
     line-height: 0.9;
   }
 
