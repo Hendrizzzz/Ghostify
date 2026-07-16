@@ -218,7 +218,13 @@ function buildTimelineDays(year: number, today: Date): TimelineDay[] {
   const yearStart = new Date(Date.UTC(year, 0, 1));
   const calendarStart = new Date(yearStart);
   calendarStart.setUTCDate(calendarStart.getUTCDate() - calendarStart.getUTCDay());
-  const events = [...STATUS_DATA.history].sort((left, right) => Date.parse(left.date) - Date.parse(right.date));
+  const events = STATUS_DATA.history
+    .map((event, sourceIndex) => ({ event, sourceIndex }))
+    .sort((left, right) => {
+      const dateOrder = Date.parse(left.event.date) - Date.parse(right.event.date);
+      return dateOrder || right.sourceIndex - left.sourceIndex;
+    })
+    .map(({ event }) => event);
   const eventByDate = new Map(events.map((event) => [event.date, event]));
   const cellCount = 54 * 7;
 
