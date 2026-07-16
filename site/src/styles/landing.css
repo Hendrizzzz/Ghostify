@@ -2946,8 +2946,8 @@
     display: none;
   }
 
-  .hero-detail-instagram { left: 4%; top: 21%; }
-  .hero-detail-messenger { right: 4%; top: 25%; }
+  .hero-detail-instagram { left: 4%; top: auto; bottom: 18%; }
+  .hero-detail-messenger { right: 4%; top: auto; bottom: 18%; }
   .hero-detail-chrome { left: 4%; bottom: 7%; }
   .hero-detail-browser { right: 4%; bottom: 7%; }
 

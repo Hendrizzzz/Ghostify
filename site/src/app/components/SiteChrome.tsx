@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Github, Menu, ShieldCheck } from 'lucide-react';
 import { getPublicReleaseStatus } from '../statusData';
 import { GhostMark } from './GhostSVG';
@@ -39,6 +39,8 @@ export function StoreCta({
 
 export function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLDetailsElement>(null);
   const publicStatus = getPublicReleaseStatus();
   const statusTone = publicStatus === 'maintainer_verified' || publicStatus === 'community_verified_reviewed'
     ? 'good'
@@ -69,9 +71,25 @@ export function SiteHeader() {
         <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><Github size={14} aria-hidden="true" /> GitHub</a>
       </nav>
 
-      <details className="mobile-nav">
-        <summary aria-label="Open navigation menu"><Menu size={19} aria-hidden="true" /></summary>
-        <nav aria-label="Mobile navigation">
+      <details
+        className="mobile-nav"
+        ref={mobileNavRef}
+        onToggle={(event) => setIsMobileNavOpen(event.currentTarget.open)}
+      >
+        <summary
+          aria-label={`${isMobileNavOpen ? 'Close' : 'Open'} navigation menu`}
+          aria-expanded={isMobileNavOpen}
+        >
+          <Menu size={19} aria-hidden="true" />
+        </summary>
+        <nav
+          aria-label="Mobile navigation"
+          onClick={(event) => {
+            if (event.target instanceof Element && event.target.closest('a')) {
+              mobileNavRef.current?.removeAttribute('open');
+            }
+          }}
+        >
           <a className="mobile-install-link" href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer"><ChromeLogo /> Add to Chrome <ArrowUpRight size={15} aria-hidden="true" /></a>
           <a href="/#features">Features</a>
           <a href="/#platforms">Platforms</a>
