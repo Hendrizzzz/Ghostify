@@ -7,10 +7,19 @@ const { QA_IDS, isGreenProposalEligible, parseArgs, prepareStatusUpdate } = requ
 
 const repoRoot = path.resolve(__dirname, '..');
 const source = JSON.parse(fs.readFileSync(path.join(repoRoot, 'site', 'src', 'app', 'statusData.json'), 'utf8'));
-const proposalDate = source.release.checkedAt.slice(0, 10);
-const proposalGeneratedAt = new Date(Date.parse(source.release.checkedAt) + 60 * 60 * 1000)
-    .toISOString()
-    .replace('.000Z', 'Z');
+
+function proposalContextForStatus(status) {
+    const date = status.history[0].date;
+    const baseline = [status.generatedAt, status.release.checkedAt, `${date}T00:00:00Z`]
+        .map(value => Date.parse(value))
+        .filter(Number.isFinite);
+    const generatedAt = new Date(Math.max(...baseline) + 60 * 60 * 1000)
+        .toISOString()
+        .replace('.000Z', 'Z');
+    return { date, generatedAt };
+}
+
+const { date: proposalDate, generatedAt: proposalGeneratedAt } = proposalContextForStatus(source);
 
 function matchingReleaseStatus() {
     const status = structuredClone(source);
@@ -38,6 +47,27 @@ function testVerifiedProposalUpdatesEverySupportedControlWithoutExpiry() {
         assert(!Object.hasOwn(entry, 'expiresAt'));
         assert(entry.reviewRecord.includes(QA_IDS[entry.id]));
     }
+}
+
+function testProposalFixtureFollowsStatusPreparedByWorkflow() {
+    const preparedDate = new Date(Date.parse(`${source.history[0].date}T00:00:00Z`) + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+    const workflowStatus = structuredClone(source);
+    workflowStatus.generatedAt = `${preparedDate}T01:00:00Z`;
+    workflowStatus.history.unshift({
+        ...workflowStatus.history[0],
+        date: preparedDate
+    });
+
+    const context = proposalContextForStatus(workflowStatus);
+    assert.strictEqual(context.date, preparedDate);
+    assert(Date.parse(context.generatedAt) > Date.parse(workflowStatus.generatedAt));
+    assert.doesNotThrow(() => prepareStatusUpdate(workflowStatus, {
+        mode: 'verified',
+        date: context.date,
+        generatedAt: context.generatedAt
+    }));
 }
 
 function testVerifiedProposalRejectsStoreBuildMismatch() {
@@ -95,6 +125,41 @@ function testInProgressProposalStaysYellowAndPreservesHistory() {
     assert.strictEqual(working.history[0].publicStatus, 'work_in_progress');
     assert.strictEqual(working.history[1].publicStatus, 'under_review');
     assert.strictEqual(working.history.length, source.history.length + 2);
+}
+
+function testMultipleSameDayStatusUpdatesPreserveNewestFirstOrder() {
+    const reported = prepareStatusUpdate(source, {
+        mode: 'reported',
+        date: proposalDate,
+        generatedAt: proposalGeneratedAt,
+        featureIds: ['messenger-hide-typing']
+    });
+    const working = prepareStatusUpdate(reported, {
+        mode: 'in-progress',
+        date: proposalDate,
+        generatedAt: new Date(Date.parse(proposalGeneratedAt) + 60 * 60 * 1000)
+            .toISOString()
+            .replace('.000Z', 'Z'),
+        featureIds: ['messenger-hide-typing']
+    });
+    const confirmed = prepareStatusUpdate(working, {
+        mode: 'known-issue',
+        date: proposalDate,
+        generatedAt: new Date(Date.parse(proposalGeneratedAt) + 2 * 60 * 60 * 1000)
+            .toISOString()
+            .replace('.000Z', 'Z'),
+        featureIds: ['messenger-hide-typing']
+    });
+
+    assert.deepStrictEqual(
+        confirmed.history.slice(0, 3).map(item => [item.date, item.publicStatus]),
+        [
+            [proposalDate, 'known_issue'],
+            [proposalDate, 'work_in_progress'],
+            [proposalDate, 'under_review']
+        ]
+    );
+    assert.strictEqual(confirmed.history.length, source.history.length + 3);
 }
 
 function testKnownIssueProposalUpdatesOnlySelectedControls() {
@@ -183,9 +248,11 @@ function testDailyWorkflowIsSingleRefreshableMaintainerApprovalPr() {
 }
 
 testVerifiedProposalUpdatesEverySupportedControlWithoutExpiry();
+testProposalFixtureFollowsStatusPreparedByWorkflow();
 testVerifiedProposalRejectsStoreBuildMismatch();
 testReportedProposalTurnsSelectedControlAndOverallStatusYellow();
 testInProgressProposalStaysYellowAndPreservesHistory();
+testMultipleSameDayStatusUpdatesPreserveNewestFirstOrder();
 testKnownIssueProposalUpdatesOnlySelectedControls();
 testYellowProposalRejectsUnknownControl();
 testStatusInputsRejectImpossibleDatesAndDuplicateFeatures();
