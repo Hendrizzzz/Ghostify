@@ -2301,10 +2301,37 @@
 }
 
 .home-final h2 {
-  max-width: 940px;
-  margin-top: 38px;
-  font-size: clamp(3rem, 4.1vw, 4.75rem);
-  line-height: 0.98;
+  max-width: 1000px;
+  margin-top: 34px;
+  font-size: clamp(3.15rem, 4.45vw, 5.15rem);
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+.home-final-brand {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  display: block;
+  color: var(--coral-dark);
+  font-family: var(--font-editorial);
+  font-size: 1.22em;
+  font-style: italic;
+  font-weight: 590;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  font-variation-settings: 'opsz' 72;
+}
+
+.home-final-promise {
+  margin-top: 0.16em;
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.9em;
+  font-stretch: 90%;
+  font-style: normal;
+  font-weight: 540;
+  letter-spacing: -0.028em;
 }
 
 .home-final > div > p {
@@ -3225,7 +3252,12 @@
   }
 
   .home-final h2 {
-    font-size: clamp(2.5rem, 10.4vw, 3rem);
+    font-size: clamp(2.65rem, 11vw, 3.15rem);
+  }
+
+  .home-final-promise {
+    margin-top: 0.2em;
+    font-size: 0.82em;
   }
 
   .home-final-actions {
