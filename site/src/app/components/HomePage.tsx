@@ -929,7 +929,10 @@ export function HomePage() {
             <span><img className="browser-logo" src="/edge-current.svg" alt="" />Edge</span>
             <span><ShieldCheck size={15} aria-hidden="true" />Free</span>
           </div>
-          <h2>Ghostify, wherever you browse.</h2>
+          <h2>
+            <span className="home-final-brand">Ghostify,</span>
+            <span className="home-final-promise">wherever you browse.</span>
+          </h2>
           <p>Quiet privacy controls for supported Meta web apps, ready in the browser you already use.</p>
           <div className="home-final-actions">
             <StoreCta />
