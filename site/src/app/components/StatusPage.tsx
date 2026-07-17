@@ -244,6 +244,7 @@ function buildTimelineDays(year: number, today: Date): TimelineDay[] {
   STATUS_DATA.history.forEach((event) => {
     eventsByDate.set(event.date, [...(eventsByDate.get(event.date) ?? []), event]);
   });
+  const latestMergedEventTime = Math.max(...events.map((event) => Date.parse(event.date)));
   const cellCount = 54 * 7;
 
   return Array.from({ length: cellCount }, (_, index) => {
@@ -270,6 +271,10 @@ function buildTimelineDays(year: number, today: Date): TimelineDay[] {
       tone = 'upcoming';
       label = 'Upcoming date';
       detail = 'No status is available for a future date.';
+    } else if (time > latestMergedEventTime) {
+      tone = 'review';
+      label = 'Under review';
+      detail = 'No status update has been merged for this date.';
     } else if (latestEvent) {
       tone = toneForStatus(latestEvent.publicStatus);
       label = tone === 'clear' ? 'No known issue recorded' : tone === 'issue' ? 'Known issue' : 'Under review';
