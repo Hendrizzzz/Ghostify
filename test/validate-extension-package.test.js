@@ -74,12 +74,16 @@ function writeStatusJsonPair(fixtureRoot, statusJson) {
     writeStatusJson(path.join(fixtureRoot, 'site', 'src', 'app', 'statusData.json'), statusJson);
 }
 
-function proposalTiming(statusJson, hoursAfterStoreCheck = 1) {
-    const generatedAt = new Date(Date.parse(statusJson.release.checkedAt) + hoursAfterStoreCheck * 60 * 60 * 1000)
+function proposalTiming(statusJson, hoursAfterLatestStatus = 1) {
+    const date = statusJson.history[0].date;
+    const baseline = [statusJson.generatedAt, statusJson.release.checkedAt, `${date}T00:00:00Z`]
+        .map(value => Date.parse(value))
+        .filter(Number.isFinite);
+    const generatedAt = new Date(Math.max(...baseline) + hoursAfterLatestStatus * 60 * 60 * 1000)
         .toISOString()
         .replace('.000Z', 'Z');
     return {
-        date: generatedAt.slice(0, 10),
+        date,
         generatedAt
     };
 }
@@ -114,9 +118,17 @@ withFixture(fixtureRoot => {
     const { statusJson } = readStatusJson(fixtureRoot);
     statusJson.release.publishedVersion = statusJson.productVersion;
     statusJson.release.matchesVerificationBuild = true;
-    const proposal = prepareStatusUpdate(statusJson, {
+    const preparedDate = new Date(Date.parse(`${statusJson.history[0].date}T00:00:00Z`) + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+    const workflowProposal = prepareStatusUpdate(statusJson, {
         mode: 'verified',
-        ...proposalTiming(statusJson)
+        date: preparedDate,
+        generatedAt: `${preparedDate}T01:00:00Z`
+    });
+    const proposal = prepareStatusUpdate(workflowProposal, {
+        mode: 'verified',
+        ...proposalTiming(workflowProposal)
     });
     writeStatusJsonPair(fixtureRoot, proposal);
 
