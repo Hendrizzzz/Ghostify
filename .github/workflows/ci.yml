@@ -33,7 +33,7 @@ jobs:
       - name: Run actionlint
         run: docker run --rm -v "${{ github.workspace }}:/repo" --workdir /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
 
-  extension:
+  chromium-extension:
     name: Chromium extension checks
     runs-on: ubuntu-24.04
 
@@ -78,6 +78,17 @@ jobs:
 
       - name: Run Firefox extension CI
         run: npm run ci:firefox
+
+  extension:
+    name: Extension checks
+    runs-on: ubuntu-24.04
+    needs:
+      - chromium-extension
+      - firefox-extension
+
+    steps:
+      - name: Confirm browser checks passed
+        run: echo "Chromium and Firefox extension checks passed."
 
   secret-scan:
     name: Secret scan
@@ -129,7 +140,7 @@ jobs:
     name: Chromium release package dry run
     runs-on: ubuntu-24.04
     needs:
-      - extension
+      - chromium-extension
       - secret-scan
 
     steps:
