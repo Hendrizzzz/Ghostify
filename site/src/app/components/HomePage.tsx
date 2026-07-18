@@ -61,12 +61,12 @@ const FEATURES: Array<{
 ];
 
 const FACTS = [
-  'Open source. Read it yourself.',
-  'Instagram, Messenger, Facebook.',
-  'No Ghostify account required.',
-  'Supported tabs only.',
-  'Seen, typing, story views.',
-  'Preferences stay in your browser.',
+  { label: 'Source open', text: 'Read every line.', tone: 'editorial' },
+  { label: 'No Ghostify account', text: 'Nothing new to sign into.', tone: 'plain' },
+  { label: 'Settings', text: 'Your switches stay on this device.', tone: 'editorial' },
+  { label: 'Supported signals', text: 'Seen. Typing. Story views.', tone: 'plain' },
+  { label: 'Three places', text: 'Instagram / Messenger / Facebook.', tone: 'editorial' },
+  { label: 'Narrow access', text: 'Only on supported Meta tabs.', tone: 'plain' },
 ];
 
 const PLATFORMS: Array<{
@@ -582,13 +582,24 @@ function FactMarquee() {
   }, []);
 
   return (
-    <section className="fact-marquee" aria-label="Ghostify facts" ref={marqueeRef}>
-      <div className="fact-marquee-track">
-        {[0, 1].map((copy) => (
-          <div className="fact-marquee-group" aria-hidden={copy === 1 ? 'true' : undefined} key={copy}>
-            {FACTS.map((fact) => <span key={fact}><i aria-hidden="true" />{fact}</span>)}
-          </div>
-        ))}
+    <section className="fact-marquee" aria-label="Ghostify at a glance" ref={marqueeRef}>
+      <div className="fact-marquee-viewport">
+        <div className="fact-marquee-track">
+          {[0, 1].map((copy) => (
+            <div className="fact-marquee-group" aria-hidden={copy === 1 ? 'true' : undefined} key={copy}>
+              <span className="fact-marquee-signature">
+                <GhostMark size={42} bodyColor="#d8d2ff" eyeColor="#0f0f0d" />
+                <span><small>Ghostify</small><strong>quiet by design.</strong></span>
+              </span>
+              {FACTS.map(({ label, text, tone }) => (
+                <span className={`fact-marquee-phrase is-${tone}`} key={label}>
+                  <small>{label}</small>
+                  <strong>{text}</strong>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

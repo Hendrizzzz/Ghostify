@@ -622,10 +622,9 @@
 }
 
 .fact-marquee {
-  min-height: 126px;
+  min-height: 152px;
   position: relative;
   display: flex;
-  align-items: center;
   overflow: hidden;
   color: var(--home-cream);
   background: var(--home-ink);
@@ -633,61 +632,128 @@
   contain: layout paint;
 }
 
-.fact-marquee::before,
-.fact-marquee::after {
-  content: '';
-  width: min(7vw, 100px);
-  position: absolute;
-  inset-block: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.fact-marquee::before {
-  left: 0;
-  background: linear-gradient(90deg, var(--home-ink), transparent);
-}
-
-.fact-marquee::after {
-  right: 0;
-  background: linear-gradient(270deg, var(--home-ink), transparent);
+.fact-marquee-viewport {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .fact-marquee-track {
   width: max-content;
   display: flex;
-  animation: factMarquee 38s linear infinite;
+  animation: factMarquee 58s linear infinite;
   backface-visibility: hidden;
   will-change: transform;
 }
 
 .fact-marquee-group {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex: 0 0 auto;
 }
 
-.fact-marquee-group > span {
-  min-width: 310px;
-  padding: 0 44px;
-  display: inline-flex;
+.fact-marquee-signature,
+.fact-marquee-phrase {
+  min-height: 150px;
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 13px;
-  color: rgba(243, 238, 226, 0.88);
-  font-size: 17px;
-  font-weight: 610;
+}
+
+.fact-marquee-signature {
+  min-width: 280px;
+  padding: 0 46px;
+  gap: 17px;
+}
+
+.fact-marquee-signature::after,
+.fact-marquee-phrase::before {
+  content: '';
+  width: 1px;
+  height: 58px;
+  position: absolute;
+  top: 50%;
+  background: rgba(216, 210, 255, 0.28);
+  transform: translateY(-50%) rotate(8deg);
+}
+
+.fact-marquee-signature::after { right: 0; }
+.fact-marquee-phrase::before { left: 0; }
+
+.fact-marquee-signature > span,
+.fact-marquee-phrase {
+  gap: 7px;
+}
+
+.fact-marquee-signature > span { display: flex; }
+
+.fact-marquee-signature > span,
+.fact-marquee-phrase {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.fact-marquee-signature small,
+.fact-marquee-phrase small {
+  color: var(--home-lavender);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fact-marquee-signature strong {
+  color: var(--home-cream);
+  font-family: var(--font-editorial);
+  font-size: 25px;
+  font-weight: 460;
+  line-height: 1;
+}
+
+.fact-marquee-phrase {
+  padding: 0 clamp(46px, 4vw, 76px);
   white-space: nowrap;
 }
 
-.fact-marquee-group i {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--home-accent);
+.fact-marquee-phrase strong {
+  color: rgba(243, 238, 226, 0.92);
+  line-height: 1;
+}
+
+.fact-marquee-phrase.is-editorial strong {
+  font-family: var(--font-editorial);
+  font-size: clamp(32px, 2.4vw, 40px);
+  font-style: italic;
+  font-weight: 430;
+  letter-spacing: -0.025em;
+}
+
+.fact-marquee-phrase.is-plain strong {
+  font-family: var(--font-sans);
+  font-size: clamp(24px, 1.8vw, 30px);
+  font-weight: 520;
+  letter-spacing: -0.035em;
 }
 
 @keyframes factMarquee { to { transform: translate3d(-50%, 0, 0); } }
+
+@media (max-width: 760px) {
+  .fact-marquee,
+  .fact-marquee-signature,
+  .fact-marquee-phrase { min-height: 132px; }
+
+  .fact-marquee-signature { min-width: 235px; padding: 0 32px; }
+  .fact-marquee-signature > svg { width: 35px; height: 35px; }
+  .fact-marquee-signature strong { font-size: 22px; }
+  .fact-marquee-phrase { padding-inline: 38px; }
+  .fact-marquee-phrase.is-editorial strong { font-size: 29px; }
+  .fact-marquee-phrase.is-plain strong { font-size: 23px; }
+}
 
 .feature-scroll {
   --feature-progress: 0;
@@ -3332,6 +3398,18 @@
   .feature-signal-passage i {
     animation: none;
   }
+
+  .fact-marquee-viewport {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .fact-marquee-viewport::-webkit-scrollbar { display: none; }
+  .fact-marquee-group[aria-hidden='true'] { display: none; }
+  .fact-marquee-signature,
+  .fact-marquee-phrase { scroll-snap-align: start; }
 
   [data-reveal] {
     opacity: 1;
