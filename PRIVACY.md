@@ -1,6 +1,6 @@
 # Privacy Policy for Ghostify
 
-**Last Updated:** July 9, 2026
+**Last Updated:** July 19, 2026
 
 ## 1. Introduction
 Ghostify ("we," "our," or "the Extension") is a browser extension designed to enhance user privacy on social media platforms by preventing the transmission of "read receipts," "typing indicators," and "story view" telemetry. We are committed to protecting your personal information and your right to privacy.
@@ -12,7 +12,7 @@ For the privacy controls described in this policy, Ghostify's extension runtime 
 
 These privacy controls operate locally on your device ("client-side"). Ghostify transiently inspects request URLs, request payloads, and supported page or worker messages inside your browser to identify privacy signals such as read receipts, typing indicators, and story-view writes. Ghostify does not send this inspected data to a Ghostify server and does not store raw messages, credentials, browsing history, or social media content.
 
-The popup can fetch a public verification-status JSON file from Ghostify's website so it can show whether the latest merged update is verified or needs attention. This status feed is not personalized and is not used to collect your social media activity.
+The popup in Chrome, Edge, and Firefox can retrieve a public verification-status JSON file from Ghostify's website so it can show whether the latest merged update is verified or needs attention. This status feed is not personalized and is not used to collect your social media activity. The credential-free request has no custom headers, query parameters, or body and does not include extension settings, tab URLs, messages, or social-media activity.
 
 ### 2.1. Permissions Justification
 To function correctly, the Extension requires specific permissions:
@@ -20,12 +20,23 @@ To function correctly, the Extension requires specific permissions:
 *   **Messenger host permission (`https://*.messenger.com/*`):** Required to inject local privacy controls on Messenger pages and block supported read receipt, typing, and story-view signals before they leave your browser.
 *   **Facebook host permission (`https://*.facebook.com/*`):** Required to inject local privacy controls on Facebook pages, including Messenger surfaces inside Facebook.
 *   **Facebook Messenger proxy frame host permission (`https://www.fbsbx.com/*`):** Required for Messenger proxy frames used by Facebook. The host permission is broader than the proxy path, so Ghostify limits Messenger-specific runtime behavior to supported Messenger proxy pages.
-*   **Ghostify status host permission (`https://ghostify-extension.vercel.app/*`):** Used only by the popup to fetch the display-only public status JSON. It does not grant Ghostify access to other tabs or send extension settings, tab URLs, messages, or social media activity.
+*   **Ghostify status host permission (`https://ghostify-extension.vercel.app/*`):** Used only by the Chrome, Edge, and Firefox popup to fetch the display-only public status JSON. It does not grant Ghostify access to other tabs or send extension settings, tab URLs, messages, or social media activity.
 *   **Storage permission (`storage`):** Used to save your preferences (e.g., "Hide Seen: ON") and cached bundled configuration locally in your browser's `chrome.storage.local`.
 *   **Declarative Net Request permission (`declarativeNetRequest`):** Used to register local browser rules that block supported privacy signals without sending your data to a Ghostify server.
 
 ### 2.2. Chrome Web Store Limited Use
 Ghostify uses handled data only to provide or improve its single purpose: blocking supported read receipts, typing indicators, and story-view signals in your browser. Ghostify does not transfer, sell, or use user data for advertising, credit, or unrelated purposes. Ghostify's use of information received through Chrome extension APIs and supported website surfaces adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.
+
+### 2.3. Firefox Data Collection Declaration
+
+The Firefox package declares `data_collection_permissions.required: ["none"]`.
+It does not collect or transmit messages, browsing activity, website content,
+settings, identifiers, or interaction analytics. Its popup receives the same
+public, non-personalized status JSON as the Chromium popup through a privileged,
+credential-free HTTPS GET with no custom headers, query parameters, or body. Privacy controls, preferences, and
+bundled pattern configuration remain local to the browser. Opening an external
+Ghostify, GitHub, or status-page link is an explicit user navigation governed
+by that site's privacy practices.
 
 ## 3. Configuration
 The Extension uses configuration files bundled with the installed extension package.

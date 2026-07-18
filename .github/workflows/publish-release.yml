@@ -76,13 +76,13 @@ jobs:
         run: npm ci
 
       - name: Run release validation
-        run: npm run ci
+        run: npm run ci:chromium
 
       - name: Build Chrome Web Store package
         run: npm run package:extension -- --expected-tag "v${RELEASE_VERSION}"
 
       - name: Verify Chrome Web Store package
-        run: npm run test:package
+        run: npm run test:package:chromium
 
       - name: Prepare release notes
         run: node scripts/extract-release-notes.js "${RELEASE_VERSION}" > release-notes.md

@@ -106,30 +106,26 @@ async function updatePublicStatusSummary() {
 
 function fetchPublicStatus() {
     return new Promise((resolve, reject) => {
-        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        const timeout = setTimeout(() => {
-            if (controller) controller.abort();
-            reject(new Error('status timeout'));
-        }, PUBLIC_STATUS_TIMEOUT_MS);
-
-        fetch(PUBLIC_STATUS_FEED_URL, {
-            method: 'GET',
-            cache: 'no-store',
-            signal: controller?.signal
-        })
-            .then(response => {
-                if (!response.ok) throw new Error(`status ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                clearTimeout(timeout);
+        const request = new XMLHttpRequest();
+        request.open('GET', PUBLIC_STATUS_FEED_URL, true);
+        request.responseType = 'json';
+        request.timeout = PUBLIC_STATUS_TIMEOUT_MS;
+        request.withCredentials = false;
+        request.onload = () => {
+            try {
+                if (request.status < 200 || request.status >= 300) {
+                    throw new Error(`status ${request.status}`);
+                }
+                const data = request.response;
                 validatePublicStatusData(data);
                 resolve(data);
-            })
-            .catch(error => {
-                clearTimeout(timeout);
+            } catch (error) {
                 reject(error);
-            });
+            }
+        };
+        request.onerror = () => reject(new Error('status request failed'));
+        request.ontimeout = () => reject(new Error('status timeout'));
+        request.send();
     });
 }
 

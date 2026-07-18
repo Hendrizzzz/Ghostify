@@ -30,8 +30,10 @@ of the repository unless they are redacted and intentionally published.
 | `GH-FB-STORY-001` | Facebook | With Hide Story Views enabled, supported Facebook story-view writes are blocked and story media still loads. |
 | `GH-FB-LOCAL-READ-001` | Facebook | With Hide Seen enabled, opening an unread personal chat and an unread group chat preserves the bold row and blue unread indicator after reopening the Messenger panel, reloading Facebook with the composer open or minimized, and checking the same conversation in a second Facebook tab. Normal history loading, chat switching, and unsent drafts still work without a `Couldn’t load chats` state. Sender-side Seen proof remains a separate verification. |
 | `GH-FB-MEDIA-001` | Facebook | Video and media playback still works on non-message surfaces after focus/visibility changes. |
-| `GH-STATUS-001` | Public verification status | `/status`, `/status/history`, and `/status.json` load; website and popup match the latest merged history record regardless of age; popup links to the public status page without changing extension behavior. |
+| `GH-STATUS-001` | Public verification status | `/status`, `/status/history`, and `/status.json` load; `status.json` responds with `Cache-Control: no-store`; website and popup match the latest merged history record regardless of age; popup links to the public status page without changing extension behavior. |
 | `GH-PKG-001` | Release package | Chrome Web Store ZIP has `manifest.json` at the root, matches `package.json` version, and has a recorded SHA-256 checksum. |
+| `GH-FF-PKG-001` | Firefox release package | AMO upload ZIP has `manifest.json` at the root, the permanent Gecko ID, Firefox background script, the justified Ghostify status host permission, zero `web-ext` lint warnings, matching version and checksum, and a reproducible reviewer source ZIP. |
+| `GH-FF-POPUP-001` | Firefox popup | Popup opens in Firefox, shows the manifest version, persists toggles, dynamically matches the latest public `status.json` date, color, and update title, and does not show a Chromium store rating link. |
 | `GH-PRIVACY-001` | Privacy review | Manifest permissions and host permissions match the allowlist and remain justified by `PRIVACY.md`. |
 
 ## Reporting Format
