@@ -147,25 +147,31 @@ function StatusPill({ status, label }: { status: PublicVerificationStatus; label
 function CurrentNotice() {
   const overallStatus = getPublicReleaseStatus();
   const meta = STATUS_META[overallStatus];
-  const label = STATUS_LABELS[overallStatus];
   const heading = STATUS_DATA.summary.label;
   const message = STATUS_DATA.summary.message;
+  const buildsMatch = STATUS_DATA.release.verificationVersion === STATUS_DATA.release.publishedVersion;
 
   return (
     <section className={`status-notice status-notice-${meta.tone}`} aria-label="Current status summary">
       <div className="status-notice-head">
         <StatusIcon status={overallStatus} size={18} />
-        <strong>{label}</strong>
+        <strong>Current status</strong>
       </div>
       <div className="status-notice-body">
         <div className="status-version-row">
-          <span className="status-version-pill">Verification build v{STATUS_DATA.release.verificationVersion}</span>
-          <span className="status-version-pill">Store v{STATUS_DATA.release.publishedVersion}</span>
+          {buildsMatch ? (
+            <span className="status-version-pill">Verified build v{STATUS_DATA.release.verificationVersion}</span>
+          ) : (
+            <>
+              <span className="status-version-pill">Verification build v{STATUS_DATA.release.verificationVersion}</span>
+              <span className="status-version-pill">Store v{STATUS_DATA.release.publishedVersion}</span>
+            </>
+          )}
         </div>
         <h1>{heading}</h1>
         <p>{message}</p>
         <div className="status-notice-meta">
-          <span>{STATUS_LABELS[overallStatus]} {formatStatusDate(STATUS_DATA.generatedAt)}</span>
+          <span>Last checked {formatStatusDate(STATUS_DATA.generatedAt)}</span>
           <span>{STATUS_DATA.policy.verificationCadence}</span>
         </div>
       </div>
