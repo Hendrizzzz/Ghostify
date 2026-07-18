@@ -105,7 +105,16 @@ function formatLongUtcDate(date) {
 }
 
 function prependHistory(status, item) {
-    status.history = [item, ...status.history];
+    const history = Array.isArray(status.history) ? status.history : [];
+    const isIdenticalEntry = existing => (
+        existing.date === item.date &&
+        existing.publicStatus === item.publicStatus &&
+        existing.eventType === item.eventType &&
+        existing.title === item.title &&
+        existing.summary === item.summary
+    );
+
+    status.history = [item, ...history.filter(existing => !isIdenticalEntry(existing))];
 }
 
 function assertNotBackdated(status, date) {
