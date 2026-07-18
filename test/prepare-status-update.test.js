@@ -162,6 +162,30 @@ function testMultipleSameDayStatusUpdatesPreserveNewestFirstOrder() {
     assert.strictEqual(confirmed.history.length, source.history.length + 3);
 }
 
+function testIdenticalVerificationUpdateDoesNotDuplicateHistory() {
+    const freshDate = new Date(Date.parse(`${proposalDate}T00:00:00Z`) + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+    const firstGeneratedAt = `${freshDate}T01:00:00Z`;
+    const first = prepareStatusUpdate(matchingReleaseStatus(), {
+        mode: 'verified',
+        date: freshDate,
+        generatedAt: firstGeneratedAt
+    });
+    const secondGeneratedAt = new Date(Date.parse(firstGeneratedAt) + 60 * 60 * 1000)
+        .toISOString()
+        .replace('.000Z', 'Z');
+    const second = prepareStatusUpdate(first, {
+        mode: 'verified',
+        date: freshDate,
+        generatedAt: secondGeneratedAt
+    });
+
+    assert.strictEqual(first.history.length, source.history.length + 1);
+    assert.strictEqual(second.history.length, first.history.length);
+    assert.deepStrictEqual(second.history[0], first.history[0]);
+}
+
 function testKnownIssueProposalUpdatesOnlySelectedControls() {
     const status = prepareStatusUpdate(source, {
         mode: 'known-issue',
@@ -253,6 +277,7 @@ testVerifiedProposalRejectsStoreBuildMismatch();
 testReportedProposalTurnsSelectedControlAndOverallStatusYellow();
 testInProgressProposalStaysYellowAndPreservesHistory();
 testMultipleSameDayStatusUpdatesPreserveNewestFirstOrder();
+testIdenticalVerificationUpdateDoesNotDuplicateHistory();
 testKnownIssueProposalUpdatesOnlySelectedControls();
 testYellowProposalRejectsUnknownControl();
 testStatusInputsRejectImpossibleDatesAndDuplicateFeatures();

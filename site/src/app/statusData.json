@@ -189,13 +189,6 @@
     },
     {
       "date": "2026-07-16",
-      "publicStatus": "maintainer_verified",
-      "eventType": "verification",
-      "title": "All supported controls operational",
-      "summary": "All supported controls were checked on July 16, 2026 and are working normally."
-    },
-    {
-      "date": "2026-07-16",
       "publicStatus": "under_review",
       "eventType": "release",
       "title": "Ghostify 2.0.4 published",
