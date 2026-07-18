@@ -84,6 +84,8 @@ const popupHtml = fs.readFileSync(repoPath('dist', 'popup.html'), 'utf8');
 const popupJs = fs.readFileSync(repoPath('dist', 'js', 'popup.js'), 'utf8');
 const changelog = fs.readFileSync(repoPath('CHANGELOG.md'), 'utf8');
 const statusJson = readJson(repoPath('site', 'src', 'app', 'statusData.json'));
+const siteHeaders = readJson(repoPath('site', 'vercel.json'));
+const siteViteConfig = fs.readFileSync(repoPath('site', 'vite.config.ts'), 'utf8');
 if (fs.existsSync(repoPath('site', 'public', 'status.json'))) {
     fail('site/public/status.json must not exist; site/src/app/statusData.json is the canonical source');
 }
@@ -399,6 +401,17 @@ function assertPopupPublicStatusLink() {
 
     if (!popupJs.includes('latestPublicStatusRecord') || !popupJs.includes('data.history')) {
         fail('dist/js/popup.js must derive popup color and date from the latest public status record');
+    }
+}
+
+function assertStatusFeedDisablesCaching() {
+    const statusRoute = siteHeaders.headers?.find(route => route.source === '/status.json');
+    const cacheHeader = statusRoute?.headers?.find(header => header.key.toLowerCase() === 'cache-control');
+    if (cacheHeader?.value !== 'no-store') {
+        fail('site/vercel.json must serve /status.json with Cache-Control: no-store');
+    }
+    if (!siteViteConfig.includes("response.setHeader('Cache-Control', 'no-store')")) {
+        fail('site/vite.config.ts must serve /status.json with Cache-Control: no-store');
     }
 }
 
@@ -729,6 +742,7 @@ assertPrivacyPolicyCoversPermissions();
 assertPrivacyPolicyRequiredDisclosures();
 assertPopupHasNoLabsOrSurvey();
 assertPopupPublicStatusLink();
+assertStatusFeedDisablesCaching();
 assertPopupPlatformLinks();
 assertChangelogCoversPackageVersion();
 assertStatusJsonContract();

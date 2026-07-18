@@ -24,6 +24,9 @@ function copyFixture() {
         path.join(repoRoot, 'site', 'src', 'app', 'statusData.json'),
         path.join(fixtureRoot, 'site', 'src', 'app', 'statusData.json')
     );
+    for (const file of ['vercel.json', 'vite.config.ts']) {
+        fs.copyFileSync(path.join(repoRoot, 'site', file), path.join(fixtureRoot, 'site', file));
+    }
     fs.copyFileSync(
         path.join(repoRoot, 'scripts', 'validate-extension-package.js'),
         path.join(fixtureRoot, 'scripts', 'validate-extension-package.js')
@@ -468,6 +471,30 @@ withFixture(fixtureRoot => {
         new RegExp(`CHANGELOG\\.md must include a release heading for ${pkg.version.replace(/\./g, '\\.')}`),
         result.stderr || result.stdout
     );
+});
+
+withFixture(fixtureRoot => {
+    const vercelPath = path.join(fixtureRoot, 'site', 'vercel.json');
+    const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
+    vercelConfig.headers[0].headers.find(header => header.key === 'Cache-Control').value = 'public, max-age=300';
+    fs.writeFileSync(vercelPath, `${JSON.stringify(vercelConfig, null, 2)}\n`);
+
+    const result = runValidator(fixtureRoot);
+    assert.notStrictEqual(result.status, 0, 'validator should reject a cacheable deployed status feed');
+    assert.match(result.stderr, /site\/vercel\.json must serve \/status\.json with Cache-Control: no-store/);
+});
+
+withFixture(fixtureRoot => {
+    const vitePath = path.join(fixtureRoot, 'site', 'vite.config.ts');
+    const viteConfig = fs.readFileSync(vitePath, 'utf8').replace(
+        "response.setHeader('Cache-Control', 'no-store')",
+        "response.setHeader('Cache-Control', 'public, max-age=300')"
+    );
+    fs.writeFileSync(vitePath, viteConfig);
+
+    const result = runValidator(fixtureRoot);
+    assert.notStrictEqual(result.status, 0, 'validator should reject a cacheable development status feed');
+    assert.match(result.stderr, /site\/vite\.config\.ts must serve \/status\.json with Cache-Control: no-store/);
 });
 
 withFixture(fixtureRoot => {

@@ -1,6 +1,6 @@
 # Ghostify Architecture
 
-Ghostify is a Manifest V3 Chrome extension that applies local privacy controls
+Ghostify is a Manifest V3 browser extension that applies local privacy controls
 to Instagram, Facebook, Messenger, and Facebook Messenger proxy frames. The
 manifest matches the broader `www.fbsbx.com` host, and runtime guards narrow
 Messenger-specific behavior to MAW proxy pages. Ghostify runs inside the user's
@@ -11,7 +11,9 @@ extension package.
 
 Ghostify has four main runtime pieces:
 
-- `src/background.js`: the Manifest V3 service worker. It owns dynamic
+- `src/background.js`: the Manifest V3 background entry point. Chromium runs
+  it as a service worker; Firefox runs the same bundle as a non-persistent
+  background script. It owns dynamic
   `declarativeNetRequest` rules for endpoint shapes that can be blocked safely
   at the extension layer.
 - `src/content.js`: the isolated-world bridge. It loads bundled config from
@@ -27,10 +29,12 @@ Ghostify has four main runtime pieces:
 The extension popup is currently a static asset under `dist/`. Its JavaScript
 reads the manifest version, writes `ghostifySettings` to `chrome.storage.local`,
 and depends on open pages receiving those setting changes through `src/content.js`.
-It also reads the display-only public status feed. The latest dated history
-record controls the popup: a working record is green, while a report, confirmed
-issue, or review record is yellow. The popup shows that record's month and day
-without changing its color merely because the record is old.
+All maintained browser packages read the same display-only public status feed.
+The privileged request uses no credentials, custom headers, query parameters,
+or body and sends no extension settings, tab URLs, messages, or social-media activity. The latest dated history record
+controls the popup: a working record is green, while a report, confirmed issue,
+or review record is yellow. The popup shows that record's month and day without
+changing its color merely because the record is old.
 
 The daily verification workflow refreshes one status-data PR for maintainer review.
 Automation never merges those PRs or treats automated checks as live Meta proof.
@@ -41,7 +45,11 @@ work-in-progress, confirmed-issue, and full-verification proposals.
 
 ## Manifest And Injection Model
 
-`dist/manifest.json` is the extension entry point loaded by Chrome.
+`dist/manifest.json` is the Chromium entry point loaded by Chrome and Edge.
+`browser-targets/firefox/manifest.overlay.json` replaces only the fields that
+must differ for Firefox. `scripts/prepare-firefox-extension.js` combines the
+overlay with the Chromium manifest in an ignored staging directory; generated
+Firefox manifests are never maintained by hand.
 
 Important manifest properties:
 
@@ -51,7 +59,7 @@ Important manifest properties:
   The `www.fbsbx.com` match is broader than the MAW proxy path, so runtime
   checks gate Messenger-specific behavior to `/maw_proxy_page`.
 - A host permission for `ghostify-extension.vercel.app`, used only by the popup
-  to fetch the display-only `/status.json` feed.
+  to fetch the display-only `/status.json` feed in Chrome, Edge, and Firefox.
 - `src/content.js` bundle injected as `dist/js/content.js` in the `ISOLATED`
   world at `document_start`
 - `src/ghost.js` bundle injected as `dist/js/ghost.js` in the `MAIN` world at
@@ -83,6 +91,21 @@ icons, manifest, and `dist/config/patterns.json` are maintained as extension
 package assets. When source modules change, rebuild and commit the generated
 bundle files. When popup or static assets change, edit the corresponding
 `dist/` asset directly unless a source counterpart is introduced later.
+
+Store packaging is deliberately split:
+
+- `npm run package:extension` or `npm run package:chromium` creates the package
+  used for Chrome Web Store and Microsoft Edge Add-ons.
+- `npm run package:firefox` creates an AMO upload ZIP and a separate reviewer
+  source ZIP.
+- `npm run prepare:firefox` creates `tmp/firefox-extension/` for local Firefox
+  loading and `web-ext` linting.
+
+The Firefox overlay declares the permanent Gecko add-on ID, Firefox 140 as the
+minimum supported release, a background script instead of a service worker,
+and Mozilla's no-data-collection declaration. Shared runtime, popup controls,
+icons, and bundled privacy configuration remain byte-identical unless a
+documented browser-specific behavior requires otherwise.
 
 ## Settings And Config Flow
 
@@ -197,7 +220,7 @@ GitHub issue-template behavior.
 
 These tests protect important regression paths, but they are not a substitute
 for manual browser smoke tests on Instagram, Messenger, and Facebook before a
-Chrome Web Store release. Use the smoke IDs in `docs/QA_FIXTURES.md` for
+browser-store release. Use the smoke IDs in `docs/QA_FIXTURES.md` for
 high-risk fixes and releases.
 
 ## Platform-Change Risks
@@ -228,6 +251,7 @@ and navigation.
   new pattern requires new matching logic.
 - Run `npm test` before opening a PR.
 - Run `npm run ci` before PR-ready or release-ready changes.
+- Treat `docs/BROWSER_DISTRIBUTION.md` as the authoritative store/package map.
 - Manually test affected Instagram, Messenger, and Facebook flows before a
   release.
 - Do not include local-only files, ZIP packages, logs, or temporary captures in

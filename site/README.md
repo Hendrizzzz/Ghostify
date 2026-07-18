@@ -24,6 +24,8 @@ status routes to the client entry point.
 `vite.config.ts` serves that file in development and copies it into `dist/`
 during production builds. It is the single canonical status file committed to
 the repository; the website and extension popup consume the deployed copy.
+Both development and deployed responses use `Cache-Control: no-store` so a
+newly deployed date, color, or title is not hidden by a stale browser response.
 
 `.github/workflows/daily-verification.yml` proposes dated status changes in a
 PR. It refreshes one pending daily proposal instead of creating duplicates. A

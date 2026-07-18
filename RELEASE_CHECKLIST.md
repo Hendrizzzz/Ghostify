@@ -1,15 +1,18 @@
 # Ghostify Release Checklist
 
-Use this checklist for every Chrome Web Store release, including small hotfixes.
-The goal is to keep the repository, built extension, Chrome Web Store package, and
-public release notes aligned.
+Use this checklist for Chromium releases to Chrome Web Store and Microsoft Edge
+Add-ons, including small hotfixes. The goal is to keep the repository, built
+extension, store packages, and public release notes aligned. Firefox releases
+use [docs/FIREFOX_RELEASE_CHECKLIST.md](docs/FIREFOX_RELEASE_CHECKLIST.md).
+The authoritative package/channel mapping is
+[docs/BROWSER_DISTRIBUTION.md](docs/BROWSER_DISTRIBUTION.md).
 
 ## 1. Release Scope
 
 - Release owner:
 - Target version:
 - Release type: patch / minor / major / emergency hotfix
-- Target channel: Chrome Web Store public listing
+- Target channel: Chrome Web Store / Microsoft Edge Add-ons / both
 - Linked issues or PRs:
 - User-visible risk summary:
 - Platform areas touched: Instagram / Messenger / Facebook / popup / website / build only
@@ -93,11 +96,11 @@ Install from the lockfile and run the full extension test command:
 
 ```bash
 npm ci
-npm run ci
+npm run ci:chromium
 npm run package:extension
 ```
 
-`npm run ci` runs the extension build/test harness, package validation,
+`npm run ci:chromium` runs the shared runtime test harness, Chromium package validation,
 generated-dist check, and high-severity dependency audit. After it finishes,
 confirm generated extension files are committed:
 
@@ -221,7 +224,7 @@ npm run package:extension
 Verify the package contents before upload:
 
 ```bash
-npm run test:package
+npm run test:package:chromium
 ```
 
 The ZIP must contain `manifest.json` at the root, the extracted manifest version

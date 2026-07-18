@@ -8447,8 +8447,10 @@ async function testPopupFetchFailureDoesNotClaimWorking() {
         Promise,
         setTimeout,
         clearTimeout,
-        AbortController: undefined,
-        fetch: () => Promise.reject(new Error('public feed unavailable')),
+        XMLHttpRequest: class {
+            open() { }
+            send() { this.onerror(); }
+        },
         window: null,
         chrome: {
             runtime: {

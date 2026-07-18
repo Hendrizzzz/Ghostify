@@ -27,6 +27,20 @@ Have an idea? Open an issue and describe:
 6. Run `npm run ci` before submitting a PR
 7. Submit a PR with a clear description
 
+## Browser Targets
+
+Ghostify has one shared runtime and two packaging targets:
+
+- Chromium: Chrome Web Store and Microsoft Edge Add-ons use `dist/` and
+  `npm run package:extension`.
+- Firefox: Firefox Browser Add-ons uses the manifest overlay under
+  `browser-targets/firefox/` and `npm run package:firefox`.
+
+Do not copy runtime code into browser-specific directories. Do not edit a
+generated manifest under `tmp/`. Browser-specific manifest, permission, or
+release changes must update the validators, packaging tests, privacy policy,
+and [browser distribution contract](docs/BROWSER_DISTRIBUTION.md).
+
 ## Change Workflow
 
 Use the lightest workflow that still proves the change.
