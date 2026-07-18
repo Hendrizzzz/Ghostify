@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "product": "Ghostify",
   "productVersion": "2.0.5",
-  "generatedAt": "2026-07-18T03:28:33Z",
+  "generatedAt": "2026-07-18T10:11:34Z",
   "release": {
     "channel": "Chrome Web Store",
     "publishedAt": "2026-02-06",
-    "publishedVersion": "2.0.4",
-    "verificationVersion": "2.0.4",
-    "checkedAt": "2026-07-16T04:46:21Z",
+    "publishedVersion": "2.0.5",
+    "verificationVersion": "2.0.5",
+    "checkedAt": "2026-07-18T10:11:18Z",
     "matchesVerificationBuild": true,
     "storeUrl": "https://chromewebstore.google.com/detail/ghostify-hide-seen-typing/flpnibonbhdmnpgflnbemgghghhblmpm"
   },
@@ -47,7 +47,7 @@
       "publicEvidenceType": "sender_side_no_signal",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-IG-SEEN-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-IG-SEEN-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Instagram Hide Seen on July 18, 2026."
@@ -61,7 +61,7 @@
       "publicEvidenceType": "sender_side_no_signal",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-IG-TYPING-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-IG-TYPING-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Instagram Hide Typing on July 18, 2026."
@@ -75,7 +75,7 @@
       "publicEvidenceType": "story_owner_no_view",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-IG-STORY-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-IG-STORY-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Instagram Hide Story Views on July 18, 2026."
@@ -89,7 +89,7 @@
       "publicEvidenceType": "sender_side_no_signal",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-MSG-SEEN-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-MSG-SEEN-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Messenger Hide Seen on July 18, 2026."
@@ -103,7 +103,7 @@
       "publicEvidenceType": "sender_side_no_signal",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-MSG-TYPING-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-MSG-TYPING-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Messenger Hide Typing on July 18, 2026."
@@ -117,7 +117,7 @@
       "publicEvidenceType": "story_owner_no_view",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-MSG-STORY-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-MSG-STORY-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Messenger Hide Story Views on July 18, 2026."
@@ -131,7 +131,7 @@
       "publicEvidenceType": "sender_side_no_signal",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-FB-SEEN-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-FB-SEEN-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Facebook Hide Seen on July 18, 2026."
@@ -145,7 +145,7 @@
       "publicEvidenceType": "sender_side_no_signal",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-FB-TYPING-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-FB-TYPING-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Facebook Hide Typing on July 18, 2026."
@@ -159,7 +159,7 @@
       "publicEvidenceType": "story_owner_no_view",
       "sourceType": "maintainer",
       "reviewer": "Hendrizzzz maintainer verification",
-      "reviewRecord": "GH-FB-STORY-001 approved in the 2026-07-18 verification PR for v2.0.4",
+      "reviewRecord": "GH-FB-STORY-001 approved in the 2026-07-18 verification PR for v2.0.5",
       "verifiedAt": "2026-07-18T00:00:00Z",
       "relatedIssueUrl": null,
       "notes": "Maintainer-confirmed verification for Facebook Hide Story Views on July 18, 2026."
@@ -172,6 +172,13 @@
       "eventType": "verification",
       "title": "All supported controls operational",
       "summary": "All supported controls were checked on July 18, 2026 and are working normally."
+    },
+    {
+      "date": "2026-07-18",
+      "publicStatus": "under_review",
+      "eventType": "release",
+      "title": "Ghostify 2.0.5 published",
+      "summary": "Ghostify 2.0.5 became available on the Chrome Web Store. Live verification of the supported controls followed on the same day."
     },
     {
       "date": "2026-07-17",
