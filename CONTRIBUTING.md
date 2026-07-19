@@ -17,6 +17,21 @@ Have an idea? Open an issue and describe:
 - How you envision the solution
 - Why this would benefit other users
 
+### Project scope
+
+Ghostify accepts user-controlled privacy features that limit supported outgoing
+interaction signals produced by the user's own browser. It does not accept
+features intended to:
+
+- preserve, download, or replay ephemeral or view-once media against the
+  sender's intended restriction
+- bypass authentication, access controls, moderation, or account restrictions
+- expose content the signed-in user could not ordinarily access
+- harvest or monitor other people's private data
+
+Maintainers may close requests outside this scope even when they are technically
+possible.
+
 ## Submitting Code
 
 1. Fork the repo
