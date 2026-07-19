@@ -476,7 +476,8 @@ withFixture(fixtureRoot => {
 withFixture(fixtureRoot => {
     const vercelPath = path.join(fixtureRoot, 'site', 'vercel.json');
     const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
-    vercelConfig.headers[0].headers.find(header => header.key === 'Cache-Control').value = 'public, max-age=300';
+    const statusRoute = vercelConfig.headers.find(route => route.source === '/status.json');
+    statusRoute.headers.find(header => header.key === 'Cache-Control').value = 'public, max-age=300';
     fs.writeFileSync(vercelPath, `${JSON.stringify(vercelConfig, null, 2)}\n`);
 
     const result = runValidator(fixtureRoot);
@@ -495,6 +496,34 @@ withFixture(fixtureRoot => {
     const result = runValidator(fixtureRoot);
     assert.notStrictEqual(result.status, 0, 'validator should reject a cacheable development status feed');
     assert.match(result.stderr, /site\/vite\.config\.ts must serve \/status\.json with Cache-Control: no-store/);
+});
+
+withFixture(fixtureRoot => {
+    const vercelPath = path.join(fixtureRoot, 'site', 'vercel.json');
+    const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
+    const siteRoute = vercelConfig.headers.find(route => route.source === '/(.*)');
+    siteRoute.headers = siteRoute.headers.filter(header => header.key !== 'Content-Security-Policy');
+    fs.writeFileSync(vercelPath, `${JSON.stringify(vercelConfig, null, 2)}\n`);
+
+    const result = runValidator(fixtureRoot);
+    assert.notStrictEqual(result.status, 0, 'validator should reject missing site security headers');
+    assert.match(result.stderr, /site\/vercel\.json must set content-security-policy/);
+});
+
+withFixture(fixtureRoot => {
+    const vercelPath = path.join(fixtureRoot, 'site', 'vercel.json');
+    const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
+    const siteRoute = vercelConfig.headers.find(route => route.source === '/(.*)');
+    siteRoute.headers.find(header => header.key === 'Content-Security-Policy').value =
+        "default-src 'self'; script-src *";
+    fs.writeFileSync(vercelPath, `${JSON.stringify(vercelConfig, null, 2)}\n`);
+
+    const result = runValidator(fixtureRoot);
+    assert.notStrictEqual(result.status, 0, 'validator should reject weakened site security headers');
+    assert.match(
+        result.stderr,
+        /site\/vercel\.json must set content-security-policy to the approved value/
+    );
 });
 
 withFixture(fixtureRoot => {

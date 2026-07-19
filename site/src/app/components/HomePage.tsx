@@ -80,12 +80,10 @@ const PLATFORMS: Array<{
   { platform: 'facebook', name: 'Facebook', url: 'facebook.com', qualifier: 'Shared settings with Messenger' },
 ];
 
-const AI_PROMPT = 'Is the Ghostify Chrome extension by Hendrizzzz right for me? Use only its official Chrome Web Store listing and GitHub documentation. Explain in plain English what it helps me do, what stays on my device, why it needs access to Instagram, Facebook, and Messenger, and its real limitations. Ignore unrelated Ghostify products and third-party directories. Keep it short.';
-
-const AI_LINKS = [
-  { name: 'ChatGPT', href: `https://chatgpt.com/?q=${encodeURIComponent(AI_PROMPT)}` },
-  { name: 'Claude', href: `https://claude.ai/new?q=${encodeURIComponent(AI_PROMPT)}` },
-  { name: 'Perplexity', href: `https://www.perplexity.ai/search/new?q=${encodeURIComponent(AI_PROMPT)}` },
+const EVIDENCE_LINKS = [
+  { name: 'Privacy policy', href: `${GITHUB_URL}/blob/main/PRIVACY.md` },
+  { name: 'Threat model', href: `${GITHUB_URL}/blob/main/docs/THREAT_MODEL.md` },
+  { name: 'Release checksums', href: `${GITHUB_URL}/releases/latest` },
 ];
 
 const FAQS = [
@@ -425,49 +423,15 @@ function PrivacyIllustration() {
 }
 
 function FootprintSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const hasRun = useRef(false);
-  const [packageSize, setPackageSize] = useState(0);
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-    let frame = 0;
-    const finish = () => setPackageSize(62.49);
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      finish();
-      return;
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || hasRun.current) return;
-      hasRun.current = true;
-      const startedAt = performance.now();
-      const tick = (now: number) => {
-        const progress = Math.min(1, (now - startedAt) / 1600);
-        setPackageSize(62.49 * progress);
-        if (progress < 1) frame = window.requestAnimationFrame(tick);
-      };
-      frame = window.requestAnimationFrame(tick);
-      observer.disconnect();
-    }, { threshold: 0.35 });
-    observer.observe(section);
-    return () => {
-      observer.disconnect();
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  const runtimeSize = packageSize * (36.5 / 62.49);
-
   return (
-    <section className="footprint-section" data-scroll-scene ref={sectionRef}>
+    <section className="footprint-section" data-scroll-scene>
       <header>
         <h2>Built to stay out of your way.</h2>
         <p>A compact footprint, no tracking relays, and no account standing between you and the controls.</p>
       </header>
       <div className="footprint-metrics">
-        <article><strong>{packageSize.toFixed(2)} <span>KiB</span></strong><small>Chrome Web Store size</small></article>
-        <article><strong>{runtimeSize.toFixed(1)} <span>KiB</span></strong><small>runtime JavaScript, gzip</small></article>
+        <article><strong>MIT</strong><small>licensed core</small></article>
+        <article><strong>MV3</strong><small>extension architecture</small></article>
         <article><strong>0</strong><small>tracking relays</small></article>
         <article><strong>0</strong><small>Ghostify accounts required</small></article>
       </div>
@@ -631,13 +595,13 @@ function EvidenceSection() {
     <section className="evidence-section" data-scroll-scene>
       <div className="evidence-card" data-reveal>
         <div className="evidence-lead">
-          <h2>Don&apos;t take<br />our word for it.</h2>
-          <p>Ask an independent model what Ghostify does, what stays on your device, and whether it fits the way you browse.</p>
+          <h2>Inspect the<br />public evidence.</h2>
+          <p>Review what Ghostify can access, where its trust boundaries sit, and how release artifacts are published.</p>
         </div>
         <div className="evidence-actions">
-          {AI_LINKS.map((item) => (
+          {EVIDENCE_LINKS.map((item) => (
             <a href={item.href} target="_blank" rel="noopener noreferrer" key={item.name}>
-              Ask {item.name}
+              {item.name}
               <ArrowUpRight size={18} aria-hidden="true" />
             </a>
           ))}
@@ -894,7 +858,7 @@ export function HomePage() {
           </article>
           <article tabIndex={0}>
             <LockKeyhole size={26} aria-hidden="true" />
-            <div><h3>Normal browsing stays intact.</h3><p>Messages, navigation, and media continue while supported privacy signals are targeted.</p></div>
+            <div><h3>Designed to preserve normal browsing.</h3><p>Regression tests and live checks cover messages, navigation, and media while supported privacy signals are targeted.</p></div>
           </article>
           <article tabIndex={0}>
             <Code2 size={26} aria-hidden="true" />
