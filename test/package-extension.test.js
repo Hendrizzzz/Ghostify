@@ -98,6 +98,18 @@ try {
         'checksum file must match the generated ZIP'
     );
 
+    const firstBuild = fs.readFileSync(zipPath);
+    const rebuild = childProcess.spawnSync(
+        process.execPath,
+        ['scripts/package-extension.js', '--output-dir', outputDir],
+        { cwd: repoRoot, encoding: 'utf8' }
+    );
+    assert.strictEqual(rebuild.status, 0, rebuild.stderr || rebuild.stdout);
+    assert(
+        firstBuild.equals(fs.readFileSync(zipPath)),
+        'two builds from the same source tree must produce byte-identical release ZIPs'
+    );
+
     const mismatchedTag = childProcess.spawnSync(
         process.execPath,
         ['scripts/package-extension.js', '--output-dir', outputDir, '--expected-tag', 'v0.0.0'],
