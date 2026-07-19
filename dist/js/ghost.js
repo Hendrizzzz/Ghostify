@@ -3582,7 +3582,7 @@
     KILLED_FEATURES.clear();
     if (!Array.isArray(killSwitch)) return;
     for (const feature of killSwitch) {
-      if (typeof feature === "string") {
+      if (typeof feature === "string" && Object.prototype.hasOwnProperty.call(SETTINGS, feature)) {
         KILLED_FEATURES.add(feature);
       }
     }

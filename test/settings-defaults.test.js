@@ -75,8 +75,8 @@ assert(
     'src/config.js should seed mutable MAIN-world settings from shared defaults'
 );
 assert(
-    fs.readFileSync('src/messenger_patch.js', 'utf8').includes('DEFAULT_PRIVACY_SETTINGS'),
-    'src/messenger_patch.js should seed page-context settings from shared defaults'
+    fs.readFileSync('src/messenger_patch.js', 'utf8').includes('normalizePrivacySettings'),
+    'src/messenger_patch.js should normalize page-context settings through the shared defaults'
 );
 
 const popupSource = fs.readFileSync('dist/js/popup.js', 'utf8');
