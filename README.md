@@ -134,7 +134,7 @@ Meta changes Instagram, Facebook, and Messenger often. If something stops workin
 
 Requirements:
 
-- Node.js 22.12 or newer
+- Node.js 22.13 or newer
 - npm (the version bundled with the supported Node.js release)
 
 Commands:

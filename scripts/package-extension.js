@@ -8,6 +8,7 @@ const STATIC_PACKAGE_ASSETS = [
     'icons/icon32.png',
     'js/popup.js'
 ];
+const TEXT_PACKAGE_EXTENSIONS = new Set(['.css', '.html', '.js', '.json']);
 
 for (let index = 0; index < CRC_TABLE.length; index += 1) {
     let value = index;
@@ -193,6 +194,14 @@ function resolvePackageFiles(distDir, expectedFiles) {
     }));
 }
 
+function readCanonicalPackageData(file) {
+    const data = fs.readFileSync(file.absolutePath);
+    const extension = path.posix.extname(file.relativePath).toLowerCase();
+    if (!TEXT_PACKAGE_EXTENSIONS.has(extension)) return data;
+
+    return Buffer.from(data.toString('utf8').replace(/\r\n?/g, '\n'), 'utf8');
+}
+
 function createZip(zipPath, packageFiles) {
     const timestamp = dosDateTime();
     const body = [];
@@ -204,7 +213,7 @@ function createZip(zipPath, packageFiles) {
             fail(`Unsafe ZIP path: ${file.relativePath}`);
         }
 
-        const data = fs.readFileSync(file.absolutePath);
+        const data = readCanonicalPackageData(file);
         const nameBuffer = Buffer.from(file.relativePath, 'utf8');
         const entry = {
             nameBuffer,

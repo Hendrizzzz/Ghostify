@@ -45,7 +45,7 @@
   "author": "Hendrizzzz",
   "license": "MIT",
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.13"
   },
   "overrides": {
     "firefox-profile@4.7.0": {
