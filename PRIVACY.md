@@ -21,7 +21,7 @@ To function correctly, the Extension requires specific permissions:
 *   **Facebook host permission (`https://*.facebook.com/*`):** Required to inject local privacy controls on Facebook pages, including Messenger surfaces inside Facebook.
 *   **Facebook Messenger proxy frame host permission (`https://www.fbsbx.com/*`):** Required for Messenger proxy frames used by Facebook. The host permission is broader than the proxy path, so Ghostify limits Messenger-specific runtime behavior to supported Messenger proxy pages.
 *   **Ghostify status host permission (`https://ghostify-extension.vercel.app/*`):** Used only by the Chrome, Edge, and Firefox popup to fetch the display-only public status JSON. It does not grant Ghostify access to other tabs or send extension settings, tab URLs, messages, or social media activity.
-*   **Storage permission (`storage`):** Used to save your preferences (e.g., "Hide Seen: ON") and cached bundled configuration locally in your browser's `chrome.storage.local`.
+*   **Storage permission (`storage`):** Used to save your preferences (e.g., "Hide Seen: ON") locally in your browser's `chrome.storage.local`.
 *   **Declarative Net Request permission (`declarativeNetRequest`):** Used to register local browser rules that block supported privacy signals without sending your data to a Ghostify server.
 
 ### 2.2. Chrome Web Store Limited Use

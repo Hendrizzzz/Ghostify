@@ -20,6 +20,20 @@
     ghostMode: true
   });
 
+  // src/settings/storage.js
+  function normalizePrivacySettings(settings) {
+    const normalized = { ...DEFAULT_PRIVACY_SETTINGS };
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+      return normalized;
+    }
+    for (const key of FREE_PRIVACY_SETTING_KEYS) {
+      if (typeof settings[key] === "boolean") {
+        normalized[key] = settings[key];
+      }
+    }
+    return normalized;
+  }
+
   // src/utils/binary-json.js
   var MAX_STRUCTURED_BINARY_JSON_BYTES = 1024 * 1024;
   var FACEBOOK_TASK_FRAME_PREFIXES = [
@@ -434,7 +448,7 @@
     function isHost(host, domain) {
       return host === domain || host.endsWith(`.${domain}`);
     }
-    const DEFAULT_SETTINGS = DEFAULT_PRIVACY_SETTINGS;
+    const ALLOWED_KILL_SWITCH_FEATURES = new Set(FREE_PRIVACY_SETTING_KEYS);
     const OBSERVE_TERMS = [
       "sendtypingindicator",
       "lssendtypingindicator",
@@ -512,11 +526,7 @@
     const readReceiptWrapperMetadata = /* @__PURE__ */ new WeakMap();
     const readReceiptWrapperCache = /* @__PURE__ */ new WeakMap();
     const optimisticMarkThreadReadLeafWrappers = /* @__PURE__ */ new WeakMap();
-    window.__GHOSTIFY_SETTINGS__ = Object.assign(
-      {},
-      DEFAULT_SETTINGS,
-      window.__GHOSTIFY_SETTINGS__ || {}
-    );
+    window.__GHOSTIFY_SETTINGS__ = normalizePrivacySettings(window.__GHOSTIFY_SETTINGS__);
     window.addEventListener("message", (event) => {
       var _a;
       if (event.source !== window) return;
@@ -525,16 +535,12 @@
         killedFeatures.clear();
         if (Array.isArray((_a = event.data.config) == null ? void 0 : _a.killSwitch)) {
           event.data.config.killSwitch.forEach((feature) => {
-            if (typeof feature === "string") killedFeatures.add(feature);
+            if (ALLOWED_KILL_SWITCH_FEATURES.has(feature)) killedFeatures.add(feature);
           });
         }
       }
       if (event.data.type === "GHOSTIFY_SETTINGS_UPDATE") {
-        window.__GHOSTIFY_SETTINGS__ = Object.assign(
-          {},
-          DEFAULT_SETTINGS,
-          event.data.settings || {}
-        );
+        window.__GHOSTIFY_SETTINGS__ = normalizePrivacySettings(event.data.settings);
         settingsReady = true;
         markPatchStatus("messenger_patch.settings", {
           msgTyping: window.__GHOSTIFY_SETTINGS__.msgTyping,

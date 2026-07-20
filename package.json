@@ -1,13 +1,13 @@
 {
   "name": "ghostify",
   "version": "2.0.5",
+  "private": true,
   "description": "Privacy controls for Instagram, Facebook, and Messenger.",
-  "main": "index.js",
   "scripts": {
     "build": "node build.js",
     "test": "npm run build && npm run test:modules && node test/messenger-send-stability.test.js && npm run test:status && npm run test:release-notes && npm run test:validator && npm run test:package",
     "test:modules": "npm run test:modules:shared && node test/firefox-popup.test.js",
-    "test:modules:shared": "node test/settings-defaults.test.js && node test/module-registry.test.js && node test/module-flags.test.js",
+    "test:modules:shared": "node test/settings-defaults.test.js && node test/runtime-config.test.js && node test/module-registry.test.js && node test/module-flags.test.js",
     "test:popup:chromium": "node test/firefox-popup.test.js chromium",
     "test:popup:firefox": "node test/firefox-popup.test.js firefox",
     "test:validator": "node test/validate-extension-package.test.js",
@@ -22,7 +22,7 @@
     "package:firefox": "node scripts/package-firefox.js",
     "validate:extension": "node scripts/validate-extension-package.js",
     "validate:firefox": "node scripts/validate-firefox-extension.js",
-    "lint:firefox": "npm run prepare:firefox && npx --yes web-ext@10.5.0 lint --source-dir tmp/firefox-extension --warnings-as-errors",
+    "lint:firefox": "npm run prepare:firefox && web-ext lint --source-dir tmp/firefox-extension --warnings-as-errors",
     "verify:dist": "git diff --exit-code -- dist/background.js dist/js/content.js dist/js/ghost.js dist/js/messenger_patch.js",
     "audit:high": "npm audit --audit-level=high",
     "ci:chromium": "npm run build && npm run test:modules:shared && npm run test:popup:chromium && node test/messenger-send-stability.test.js && npm run test:status && npm run test:release-notes && npm run test:validator && npm run test:package:chromium && npm run validate:extension && npm run verify:dist && npm run audit:high",
@@ -33,14 +33,31 @@
     "type": "git",
     "url": "git+https://github.com/Hendrizzzz/Ghostify.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "browser-extension",
+    "chrome-extension",
+    "manifest-v3",
+    "privacy",
+    "instagram",
+    "facebook",
+    "messenger"
+  ],
+  "author": "Hendrizzzz",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "overrides": {
+    "firefox-profile@4.7.0": {
+      "adm-zip": "0.6.0"
+    }
+  },
   "bugs": {
     "url": "https://github.com/Hendrizzzz/Ghostify/issues"
   },
   "homepage": "https://github.com/Hendrizzzz/Ghostify#readme",
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "web-ext": "10.5.0"
   }
 }

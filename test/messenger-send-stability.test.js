@@ -1937,6 +1937,42 @@ function testMessengerPatchPurePrivacyTrafficStillBlocks() {
     assert.strictEqual(seenOutcome.blocked, 1);
 }
 
+function testMessengerPatchNormalizesPageBridgeUpdates() {
+    const context = makeMessengerPatchPage();
+
+    context.window.postMessage({
+        type: 'GHOSTIFY_SETTINGS_UPDATE',
+        source: 'GHOSTIFY_EXTENSION',
+        settings: {
+            msgSeen: false,
+            msgTyping: 'false',
+            unknownSetting: true
+        }
+    });
+
+    assert.strictEqual(context.window.__ghostify_shouldBlockMessengerSeen(), false);
+    assert.strictEqual(context.window.__ghostify_shouldBlockMessengerTyping(), true);
+    assert.strictEqual(
+        Object.prototype.hasOwnProperty.call(context.window.__GHOSTIFY_SETTINGS__, 'unknownSetting'),
+        false,
+        'page bridge must discard unknown settings'
+    );
+
+    context.window.postMessage({
+        type: 'GHOSTIFY_CONFIG_UPDATE',
+        source: 'GHOSTIFY_EXTENSION',
+        config: { killSwitch: ['unknownFeature', 42] }
+    });
+    assert.strictEqual(context.window.__ghostify_shouldBlockMessengerTyping(), true);
+
+    context.window.postMessage({
+        type: 'GHOSTIFY_CONFIG_UPDATE',
+        source: 'GHOSTIFY_EXTENSION',
+        config: { killSwitch: ['msgTyping', 'unknownFeature'] }
+    });
+    assert.strictEqual(context.window.__ghostify_shouldBlockMessengerTyping(), false);
+}
+
 async function testMessengerTogglesDisableProtections() {
     const window = makeMessengerPage({
         msgSeen: false,
@@ -8618,6 +8654,7 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     await testFacebookMawSecureTypingStateDependenciesPreserveSecureSend();
     await testFacebookMiniChatComposerSendDependenciesPreserveSecureSend();
     testMessengerPatchPurePrivacyTrafficStillBlocks();
+    testMessengerPatchNormalizesPageBridgeUpdates();
     await testMessengerTogglesDisableProtections();
     await testMessageRequestsAndInboxQueriesAreAllowed();
     testMessengerPatchRequestRouteModulesHydrateUntouched();

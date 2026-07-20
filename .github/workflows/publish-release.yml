@@ -12,6 +12,10 @@ on:
         required: true
         default: false
         type: boolean
+      chrome_web_store_sha256:
+        description: SHA-256 of the exact ZIP uploaded to and approved by the Chrome Web Store
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -28,6 +32,7 @@ jobs:
     env:
       RELEASE_VERSION: ${{ inputs.version }}
       STORE_APPROVED: ${{ inputs.chrome_web_store_approved }}
+      APPROVED_PACKAGE_SHA256: ${{ inputs.chrome_web_store_sha256 }}
 
     steps:
       - name: Check out main
@@ -61,6 +66,11 @@ jobs:
             exit 1
           fi
 
+          if [[ ! "${APPROVED_PACKAGE_SHA256}" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "::error::Chrome Web Store package SHA-256 must contain exactly 64 hexadecimal characters."
+            exit 1
+          fi
+
           package_version="$(node -p "require('./package.json').version")"
           if [[ "${RELEASE_VERSION}" != "${package_version}" ]]; then
             echo "::error::Requested v${RELEASE_VERSION} does not match package.json v${package_version}."
@@ -83,6 +93,18 @@ jobs:
 
       - name: Verify Chrome Web Store package
         run: npm run test:package:chromium
+
+      - name: Match approved Chrome Web Store artifact
+        shell: bash
+        run: |
+          zip="ghostify-v${RELEASE_VERSION}-chrome-web-store.zip"
+          actual_sha256="$(sha256sum "${zip}" | awk '{print $1}')"
+          expected_sha256="$(printf '%s' "${APPROVED_PACKAGE_SHA256}" | tr '[:upper:]' '[:lower:]')"
+
+          if [[ "${actual_sha256}" != "${expected_sha256}" ]]; then
+            echo "::error::Rebuilt package SHA-256 ${actual_sha256} does not match the approved Chrome Web Store artifact ${expected_sha256}."
+            exit 1
+          fi
 
       - name: Prepare release notes
         run: node scripts/extract-release-notes.js "${RELEASE_VERSION}" > release-notes.md
@@ -114,4 +136,5 @@ jobs:
             echo
             echo "- Package: \`ghostify-v${RELEASE_VERSION}-chrome-web-store.zip\`"
             echo "- Checksum: \`ghostify-v${RELEASE_VERSION}-chrome-web-store.zip.sha256\`"
+            echo "- Approved artifact SHA-256: \`${APPROVED_PACKAGE_SHA256}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
