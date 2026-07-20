@@ -43,7 +43,6 @@ grouped by version, with the most recent changes first.
   release, and product-update history no longer overrides popup verification.
 - Removed the redundant Chrome Web Store link and version-mismatch warning from
   the status summary card; the header remains the single installation action.
-- Prevented duplicate public-status history entries during repeated proposals.
 
 ## [2.0.5] - 2026-07-17
 
@@ -66,6 +65,7 @@ grouped by version, with the most recent changes first.
 
 ### Fixed
 
+- Prevented duplicate public-status history entries during repeated proposals.
 - Removed unnecessary platform-link hover motion and corrected the Facebook
   icon's optical size.
 - Prevented long popup tooltips from overflowing or leaving one-sided empty
