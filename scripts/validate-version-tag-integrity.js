@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PACKAGE_IDENTITY_PATHS = [
-    'browser-targets/firefox-manifest-overrides.json',
+    'browser-targets/firefox',
     'dist',
     'scripts/lib/deterministic-zip.js',
     'scripts/package-extension.js',

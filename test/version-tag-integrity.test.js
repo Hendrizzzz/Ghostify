@@ -23,6 +23,7 @@ function createTaggedFixture() {
     git(root, ['config', 'user.name', 'Ghostify test']);
     git(root, ['config', 'user.email', 'ghostify-test@example.invalid']);
     write(root, 'package.json', '{"version":"1.2.3"}\n');
+    write(root, 'browser-targets/firefox/manifest.overlay.json', '{"name":"fixture"}\n');
     write(root, 'dist/manifest.json', '{"version":"1.2.3"}\n');
     write(root, 'scripts/package-extension.js', 'module.exports = {};\n');
     write(root, 'README.md', '# Fixture\n');
@@ -55,6 +56,20 @@ try {
     assert.throws(
         () => validateVersionTagIntegrity(changedPackage),
         /v1\.2\.3 already identifies different packaged extension inputs.*dist\/manifest\.json/
+    );
+
+    const changedFirefoxOverlay = createTaggedFixture();
+    fixtureRoots.push(changedFirefoxOverlay);
+    write(
+        changedFirefoxOverlay,
+        'browser-targets/firefox/manifest.overlay.json',
+        '{"name":"changed fixture"}\n'
+    );
+    git(changedFirefoxOverlay, ['add', '--', 'browser-targets/firefox/manifest.overlay.json']);
+    git(changedFirefoxOverlay, ['commit', '-m', 'change Firefox package overlay']);
+    assert.throws(
+        () => validateVersionTagIntegrity(changedFirefoxOverlay),
+        /v1\.2\.3 already identifies different packaged extension inputs.*browser-targets\/firefox\/manifest\.overlay\.json/
     );
 
     write(changedPackage, 'package.json', '{"version":"1.2.4"}\n');
