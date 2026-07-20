@@ -124,9 +124,11 @@ them to the main-world scripts with `window.postMessage`. It also listens for
 storage changes and pushes updates to already-open pages.
 
 Privacy pattern configuration is bundled in `dist/config/patterns.json`. The
-content script fetches that file through `chrome.runtime.getURL`, stores it as
-`ghostifyConfig`, and posts it to the main-world engine. `src/ghost.js` then
-calls `updatePatterns` in `src/utils/network.js`.
+content script fetches that file through `chrome.runtime.getURL`, validates its
+version and shape, and posts it to the main-world engine. If the packaged file
+cannot be read or is invalid, the content script uses its matching committed
+fallback. Runtime configuration is not persisted separately in browser
+storage. `src/ghost.js` then calls `updatePatterns` in `src/utils/network.js`.
 
 Version values must stay synchronized across:
 

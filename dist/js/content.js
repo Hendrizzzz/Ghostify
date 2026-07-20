@@ -38,6 +38,30 @@
     return normalizePrivacySettings(settings);
   }
 
+  // src/runtime-config.js
+  var MAX_PATTERNS_PER_FEATURE = 50;
+  var MAX_PATTERN_LENGTH = 96;
+  var UNSUPPORTED_PATTERN_META = /[|^$()[\]{}+?\\]/;
+  function normalizePackagedConfig(config, fallbackConfig) {
+    if (!config || typeof config !== "object" || Array.isArray(config)) return null;
+    if (!fallbackConfig || config.version !== fallbackConfig.version) return null;
+    if (!config.patterns || typeof config.patterns !== "object" || Array.isArray(config.patterns)) return null;
+    const patternKeys = Object.keys(fallbackConfig.patterns || {});
+    if (!patternKeys.length) return null;
+    const patterns = {};
+    for (const key of patternKeys) {
+      if (!Array.isArray(config.patterns[key])) return null;
+      patterns[key] = config.patterns[key].filter((pattern) => typeof pattern === "string").map((pattern) => pattern.trim()).filter((pattern) => pattern && pattern.length <= MAX_PATTERN_LENGTH).filter((pattern) => !UNSUPPORTED_PATTERN_META.test(pattern)).slice(0, MAX_PATTERNS_PER_FEATURE);
+    }
+    const allowedFeatures = new Set(patternKeys);
+    const killSwitch = Array.isArray(config.killSwitch) ? [...new Set(config.killSwitch.filter((feature) => allowedFeatures.has(feature)))] : [];
+    return {
+      version: config.version,
+      killSwitch,
+      patterns
+    };
+  }
+
   // src/content.js
   var FALLBACK_CONFIG = {
     version: "2.0.5",
@@ -53,22 +77,15 @@
   };
   (async function init() {
     syncUserSettings();
-    let config = await fetchLocalConfig() || await getStoredConfig();
+    const config = await fetchLocalConfig() || FALLBACK_CONFIG;
     sendConfigToGhost(config);
   })();
-  function getStoredConfig() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(["ghostifyConfig"], (result) => {
-        resolve(result.ghostifyConfig || FALLBACK_CONFIG);
-      });
-    });
-  }
   async function fetchLocalConfig() {
     try {
       const response = await fetch(chrome.runtime.getURL("config/patterns.json"));
       if (response.ok) {
-        const localConfig = await response.json();
-        chrome.storage.local.set({ ghostifyConfig: localConfig });
+        const localConfig = normalizePackagedConfig(await response.json(), FALLBACK_CONFIG);
+        if (!localConfig) return null;
         return localConfig;
       }
     } catch (e) {

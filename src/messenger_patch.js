@@ -1,4 +1,5 @@
-import { DEFAULT_PRIVACY_SETTINGS } from './settings/defaults.js';
+import { FREE_PRIVACY_SETTING_KEYS } from './settings/defaults.js';
+import { normalizePrivacySettings } from './settings/storage.js';
 import {
     sanitizeFramedJsonTaskBatchBinary,
     sanitizeJsonTaskBatchStringSource,
@@ -37,7 +38,7 @@ import {
         return host === domain || host.endsWith(`.${domain}`);
     }
 
-    const DEFAULT_SETTINGS = DEFAULT_PRIVACY_SETTINGS;
+    const ALLOWED_KILL_SWITCH_FEATURES = new Set(FREE_PRIVACY_SETTING_KEYS);
     const OBSERVE_TERMS = [
         'sendtypingindicator',
         'lssendtypingindicator',
@@ -116,11 +117,7 @@ import {
     const readReceiptWrapperCache = new WeakMap();
     const optimisticMarkThreadReadLeafWrappers = new WeakMap();
 
-    window.__GHOSTIFY_SETTINGS__ = Object.assign(
-        {},
-        DEFAULT_SETTINGS,
-        window.__GHOSTIFY_SETTINGS__ || {}
-    );
+    window.__GHOSTIFY_SETTINGS__ = normalizePrivacySettings(window.__GHOSTIFY_SETTINGS__);
 
     window.addEventListener('message', (event) => {
         if (event.source !== window) return;
@@ -130,17 +127,13 @@ import {
             killedFeatures.clear();
             if (Array.isArray(event.data.config?.killSwitch)) {
                 event.data.config.killSwitch.forEach(feature => {
-                    if (typeof feature === 'string') killedFeatures.add(feature);
+                    if (ALLOWED_KILL_SWITCH_FEATURES.has(feature)) killedFeatures.add(feature);
                 });
             }
         }
 
         if (event.data.type === 'GHOSTIFY_SETTINGS_UPDATE') {
-            window.__GHOSTIFY_SETTINGS__ = Object.assign(
-                {},
-                DEFAULT_SETTINGS,
-                event.data.settings || {}
-            );
+            window.__GHOSTIFY_SETTINGS__ = normalizePrivacySettings(event.data.settings);
             settingsReady = true;
             markPatchStatus('messenger_patch.settings', {
                 msgTyping: window.__GHOSTIFY_SETTINGS__.msgTyping,

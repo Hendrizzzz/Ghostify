@@ -1,4 +1,5 @@
 import { GHOSTIFY_SETTINGS_STORAGE_KEY, sanitizePrivacySettingsForPage } from './settings/storage.js';
+import { normalizePackagedConfig } from './runtime-config.js';
 
 const FALLBACK_CONFIG = {
     version: "2.0.5",
@@ -15,24 +16,16 @@ const FALLBACK_CONFIG = {
 
 (async function init() {
     syncUserSettings();
-    let config = await fetchLocalConfig() || await getStoredConfig();
+    const config = await fetchLocalConfig() || FALLBACK_CONFIG;
     sendConfigToGhost(config);
 })();
-
-function getStoredConfig() {
-    return new Promise((resolve) => {
-        chrome.storage.local.get(['ghostifyConfig'], (result) => {
-            resolve(result.ghostifyConfig || FALLBACK_CONFIG);
-        });
-    });
-}
 
 async function fetchLocalConfig() {
     try {
         const response = await fetch(chrome.runtime.getURL('config/patterns.json'));
         if (response.ok) {
-            const localConfig = await response.json();
-            chrome.storage.local.set({ ghostifyConfig: localConfig });
+            const localConfig = normalizePackagedConfig(await response.json(), FALLBACK_CONFIG);
+            if (!localConfig) return null;
             return localConfig;
         }
     } catch (e) { }

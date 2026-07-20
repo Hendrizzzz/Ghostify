@@ -18,6 +18,8 @@ Privacy controls for Instagram, Facebook, and Messenger web.
 
 Ghostify is a Manifest V3 browser extension that helps reduce social pressure on Meta web apps. Its privacy controls block supported read receipts, typing indicators, and story-view signals locally in the browser, without requiring a Ghostify account or asking for social media passwords.
 
+Ghostify has [4,000+ users listed on the Chrome Web Store](https://chromewebstore.google.com/detail/flpnibonbhdmnpgflnbemgghghhblmpm).
+
 ## Browser Distribution
 
 | Browser channel | Package target | Publication state |
@@ -132,8 +134,8 @@ Meta changes Instagram, Facebook, and Messenger often. If something stops workin
 
 Requirements:
 
-- Node.js
-- npm
+- Node.js 22.13 or newer
+- npm (the version bundled with the supported Node.js release)
 
 Commands:
 
@@ -165,7 +167,9 @@ Ghostify/
 |-- site/                 Public website
 |-- build.js              ESBuild build script
 |-- CONTRIBUTING.md       Contribution guide
+|-- MAINTAINERS.md        Maintainer roles and decision process
 |-- PRIVACY.md            Privacy policy
+|-- SECURITY.md           Vulnerability reporting policy
 `-- README.md             Project overview
 ```
 
@@ -180,6 +184,12 @@ Screenshots or short screen recordings are welcome when they help explain the is
 ## Contributing
 
 Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for reporting bugs, suggesting features, and submitting code.
+
+## Security
+
+Report suspected vulnerabilities through the private process in
+[SECURITY.md](SECURITY.md). The extension's trust boundaries and residual risks
+are documented in the [threat model](docs/THREAT_MODEL.md).
 
 ## Disclaimer
 

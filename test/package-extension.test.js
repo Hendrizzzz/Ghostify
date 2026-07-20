@@ -8,6 +8,34 @@ const path = require('path');
 const repoRoot = path.resolve(__dirname, '..');
 const pkg = require('../package.json');
 const staticPopupAssets = new Set(['css/popup.css', 'icons/icon32.png', 'js/popup.js']);
+const textPackageExtensions = new Set(['.css', '.html', '.js', '.json']);
+
+function runPackager(distDir, outputDir, extraArgs = []) {
+    return childProcess.spawnSync(
+        process.execPath,
+        [
+            'scripts/package-extension.js',
+            '--dist-dir',
+            distDir,
+            '--output-dir',
+            outputDir,
+            ...extraArgs
+        ],
+        { cwd: repoRoot, encoding: 'utf8' }
+    );
+}
+
+function rewriteTextLineEndings(root, newline) {
+    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+        const absolutePath = path.join(root, entry.name);
+        if (entry.isDirectory()) {
+            rewriteTextLineEndings(absolutePath, newline);
+        } else if (entry.isFile() && textPackageExtensions.has(path.extname(entry.name).toLowerCase())) {
+            const normalized = fs.readFileSync(absolutePath, 'utf8').replace(/\r\n?/g, '\n');
+            fs.writeFileSync(absolutePath, normalized.replace(/\n/g, newline), 'utf8');
+        }
+    }
+}
 
 function findEndOfCentralDirectory(buffer) {
     for (let offset = buffer.length - 22; offset >= 0; offset -= 1) {
@@ -67,11 +95,7 @@ function requiredManifestAssets(manifest) {
 const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ghostify-package-'));
 
 try {
-    const result = childProcess.spawnSync(
-        process.execPath,
-        ['scripts/package-extension.js', '--output-dir', outputDir],
-        { cwd: repoRoot, encoding: 'utf8' }
-    );
+    const result = runPackager(path.join(repoRoot, 'dist'), outputDir);
 
     assert.strictEqual(result.status, 0, result.stderr || result.stdout);
 
@@ -98,10 +122,44 @@ try {
         'checksum file must match the generated ZIP'
     );
 
-    const mismatchedTag = childProcess.spawnSync(
-        process.execPath,
-        ['scripts/package-extension.js', '--output-dir', outputDir, '--expected-tag', 'v0.0.0'],
-        { cwd: repoRoot, encoding: 'utf8' }
+    const firstBuild = fs.readFileSync(zipPath);
+    const rebuild = runPackager(path.join(repoRoot, 'dist'), outputDir);
+    assert.strictEqual(rebuild.status, 0, rebuild.stderr || rebuild.stdout);
+    assert(
+        firstBuild.equals(fs.readFileSync(zipPath)),
+        'two builds from the same source tree must produce byte-identical release ZIPs'
+    );
+
+    const lfDist = fs.mkdtempSync(path.join(os.tmpdir(), 'ghostify-dist-lf-'));
+    const crlfDist = fs.mkdtempSync(path.join(os.tmpdir(), 'ghostify-dist-crlf-'));
+    const lfOutput = fs.mkdtempSync(path.join(os.tmpdir(), 'ghostify-package-lf-'));
+    const crlfOutput = fs.mkdtempSync(path.join(os.tmpdir(), 'ghostify-package-crlf-'));
+    try {
+        fs.cpSync(path.join(repoRoot, 'dist'), lfDist, { recursive: true });
+        fs.cpSync(path.join(repoRoot, 'dist'), crlfDist, { recursive: true });
+        rewriteTextLineEndings(lfDist, '\n');
+        rewriteTextLineEndings(crlfDist, '\r\n');
+
+        const lfResult = runPackager(lfDist, lfOutput);
+        const crlfResult = runPackager(crlfDist, crlfOutput);
+        assert.strictEqual(lfResult.status, 0, lfResult.stderr || lfResult.stdout);
+        assert.strictEqual(crlfResult.status, 0, crlfResult.stderr || crlfResult.stdout);
+        assert(
+            fs.readFileSync(path.join(lfOutput, zipName)).equals(
+                fs.readFileSync(path.join(crlfOutput, zipName))
+            ),
+            'LF and CRLF source trees must produce byte-identical release ZIPs'
+        );
+    } finally {
+        for (const directory of [lfDist, crlfDist, lfOutput, crlfOutput]) {
+            fs.rmSync(directory, { recursive: true, force: true });
+        }
+    }
+
+    const mismatchedTag = runPackager(
+        path.join(repoRoot, 'dist'),
+        outputDir,
+        ['--expected-tag', 'v0.0.0']
     );
     assert.notStrictEqual(mismatchedTag.status, 0, 'mismatched release tag should fail');
     assert.match(
@@ -113,11 +171,7 @@ try {
     const rogueDist = fs.mkdtempSync(path.join(os.tmpdir(), 'ghostify-dist-'));
     fs.cpSync(path.join(repoRoot, 'dist'), rogueDist, { recursive: true });
     fs.writeFileSync(path.join(rogueDist, 'debug-capture.log'), 'local debug capture');
-    const rogueResult = childProcess.spawnSync(
-        process.execPath,
-        ['scripts/package-extension.js', '--dist-dir', rogueDist, '--output-dir', outputDir],
-        { cwd: repoRoot, encoding: 'utf8' }
-    );
+    const rogueResult = runPackager(rogueDist, outputDir);
     fs.rmSync(rogueDist, { recursive: true, force: true });
     assert.notStrictEqual(rogueResult.status, 0, 'unexpected dist files should fail packaging');
     assert.match(

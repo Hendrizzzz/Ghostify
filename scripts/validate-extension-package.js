@@ -415,6 +415,25 @@ function assertStatusFeedDisablesCaching() {
     }
 }
 
+function assertSiteSecurityHeaders() {
+    const siteRoute = siteHeaders.headers?.find(route => route.source === '/(.*)');
+    const headerMap = new Map((siteRoute?.headers || []).map(header => [header.key.toLowerCase(), header.value]));
+    const requiredHeaders = {
+        'content-security-policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'",
+        'x-content-type-options': 'nosniff',
+        'x-frame-options': 'DENY',
+        'referrer-policy': 'strict-origin-when-cross-origin',
+        'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+    };
+
+    for (const [key, expectedValue] of Object.entries(requiredHeaders)) {
+        const actualValue = headerMap.get(key);
+        if (actualValue !== expectedValue) {
+            fail(`site/vercel.json must set ${key} to the approved value`);
+        }
+    }
+}
+
 function assertPopupPlatformLinks() {
     const expectedLinks = [
         ['Instagram', 'https://instagram.com/'],
@@ -743,6 +762,7 @@ assertPrivacyPolicyRequiredDisclosures();
 assertPopupHasNoLabsOrSurvey();
 assertPopupPublicStatusLink();
 assertStatusFeedDisablesCaching();
+assertSiteSecurityHeaders();
 assertPopupPlatformLinks();
 assertChangelogCoversPackageVersion();
 assertStatusJsonContract();
