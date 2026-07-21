@@ -2,14 +2,6 @@
 @import './landing.css';
 
 @font-face {
-  font-family: 'Uncut Sans Variable';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 300 700;
-  src: url('../assets/fonts/UncutSans-Variable.woff2') format('woff2-variations');
-}
-
-@font-face {
   font-family: 'Commit Mono Variable';
   font-style: normal;
   font-display: swap;
