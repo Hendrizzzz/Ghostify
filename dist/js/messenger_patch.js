@@ -1342,6 +1342,7 @@
       const wrapped = function(message, transfer) {
         const needsInspection = isPostMessageObservationEnabled() || window.__ghostify_shouldBlockTyping() || window.__ghostify_shouldBlockMessengerSeen();
         const text = needsInspection ? stringifyForMatch(message).toLowerCase() : "";
+        const hasQueueRoutedSendTask = needsInspection && containsQueueRoutedMessengerSendTask(message);
         if (hasNativeMessageRequestBypass() && isMessageRequestHydrationText(text)) {
           return originalPostMessage.apply(this, arguments);
         }
@@ -1388,6 +1389,11 @@
                 tracePostMessageOutcome(kind, blockType, "sanitize_typing", message, text);
                 return forwardSanitizedPostMessage(originalPostMessage, this, sanitizedTyping.value, transferSafe);
               }
+            }
+            if (hasQueueRoutedSendTask) {
+              window.__GHOSTIFY_FACEBOOK_UNSAFE_BLOCKS_SKIPPED__ = (window.__GHOSTIFY_FACEBOOK_UNSAFE_BLOCKS_SKIPPED__ || 0) + 1;
+              tracePostMessageOutcome(kind, blockType, "queue_send_forward", message, text);
+              return originalPostMessage.apply(this, arguments);
             }
             if (isSafeFacebookBridgeBlock(blockType, text)) {
               window.__GHOSTIFY_BLOCKED_WORKER_MESSAGES__ = (window.__GHOSTIFY_BLOCKED_WORKER_MESSAGES__ || 0) + 1;
@@ -1533,7 +1539,8 @@
         const next = [];
         for (const item of value) {
           const itemText = stringifyForMatch(item).toLowerCase();
-          if (depth > 0 && isDedicatedServerReadReceiptCommand(itemText)) {
+          const isSendItem = isBridgeSendItemObject(item, itemText);
+          if (!isSendItem && depth > 0 && isDedicatedServerReadReceiptCommand(itemText)) {
             changed = true;
             continue;
           }
@@ -1547,7 +1554,7 @@
             next.push(sanitizedItem.value);
             continue;
           }
-          if (isDedicatedServerReadReceiptCommand(itemText)) {
+          if (!isSendItem && isDedicatedServerReadReceiptCommand(itemText)) {
             changed = true;
             continue;
           }
@@ -1561,6 +1568,9 @@
       }
       if (typeof value === "object") {
         const ownText = stringifyForMatch(value).toLowerCase();
+        if (isQueueRoutedMessengerSendTask(value)) {
+          return sanitizeQueueRoutedSendReadMetadata(value);
+        }
         if (isBridgeSendItemObject(value, ownText)) {
           return { value, changed: false, blockedAll: false };
         }
@@ -1605,7 +1615,7 @@
             blockedAll: isBridgeEnvelopeMetadataOnly(clone)
           };
         }
-        if (isDedicatedServerReadReceiptCommand(ownText)) {
+        if (!containsQueueRoutedMessengerSendTask(value) && isDedicatedServerReadReceiptCommand(ownText)) {
           return { value: void 0, changed: true, blockedAll: true };
         }
       }
@@ -1708,6 +1718,143 @@
       if (hasSendOperationName && (hasMessagePayload || hasClientMessageId || matchText.includes("send_type"))) return true;
       return matchText.includes("send_type") && hasClientMessageId && hasMessagePayload;
     }
+    function containsQueueRoutedMessengerSendTask(value, depth = 0) {
+      if (!value || depth > 6 || isBinaryPayload(value)) return false;
+      if (Array.isArray(value)) {
+        return value.some((item) => containsQueueRoutedMessengerSendTask(item, depth + 1));
+      }
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed[0] !== "{" && trimmed[0] !== "[") return false;
+        try {
+          return containsQueueRoutedMessengerSendTask(JSON.parse(trimmed), depth + 1);
+        } catch (e) {
+          return false;
+        }
+      }
+      if (typeof value !== "object") return false;
+      if (isQueueRoutedMessengerSendTask(value)) return true;
+      try {
+        return Object.keys(value).some(
+          (key) => containsQueueRoutedMessengerSendTask(value[key], depth + 1)
+        );
+      } catch (e) {
+        return false;
+      }
+    }
+    function isQueueRoutedMessengerSendTask(value) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+      const fields = normalizedBridgeFields(value);
+      if (String(fields.label || "") !== "46") return false;
+      if (typeof fields.queuename !== "string" || !fields.queuename.trim()) return false;
+      const payload = parseBridgeObject(fields.payload);
+      if (!payload) return false;
+      const payloadFields = normalizedBridgeFields(payload);
+      const sendType = payloadFields.sendtype;
+      if (!(typeof sendType === "number" && Number.isFinite(sendType) && sendType > 0)) return false;
+      const hasClientMessageId = [
+        "offlinethreadingid",
+        "clientmessageid",
+        "clientmutationid",
+        "otid"
+      ].some((key) => payloadFields[key] != null && String(payloadFields[key]).length > 0);
+      const hasMessagePayload = [
+        "message",
+        "text",
+        "body",
+        "attachment",
+        "sticker",
+        "media",
+        "encryptedmessage",
+        "encryptedpayload",
+        "encryptedblob",
+        "encryptedcontent",
+        "ciphertext",
+        "reaction",
+        "messagereaction",
+        "emoji",
+        "quicklike"
+      ].some((key) => payloadFields[key] != null);
+      return hasClientMessageId && hasMessagePayload;
+    }
+    function normalizedBridgeFields(value) {
+      const fields = {};
+      try {
+        for (const key of Object.keys(value)) {
+          fields[normalizeBridgeKey(key)] = value[key];
+        }
+      } catch (e) {
+      }
+      return fields;
+    }
+    function parseBridgeObject(value) {
+      if (value && typeof value === "object" && !Array.isArray(value)) return value;
+      if (typeof value !== "string") return null;
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    function sanitizeQueueRoutedSendReadMetadata(task) {
+      let payloadKey;
+      try {
+        payloadKey = Object.keys(task).find((key) => normalizeBridgeKey(key) === "payload");
+      } catch (e) {
+        return { value: task, changed: false, blockedAll: false };
+      }
+      if (!payloadKey) return { value: task, changed: false, blockedAll: false };
+      const rawPayload = task[payloadKey];
+      const payload = parseBridgeObject(rawPayload);
+      if (!payload) return { value: task, changed: false, blockedAll: false };
+      const sanitized = sanitizeQueueSendPayloadReadMetadata(payload);
+      if (!sanitized.changed) return { value: task, changed: false, blockedAll: false };
+      const clone = Object.assign({}, task);
+      clone[payloadKey] = typeof rawPayload === "string" ? JSON.stringify(sanitized.value) : sanitized.value;
+      return { value: clone, changed: true, blockedAll: false };
+    }
+    function sanitizeQueueSendPayloadReadMetadata(value, depth = 0) {
+      if (!value || depth > 6 || typeof value !== "object" || isBinaryPayload(value)) {
+        return { value, changed: false };
+      }
+      if (Array.isArray(value)) {
+        let changed2 = false;
+        const next = value.map((item) => {
+          const sanitized = sanitizeQueueSendPayloadReadMetadata(item, depth + 1);
+          changed2 = changed2 || sanitized.changed;
+          return sanitized.value;
+        });
+        return { value: changed2 ? next : value, changed: changed2 };
+      }
+      let changed = false;
+      const clone = {};
+      for (const key of Object.keys(value)) {
+        const child = value[key];
+        const normalizedKey = normalizeBridgeKey(key);
+        if (isReadReceiptSendFlagKey(normalizedKey)) {
+          const truthy = isTruthyPrivacyValue(child);
+          clone[key] = truthy ? false : child;
+          changed = changed || truthy;
+          continue;
+        }
+        if (isReadReceiptMutationKey(normalizedKey)) {
+          const truthy = isTruthyPrivacyValue(child);
+          clone[key] = truthy ? null : child;
+          changed = changed || truthy;
+          continue;
+        }
+        if (isReadWatermarkKey(normalizedKey) && isLikelyReadWatermarkValue(child)) {
+          clone[key] = safeReadWatermarkValue(child);
+          changed = changed || clone[key] !== child;
+          continue;
+        }
+        const sanitized = sanitizeQueueSendPayloadReadMetadata(child, depth + 1);
+        clone[key] = sanitized.value;
+        changed = changed || sanitized.changed;
+      }
+      return { value: changed ? clone : value, changed };
+    }
     function tracePostMessageOutcome(kind, blockType, outcome, message, text) {
       if (!isPostMessageObservationEnabled() && !String(outcome || "").startsWith("drop")) return;
       const haystack = String(text || "").toLowerCase();
@@ -1751,7 +1898,8 @@
         const next = [];
         for (const item of value) {
           const itemText = stringifyForMatch(item).toLowerCase();
-          if (!hasMessengerMessageSendIntentText(itemText) && (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText))) {
+          const isSendItem = isBridgeSendItemObject(item, itemText);
+          if (!isSendItem && (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText))) {
             changed = true;
             continue;
           }
@@ -1761,7 +1909,7 @@
             continue;
           }
           if (!sanitizedItem.changed) {
-            if (!hasMessengerMessageSendIntentText(itemText) && (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText))) {
+            if (!isSendItem && (shouldBlockTypingText(itemText) || shouldBlockSeenText(itemText))) {
               changed = true;
               continue;
             }
@@ -1777,6 +1925,9 @@
       }
       if (typeof value === "object") {
         const ownText = stringifyForMatch(value).toLowerCase();
+        if (isQueueRoutedMessengerSendTask(value)) {
+          return sanitizeQueueRoutedSendReadMetadata(value);
+        }
         if (isBridgeSendItemObject(value, ownText)) {
           return { value, changed: false, blockedAll: false };
         }
@@ -1787,7 +1938,8 @@
           const child = value[key];
           if (child && typeof child === "object" && !isBinaryPayload(child)) {
             const childText = stringifyForMatch(child).toLowerCase();
-            if (!hasMessengerMessageSendIntentText(childText) && (shouldBlockTypingText(childText) || shouldBlockSeenText(childText))) {
+            const childContainsSend = containsQueueRoutedMessengerSendTask(child);
+            if (!childContainsSend && !hasMessengerMessageSendIntentText(childText) && (shouldBlockTypingText(childText) || shouldBlockSeenText(childText))) {
               changed = true;
               continue;
             }
@@ -1820,7 +1972,7 @@
     }
     function isBridgeSendItemObject(value, text) {
       if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-      if (!hasMessengerMessageSendIntentText(text)) return false;
+      if (!isQueueRoutedMessengerSendTask(value) && !hasMessengerMessageSendIntentText(text)) return false;
       const keys = Object.keys(value).map(normalizeBridgeKey);
       if (keys.includes("tasks") || keys.includes("tasklist") || keys.includes("batch")) return false;
       return keys.some((key) => [
