@@ -61,12 +61,12 @@ const FEATURES: Array<{
 ];
 
 const FACTS = [
-  { label: 'Source open', text: 'Read every line.', tone: 'editorial' },
-  { label: 'No Ghostify account', text: 'Nothing new to sign into.', tone: 'plain' },
-  { label: 'Settings', text: 'Your switches stay on this device.', tone: 'editorial' },
-  { label: 'Supported signals', text: 'Seen. Typing. Story views.', tone: 'plain' },
-  { label: 'Three places', text: 'Instagram / Messenger / Facebook.', tone: 'editorial' },
-  { label: 'Narrow access', text: 'Only on supported Meta tabs.', tone: 'plain' },
+  { label: 'Source open', text: 'Read every line.' },
+  { label: 'No Ghostify account', text: 'Nothing new to sign into.' },
+  { label: 'Narrow access', text: 'Only on supported Meta tabs.' },
+  { label: 'Supported signals', text: 'Seen. Typing. Story views.' },
+  { label: 'Settings', text: 'Your switches stay on this device.' },
+  { label: 'Three places', text: 'Instagram / Messenger / Facebook.' },
 ];
 
 const PLATFORMS: Array<{
@@ -117,122 +117,16 @@ const FAQS = [
   },
 ];
 
-function SignalPill({
-  label,
-  pathId,
-  width,
-  begin,
-  kind,
-  compact = false,
-}: {
-  label: string;
-  pathId: string;
-  width: number;
-  begin: string;
-  kind: 'input' | 'output';
-  compact?: boolean;
-}) {
-  const isTyping = label === 'typing';
-  const height = compact ? 44 : 36;
-  const opacityValues = kind === 'input' ? '0;0;1;1;0;0' : '0;0;1;1;0;0';
-  const opacityKeyTimes = kind === 'input'
-    ? '0;0.006;0.02;0.25;0.29;1'
-    : '0;0.02;0.04;0.2917;0.3194;1';
+function SignalStreams() {
   return (
-    <g className={`signal-svg-pill signal-svg-pill-${kind}${compact ? ' signal-svg-pill-compact' : ''}${isTyping ? ' signal-svg-pill-typing' : ''}`} opacity="0">
-      <rect x={width / -2} y={height / -2} width={width} height={height} rx={height / 2} />
-      <text x={isTyping ? -12 : 0} textAnchor="middle" dominantBaseline="middle">{label}</text>
-      {isTyping && (
-        <g className="signal-typing-dots" transform={`translate(${compact ? 25 : 29} 0)`}>
-          {[0, 1, 2].map((dot) => (
-            <circle cx={dot * 6} cy="0" r="1.8" key={dot} style={{ animationDelay: `${dot * 0.14}s` }} />
-          ))}
-        </g>
-      )}
-      <animateMotion
-        dur="7.2s"
-        begin={begin}
-        repeatCount="indefinite"
-        calcMode="linear"
-        keyPoints="0;1;1"
-        keyTimes="0;0.3194;1"
-      >
-        <mpath href={`#${pathId}`} />
-      </animateMotion>
-      <animate
-        attributeName="opacity"
-        values={opacityValues}
-        keyTimes={opacityKeyTimes}
-        dur="7.2s"
-        begin={begin}
-        repeatCount="indefinite"
-      />
-    </g>
-  );
-}
-
-function SignalDiagram({ compact = false }: { compact?: boolean }) {
-  const prefix = compact ? 'signal-compact' : 'signal-desktop';
-  const paths = compact
-    ? {
-        inSeen: 'M62 54C82 142 138 126 200 202',
-        inTyping: 'M200 28C200 94 200 148 200 202',
-        inStory: 'M338 54C318 142 262 126 200 202',
-      }
-    : {
-        inSeen: 'M72 70C300 70 420 145 600 210',
-        inTyping: 'M36 210C300 210 440 210 600 210',
-        inStory: 'M72 350C300 350 420 275 600 210',
-      };
-
-  return (
-    <svg
-      className={`signal-network signal-network-${compact ? 'compact' : 'desktop'}`}
-      viewBox={compact ? '0 0 400 420' : '0 0 1200 420'}
-      preserveAspectRatio="xMidYMid meet"
-    >
-        <defs>
-          <path id={`${prefix}-in-seen`} d={paths.inSeen} />
-          <path id={`${prefix}-in-typing`} d={paths.inTyping} />
-          <path id={`${prefix}-in-story`} d={paths.inStory} />
-          <clipPath id={`${prefix}-input-clip`}>
-            <rect x="0" y="0" width={compact ? 400 : 604} height={compact ? 210 : 420} />
-          </clipPath>
-        </defs>
-
-        <g className="signal-network-lines">
-          <use href={`#${prefix}-in-seen`} /><use href={`#${prefix}-in-typing`} /><use href={`#${prefix}-in-story`} />
-        </g>
-
-        <g className="signal-route-nodes">
-          {compact ? (
-            <>
-              <circle cx="62" cy="54" r="4" /><circle cx="200" cy="28" r="4" /><circle cx="338" cy="54" r="4" />
-            </>
-          ) : (
-            <>
-              <circle cx="72" cy="70" r="5" /><circle cx="36" cy="210" r="5" /><circle cx="72" cy="350" r="5" />
-            </>
-          )}
-        </g>
-
-        <g className="signal-motion">
-          <g clipPath={`url(#${prefix}-input-clip)`}>
-            <SignalPill label="seen" pathId={`${prefix}-in-seen`} width={compact ? 70 : 104} begin="-7.2s" kind="input" compact={compact} />
-            <SignalPill label="story-view" pathId={`${prefix}-in-story`} width={compact ? 104 : 150} begin="-4.8s" kind="input" compact={compact} />
-            <SignalPill label="typing" pathId={`${prefix}-in-typing`} width={compact ? 108 : 150} begin="-2.4s" kind="input" compact={compact} />
-          </g>
-
-        </g>
-
-        <g className="signal-static-labels">
-          {compact ? (
-            <><text x="62" y="50">seen</text><text x="200" y="24">typing</text><text x="338" y="50">story-view</text></>
-          ) : (
-            <><text x="72" y="58">seen</text><text x="36" y="196">typing</text><text x="72" y="338">story-view</text></>
-          )}
-        </g>
-      </svg>
+    <div className="signal-streams">
+      <span className="signal-stream signal-stream-seen">seen</span>
+      <span className="signal-stream signal-stream-typing">
+        typing
+        <i className="signal-stream-dots"><b /><b /><b /></i>
+      </span>
+      <span className="signal-stream signal-stream-story">story view</span>
+    </div>
   );
 }
 
@@ -242,33 +136,10 @@ function HeroSignalFlow() {
   useEffect(() => {
     const flow = flowRef.current;
     if (!flow) return;
-    const diagrams = Array.from(flow.querySelectorAll<SVGSVGElement>('.signal-network'));
     let visible = true;
-    let wasPlaying = true;
     const sync = () => {
       const shouldPlay = visible && !document.hidden;
       flow.classList.toggle('is-motion-paused', !shouldPlay);
-
-      if (!shouldPlay) {
-        diagrams.forEach((diagram) => diagram.pauseAnimations());
-        wasPlaying = false;
-        return;
-      }
-
-      if (!wasPlaying) {
-        diagrams.forEach((diagram) => {
-          diagram.pauseAnimations();
-          diagram.setCurrentTime(0);
-          diagram.unpauseAnimations();
-        });
-        flow.getAnimations({ subtree: true }).forEach((animation) => {
-          animation.currentTime = 0;
-          animation.play();
-        });
-      } else {
-        diagrams.forEach((diagram) => diagram.unpauseAnimations());
-      }
-      wasPlaying = true;
     };
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
@@ -284,20 +155,7 @@ function HeroSignalFlow() {
 
   return (
     <div className="hero-signal-flow" aria-hidden="true" ref={flowRef}>
-      <SignalDiagram />
-      <SignalDiagram compact />
-
-      <div className="signal-collage">
-        <span className="signal-paper signal-paper-incoming">
-          <b>Signals head out.</b>
-        </span>
-        <span className="signal-paper signal-paper-onward">
-          <b>The page carries on.</b>
-        </span>
-        <svg className="signal-pencil-work" viewBox="0 0 1200 420" preserveAspectRatio="none">
-          <path className="signal-pencil-arrow" d="M248 122C356 108 445 137 523 184M511 166L523 184L502 181" />
-        </svg>
-      </div>
+      <SignalStreams />
 
       <div className="signal-processor">
         <span className="signal-catch-ring" />
@@ -422,6 +280,53 @@ function PrivacyIllustration() {
   );
 }
 
+function AnimatedFootprintMetric() {
+  const metricRef = useRef<HTMLElement>(null);
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    const metric = metricRef.current;
+    if (!metric) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      setValue(63.09);
+      return;
+    }
+
+    let frame = 0;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+
+      const startedAt = performance.now();
+      const update = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / 900);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setValue(63.09 * eased);
+        if (progress < 1) frame = window.requestAnimationFrame(update);
+      };
+
+      frame = window.requestAnimationFrame(update);
+    }, { threshold: 0.45 });
+
+    observer.observe(metric);
+    return () => {
+      observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  const displayValue = value === 0 ? '0' : value.toFixed(2);
+
+  return (
+    <article ref={metricRef} aria-label="63.09 KiB extension footprint">
+      <strong aria-hidden="true">{displayValue}<span>KiB</span></strong>
+      <small aria-hidden="true">extension footprint</small>
+    </article>
+  );
+}
+
 function FootprintSection() {
   return (
     <section className="footprint-section" data-scroll-scene>
@@ -430,8 +335,8 @@ function FootprintSection() {
         <p>A compact footprint, no tracking relays, and no account standing between you and the controls.</p>
       </header>
       <div className="footprint-metrics">
-        <article><strong>MIT</strong><small>licensed core</small></article>
         <article><strong>MV3</strong><small>extension architecture</small></article>
+        <AnimatedFootprintMetric />
         <article><strong>0</strong><small>tracking relays</small></article>
         <article><strong>0</strong><small>Ghostify accounts required</small></article>
       </div>
@@ -547,16 +452,16 @@ function FactMarquee() {
 
   return (
     <section className="fact-marquee" aria-label="Ghostify at a glance" ref={marqueeRef}>
+      <div className="fact-marquee-signature">
+        <GhostMark size={42} bodyColor="#d8d2ff" eyeColor="#0f0f0d" />
+        <span><small>Ghostify</small><strong>quiet by design.</strong></span>
+      </div>
       <div className="fact-marquee-viewport">
         <div className="fact-marquee-track">
           {[0, 1].map((copy) => (
             <div className="fact-marquee-group" aria-hidden={copy === 1 ? 'true' : undefined} key={copy}>
-              <span className="fact-marquee-signature">
-                <GhostMark size={42} bodyColor="#d8d2ff" eyeColor="#0f0f0d" />
-                <span><small>Ghostify</small><strong>quiet by design.</strong></span>
-              </span>
-              {FACTS.map(({ label, text, tone }) => (
-                <span className={`fact-marquee-phrase is-${tone}`} key={label}>
+              {FACTS.map(({ label, text }) => (
+                <span className="fact-marquee-phrase" key={label}>
                   <small>{label}</small>
                   <strong>{text}</strong>
                 </span>

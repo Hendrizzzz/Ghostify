@@ -14,7 +14,7 @@
   --success: #287a50;
   --warning: #8873cf;
   --danger: #a84747;
-  --font-sans: 'Uncut Sans Variable', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
   --font-display: var(--font-sans);
   --font-mono: 'Commit Mono Variable', 'SFMono-Regular', Consolas, monospace;
   --font-editorial: 'Newsreader Variable', Georgia, serif;
@@ -182,7 +182,7 @@ svg {
   gap: 10px;
   color: var(--ink);
   font-size: 20px;
-  font-weight: 680;
+  font-weight: 620;
   letter-spacing: -0.025em;
   text-decoration: none;
 }
@@ -218,7 +218,7 @@ svg {
   border-radius: 999px;
   color: #4f4d46;
   font-size: 14px;
-  font-weight: 590;
+  font-weight: 500;
   text-decoration: none;
   transition: color 160ms ease, background 160ms ease;
 }
@@ -252,7 +252,7 @@ svg {
   background: var(--ink);
   box-shadow: none;
   font-size: 15px;
-  font-weight: 680;
+  font-weight: 620;
   letter-spacing: -0.01em;
   text-decoration: none;
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
@@ -310,7 +310,7 @@ svg {
   border-radius: 10px;
   color: var(--ink);
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -1426,7 +1426,7 @@ svg {
 }
 
 .footer-links > div { display: flex; flex-direction: column; align-items: flex-start; }
-.footer-label { margin-bottom: 14px; color: #817d74; font-size: 10px; font-weight: 720; letter-spacing: 0.1em; text-transform: uppercase; }
+.footer-label { margin-bottom: 14px; color: #817d74; font-size: 10px; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; }
 .footer-links a { min-height: 44px; display: inline-flex; align-items: center; color: #d8d3c9; font-size: 13px; text-decoration: none; }
 .footer-links a:hover { color: white; text-decoration: underline; text-underline-offset: 4px; }
 
