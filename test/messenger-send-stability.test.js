@@ -1569,6 +1569,148 @@ function testFacebookMiniChatMixedSendTypingBridgeFrameDoesNotEnterTypingSanitiz
     assert.strictEqual(forwarded.tasks[1].label, 'sendChatStateFromComposer');
 }
 
+function testFacebookGroupSendWithQueueOnlyTargetPreservesSendAndRemovesTyping() {
+    const context = makeMessengerPatchPage({}, {
+        hostname: 'www.facebook.com',
+        pathname: '/',
+        href: 'https://www.facebook.com/',
+        facebookMiniChatOpen: true
+    });
+    const message = {
+        issue_new_task: true,
+        tasks: [{
+            label: '46',
+            queue_name: 'redacted-group-thread',
+            task_id: 414,
+            payload: JSON.stringify({
+                offline_threading_id: 'redacted-offline-id',
+                send_type: 1,
+                message: { text: 'group message' },
+                sync_group: 104
+            })
+        }, {
+            label: 'sendChatStateFromComposer',
+            queue_name: 'redacted-group-thread',
+            task_id: 415,
+            payload: JSON.stringify({
+                chatstate: 'typing_indicator',
+                send_type: 'typing'
+            })
+        }]
+    };
+    const outcome = workerOutcome(context, message);
+
+    assert.strictEqual(outcome.result, 'worker-sent');
+    assert.strictEqual(outcome.postCount, 1);
+    assert.strictEqual(outcome.blocked, 0);
+    assert.strictEqual(
+        outcome.sanitized,
+        1,
+        'Facebook group sends routed only by queue_name must remove bundled typing without dropping the send'
+    );
+    assert.notStrictEqual(outcome.post.message, message);
+    assert.strictEqual(outcome.post.message.tasks.length, 1);
+    assert.strictEqual(outcome.post.message.tasks[0], message.tasks[0]);
+
+    const seenContext = makeMessengerPatchPage({}, {
+        hostname: 'www.facebook.com',
+        pathname: '/',
+        href: 'https://www.facebook.com/',
+        facebookMiniChatOpen: true
+    });
+    const seenMessage = {
+        issue_new_task: true,
+        tasks: [{
+            label: '46',
+            queue_name: 'redacted-group-thread',
+            task_id: 416,
+            payload: JSON.stringify({
+                offline_threading_id: 'redacted-offline-id',
+                send_type: 1,
+                message: { text: 'group message' },
+                sync_group: 104,
+                last_read_watermark_ts: 1779530000000,
+                should_send_read_receipt: true
+            })
+        }]
+    };
+    const seenOutcome = workerOutcome(seenContext, seenMessage);
+
+    assert.strictEqual(seenOutcome.result, 'worker-sent');
+    assert.strictEqual(seenOutcome.postCount, 1);
+    assert.strictEqual(seenOutcome.blocked, 0);
+    assert.strictEqual(
+        seenOutcome.sanitizedSeen,
+        1,
+        'queue-only Facebook group sends must remove bundled Seen metadata without dropping the send'
+    );
+    assert.notStrictEqual(seenOutcome.post.message, seenMessage);
+    assert.strictEqual(seenOutcome.post.message.tasks.length, 1);
+    assert.strictEqual(seenOutcome.post.message.tasks[0].label, '46');
+    assert.strictEqual(seenOutcome.post.message.tasks[0].queue_name, 'redacted-group-thread');
+    assert.strictEqual(seenOutcome.post.message.tasks[0].task_id, 416);
+    const sanitizedSendPayload = JSON.parse(seenOutcome.post.message.tasks[0].payload);
+    assert.strictEqual(sanitizedSendPayload.message.text, 'group message');
+    assert.strictEqual(sanitizedSendPayload.offline_threading_id, 'redacted-offline-id');
+    assert.strictEqual(sanitizedSendPayload.should_send_read_receipt, false);
+    assert.strictEqual(sanitizedSendPayload.last_read_watermark_ts, SAFE_READ_WATERMARK);
+}
+
+function testFacebookQueueOnlyPrivacyTasksAreNotClassifiedAsSends() {
+    const typingContext = makeMessengerPatchPage({}, {
+        hostname: 'www.facebook.com',
+        pathname: '/',
+        href: 'https://www.facebook.com/',
+        facebookMiniChatOpen: true
+    });
+    const typingTask = {
+        issue_new_task: true,
+        tasks: [{
+            label: 'sendChatStateFromComposer',
+            queue_name: 'redacted-group-thread',
+            task_id: 417,
+            payload: JSON.stringify({
+                offline_threading_id: 'redacted-offline-id',
+                send_type: 'typing',
+                message: { text: 'incidental metadata' },
+                chatstate: 'typing_indicator'
+            })
+        }]
+    };
+    const typingOutcome = workerOutcome(typingContext, typingTask);
+
+    assert.strictEqual(typingOutcome.result, undefined);
+    assert.strictEqual(typingOutcome.postCount, 0);
+    assert.strictEqual(typingOutcome.blocked, 1);
+
+    const seenContext = makeMessengerPatchPage({}, {
+        hostname: 'www.facebook.com',
+        pathname: '/',
+        href: 'https://www.facebook.com/',
+        facebookMiniChatOpen: true
+    });
+    const seenTask = {
+        issue_new_task: true,
+        tasks: [{
+            label: 'markThreadAsRead',
+            queue_name: 'redacted-group-thread',
+            task_id: 418,
+            payload: JSON.stringify({
+                offline_threading_id: 'redacted-offline-id',
+                send_type: 1,
+                message: { text: 'incidental metadata' },
+                last_read_watermark_ts: 1779530000000,
+                should_send_read_receipt: true
+            })
+        }]
+    };
+    const seenOutcome = workerOutcome(seenContext, seenTask);
+
+    assert.strictEqual(seenOutcome.result, undefined);
+    assert.strictEqual(seenOutcome.postCount, 0);
+    assert.strictEqual(seenOutcome.blocked, 1);
+}
+
 async function testFacebookSecureEncryptedDirectRecipientSendsAreAllowed() {
     const facebookWindow = makeGhostPage({
         hostname: 'www.facebook.com',
@@ -8643,6 +8785,8 @@ async function testMessageRequestClickGraceKeepsTransportAndBridgeNative() {
     testFacebookPatchMixedSendTypingBatchPreservesSend();
     testFacebookMiniChatSecureSendWithAlternateTargetsIsForwarded();
     testFacebookMiniChatMixedSendTypingBridgeFrameDoesNotEnterTypingSanitizer();
+    testFacebookGroupSendWithQueueOnlyTargetPreservesSendAndRemovesTyping();
+    testFacebookQueueOnlyPrivacyTasksAreNotClassifiedAsSends();
     await testFacebookSecureEncryptedDirectRecipientSendsAreAllowed();
     testMessengerPatchMixedSendReadStringBatchPreservesSend();
     testMessengerPatchObjectMapBatchSanitizesPrivacyTasks();
