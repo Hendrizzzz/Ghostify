@@ -189,8 +189,8 @@
     },
     {
       "date": "2026-07-21",
-      "publicStatus": "under_review",
-      "eventType": "investigation",
+      "publicStatus": "known_issue",
+      "eventType": "incident",
       "title": "Facebook group-message sending report acknowledged",
       "summary": "A report that messages in some Facebook group chats could remain stuck in Sending was reproduced and investigated."
     },
