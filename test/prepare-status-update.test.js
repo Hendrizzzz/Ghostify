@@ -80,6 +80,13 @@ function testVerifiedProposalTargetsRecordedStoreBuildAcrossVersionMismatch() {
     mismatchingStatus.entries[0].publicStatus = 'known_issue';
     mismatchingStatus.entries[0].localEvidenceStatus = 'manual_pending';
     mismatchingStatus.entries[0].relatedIssueUrl = 'https://github.com/Hendrizzzz/Ghostify/issues/123';
+    mismatchingStatus.history.unshift({
+        date: proposalDate,
+        publicStatus: 'under_review',
+        eventType: 'review',
+        title: 'Existing review state',
+        summary: 'Existing history must survive a later verified proposal.'
+    });
 
     const status = prepareStatusUpdate(mismatchingStatus, {
         mode: 'verified',
@@ -93,7 +100,7 @@ function testVerifiedProposalTargetsRecordedStoreBuildAcrossVersionMismatch() {
     assert.strictEqual(status.summary.publicStatus, 'maintainer_verified');
     assert(status.entries.every(entry => entry.reviewRecord.includes('for v2.0.6')));
     assert(status.entries.every(entry => entry.relatedIssueUrl === null));
-    assert.strictEqual(status.history[1].publicStatus, mismatchingStatus.history[0].publicStatus);
+    assert(status.history.some(item => item.title === 'Existing review state'));
 }
 
 function testReportedProposalTurnsSelectedControlAndOverallStatusYellow() {
