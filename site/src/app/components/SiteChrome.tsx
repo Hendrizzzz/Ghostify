@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Github, Menu, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, Code2, Menu, ShieldCheck } from 'lucide-react';
 import { getPublicReleaseStatus } from '../statusData';
 import { GhostMark } from './GhostSVG';
 
@@ -68,7 +68,7 @@ export function SiteHeader() {
           <span className={`nav-status-dot nav-status-${statusTone}`} aria-hidden="true" />
           Status
         </a>
-        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><Github size={14} aria-hidden="true" /> GitHub</a>
+        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><Code2 size={14} aria-hidden="true" /> GitHub</a>
       </nav>
 
       <details
@@ -137,7 +137,7 @@ export function SiteFooter() {
 
       <div className="footer-bottom">
         <span>© {new Date().getFullYear()} Ghostify</span>
-        <span className="footer-open-source"><Github size={13} aria-hidden="true" /> MIT-licensed Core</span>
+        <span className="footer-open-source"><Code2 size={13} aria-hidden="true" /> MIT-licensed Core</span>
         <span className="footer-independent"><ShieldCheck size={13} aria-hidden="true" /> Independent project — not affiliated with Meta</span>
       </div>
     </footer>
