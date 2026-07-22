@@ -7,6 +7,7 @@ import {
   HelpCircle,
   History,
   Info,
+  PackageCheck,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -493,6 +494,41 @@ function StatusFootnote() {
 }
 
 type HistoryItem = (typeof STATUS_DATA.history)[number];
+type HistoryEventTone = 'operational' | 'update' | 'review' | 'issue';
+
+const HISTORY_EVENT_META: Record<HistoryEventTone, { label: string; description: string }> = {
+  operational: { label: 'All working', description: 'A completed verification found no known issue.' },
+  update: { label: 'Product update', description: 'A version or fix was published.' },
+  review: { label: 'Under review', description: 'Checks or investigation are still in progress.' },
+  issue: { label: 'Known issue', description: 'A user-facing problem was confirmed.' },
+};
+
+const HISTORY_EVENT_TONES = Object.keys(HISTORY_EVENT_META) as HistoryEventTone[];
+
+function getHistoryEventTone(item: HistoryItem): HistoryEventTone {
+  if (isProductUpdate(item)) return 'update';
+  if (item.publicStatus === 'known_issue') return 'issue';
+  if (item.publicStatus === 'maintainer_verified' || item.publicStatus === 'community_verified_reviewed') {
+    return 'operational';
+  }
+  return 'review';
+}
+
+function HistoryEventIcon({ tone, size = 16 }: { tone: HistoryEventTone; size?: number }) {
+  if (tone === 'operational') return <CheckCircle2 size={size} strokeWidth={2} />;
+  if (tone === 'update') return <PackageCheck size={size} strokeWidth={2} />;
+  if (tone === 'issue') return <AlertTriangle size={size} strokeWidth={2} />;
+  return <Clock3 size={size} strokeWidth={2} />;
+}
+
+function HistoryEventPill({ tone }: { tone: HistoryEventTone }) {
+  return (
+    <span className={`status-history-pill is-${tone}`}>
+      <HistoryEventIcon tone={tone} size={13} />
+      {HISTORY_EVENT_META[tone].label}
+    </span>
+  );
+}
 
 function buildVisibleHistory(): HistoryItem[] {
   return [...STATUS_DATA.history];
@@ -533,24 +569,40 @@ function HistoryStatus() {
       <a className="status-home-link" href="/status"><ArrowLeft size={15} /> Current status</a>
       <section className="status-panel" aria-labelledby="history-heading">
         <div className="status-panel-head">
-          <h1 id="history-heading">Verification history</h1>
+          <h1 id="history-heading">Status history</h1>
           <span>Public record</span>
+        </div>
+        <div className="status-history-intro">
+          <p>Every update uses the same meaning and color as the status calendar.</p>
+          <div className="status-history-legend" aria-label="Status history color legend">
+            {HISTORY_EVENT_TONES.map((tone) => (
+              <span className={`is-${tone}`} title={HISTORY_EVENT_META[tone].description} key={tone}>
+                <i aria-hidden="true" />
+                {HISTORY_EVENT_META[tone].label}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="status-history-list">
           {buildHistoryGroups().map((group) => (
             <section className="status-history-group" aria-labelledby={`history-${group.key}`} key={group.key}>
               <h3 id={`history-${group.key}`}>{group.label}</h3>
-              {group.items.map((item) => (
-                <article className="status-history-row" key={`${item.date}-${item.title}`}>
-                  <StatusIcon status={item.publicStatus} size={16} />
-                  <time>{formatStatusDate(item.date)}</time>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.summary}</p>
-                  </div>
-                  <StatusPill status={item.publicStatus} />
-                </article>
-              ))}
+              {group.items.map((item) => {
+                const tone = getHistoryEventTone(item);
+                return (
+                  <article className={`status-history-row is-${tone}`} key={`${item.date}-${item.title}`}>
+                    <span className={`status-history-icon is-${tone}`} aria-hidden="true">
+                      <HistoryEventIcon tone={tone} size={15} />
+                    </span>
+                    <time>{formatStatusDate(item.date)}</time>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{item.summary}</p>
+                    </div>
+                    <HistoryEventPill tone={tone} />
+                  </article>
+                );
+              })}
             </section>
           ))}
         </div>
