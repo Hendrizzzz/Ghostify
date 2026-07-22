@@ -3886,7 +3886,77 @@
 }
 
 .site-root.is-status-view .status-page .status-history-list {
-  margin-top: 8px;
+  margin-top: 0;
+}
+
+.site-root.is-status-view .status-page .status-history-intro {
+  padding: 22px 18px 20px;
+  border-bottom: 1px solid rgba(15, 15, 13, 0.14);
+  background: rgba(243, 238, 226, 0.52);
+}
+
+.site-root.is-status-view .status-page .status-history-intro > p {
+  margin: 0;
+  color: rgba(15, 15, 13, 0.62);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.site-root.is-status-view .status-page .status-history-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 18px;
+  margin-top: 15px;
+}
+
+.site-root.is-status-view .status-page .status-history-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(15, 15, 13, 0.68);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.site-root.is-status-view .status-page .status-history-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--history-accent);
+}
+
+.site-root.is-status-view .status-page .status-history-legend .is-operational,
+.site-root.is-status-view .status-page .status-history-row.is-operational {
+  --history-accent: var(--home-accent);
+  --history-ink: #6e58b9;
+  --history-soft: rgba(136, 115, 207, 0.11);
+  --history-border: rgba(136, 115, 207, 0.3);
+}
+
+.site-root.is-status-view .status-page .status-history-legend .is-update,
+.site-root.is-status-view .status-page .status-history-row.is-update {
+  --history-accent: var(--status-update);
+  --history-ink: #27785f;
+  --history-soft: rgba(39, 142, 114, 0.1);
+  --history-border: rgba(39, 142, 114, 0.28);
+}
+
+.site-root.is-status-view .status-page .status-history-legend .is-review,
+.site-root.is-status-view .status-page .status-history-row.is-review {
+  --history-accent: #b9a8ef;
+  --history-ink: #7058bd;
+  --history-soft: rgba(185, 168, 239, 0.13);
+  --history-border: rgba(112, 88, 189, 0.24);
+}
+
+.site-root.is-status-view .status-page .status-history-legend .is-issue,
+.site-root.is-status-view .status-page .status-history-row.is-issue {
+  --history-accent: #d85d4a;
+  --history-ink: #b74e3e;
+  --history-soft: rgba(216, 93, 74, 0.09);
+  --history-border: rgba(216, 93, 74, 0.28);
 }
 
 .site-root.is-status-view .status-page .status-history-group h3 {
@@ -3907,11 +3977,41 @@
   padding: 26px 18px;
   grid-template-columns: 22px 120px minmax(0, 1fr) auto;
   border-bottom: 1px solid rgba(15, 15, 13, 0.14);
+  box-shadow: inset 3px 0 0 var(--history-accent);
+  background: transparent;
+}
+
+.site-root.is-status-view .status-page .status-history-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid var(--history-border);
+  color: var(--history-ink);
+  background: var(--home-cream);
 }
 
 .site-root.is-status-view .status-page .status-history-row time,
-.site-root.is-status-view .status-page .status-history-row .status-pill {
+.site-root.is-status-view .status-page .status-history-row .status-history-pill {
   font-family: var(--font-mono);
+}
+
+.site-root.is-status-view .status-page .status-history-pill {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--history-border);
+  border-radius: 999px;
+  color: var(--history-ink);
+  background: var(--home-cream);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .site-root.is-status-view .status-page .status-history-row p {
@@ -4076,7 +4176,7 @@
 
   .site-root.is-status-view .status-page .status-history-row time,
   .site-root.is-status-view .status-page .status-history-row > div,
-  .site-root.is-status-view .status-page .status-history-row .status-pill {
+  .site-root.is-status-view .status-page .status-history-row .status-history-pill {
     grid-column: 2;
   }
 }
@@ -4345,7 +4445,7 @@
     grid-row: 2;
   }
 
-  .site-root.is-status-view .status-page .status-history-row .status-pill {
+  .site-root.is-status-view .status-page .status-history-row .status-history-pill {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
@@ -4368,7 +4468,7 @@
   .site-root.is-status-view .status-page .status-history-row {
     grid-template-columns: 20px minmax(0, 1fr);
   }
-  .site-root.is-status-view .status-page .status-history-row .status-pill {
+  .site-root.is-status-view .status-page .status-history-row .status-history-pill {
     grid-column: 2;
     grid-row: 2;
     justify-self: start;
@@ -4398,7 +4498,7 @@
     grid-row: 2;
   }
 
-  .site-root.is-status-view .status-page .status-history-row .status-pill {
+  .site-root.is-status-view .status-page .status-history-row .status-history-pill {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
